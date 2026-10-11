@@ -16,6 +16,7 @@
 
 set -euo pipefail
 
+ME="$(id -un)"
 ROOT="$HOME/bingoor-project"
 VENV="$HOME/nodevenv/bingoor-project"
 NODE_VER=20
@@ -44,7 +45,7 @@ plain_node() {
   fail "Node.js ${NODE_VER} not found on PATH"
 }
 
-threads() { ps -u "$USER" -L --no-headers 2>/dev/null | wc -l; }
+threads() { ps -u "$ME" -L --no-headers 2>/dev/null | wc -l; }
 
 # Frees the threads a running site holds while it is being rebuilt. The site
 # is down for those minutes; restart_app brings it back.
@@ -54,7 +55,7 @@ stop_app() {
     cloudlinux-selector stop --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1; then
     :
   else
-    pkill -u "$USER" -f "lsnode:$ROOT/$app/" 2>/dev/null || true
+    pkill -u "$ME" -f "lsnode:$ROOT/$app/" 2>/dev/null || true
   fi
   sleep 2
   echo "   paused $app while it rebuilds (threads in use: $(threads))"
