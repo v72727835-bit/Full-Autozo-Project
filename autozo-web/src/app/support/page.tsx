@@ -41,6 +41,17 @@ function SupportInner() {
 
   useEffect(load, [load]);
 
+  // A failed load used to leave the spinner turning for ever; say what went wrong instead.
+  if (!tickets && error)
+    return (
+      <div className="page" style={{ paddingTop: 24, maxWidth: 560 }}>
+        <Alert tone="bad">{error}</Alert>
+        <Button icon="repeat" onClick={load}>
+          Try again
+        </Button>
+      </div>
+    );
+
   if (!tickets) return <PageLoader />;
 
   return (
@@ -207,6 +218,16 @@ function Thread({ id, onClose }: { id: string; onClose: () => void }) {
       setSending(false);
     }
   };
+
+  if (!ticket && error)
+    return (
+      <section className="card card-pad">
+        <Alert tone="bad">{error}</Alert>
+        <Button variant="outline" onClick={onClose}>
+          Back to chats
+        </Button>
+      </section>
+    );
 
   if (!ticket) return <PageLoader />;
 
