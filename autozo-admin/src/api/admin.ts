@@ -25,6 +25,8 @@ export const fetchProducts = (params: {
   isActive?: boolean;
 }) => paged<Product>('/admin/products', params);
 
+export const bulkCreateProducts = async (rows: Record<string, string>[], dryRun: boolean): Promise<import('../components/BulkUpload').BulkResponse> =>
+  (await api.post('/admin/products/bulk', { rows, dryRun })).data.data;
 export const createProduct = async (body: Partial<Product> & { shop: string; category: string }): Promise<Product> =>
   (await api.post('/admin/products', body)).data.data;
 
@@ -252,6 +254,8 @@ export const sellerSaveProfile = async (body: Record<string, unknown>): Promise<
 export const sellerCategories = async (): Promise<{ _id: string; name: string; nameHi?: string; parent: string | null; level: 1 | 2 | 3 }[]> =>
   (await api.get('/seller/categories')).data.data;
 export const sellerProducts = (params: { page?: number; limit?: number; q?: string; status?: string; category?: string }) => paged<import('../types').Product>('/seller/products', params);
+export const sellerBulkProducts = async (rows: Record<string, string>[], dryRun: boolean): Promise<import('../components/BulkUpload').BulkResponse> =>
+  (await api.post('/seller/products/bulk', { rows, dryRun })).data.data;
 export const sellerCreateProduct = async (body: Record<string, unknown>) => (await api.post('/seller/products', body)).data.data;
 export const sellerUpdateProduct = async (id: string, body: Record<string, unknown>) => (await api.patch(`/seller/products/${id}`, body)).data.data;
 export const sellerUploadImages = async (files: File[]): Promise<string[]> => {

@@ -2,8 +2,9 @@ import { OrderStatus } from './types';
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
   placed: 'Order received',
-  confirmed: 'Confirmed by the shop',
+  accepted: 'Confirmed by the shop',
   preparing: 'Being packed',
+  ready_for_pickup: 'Packed, waiting for a rider',
   out_for_delivery: 'Out for delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
@@ -13,8 +14,9 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 /** Shown under whichever step the order is sitting on right now. */
 export const STATUS_BLURB: Record<OrderStatus, string> = {
   placed: 'The shop has been notified and will confirm shortly.',
-  confirmed: 'The shop has accepted your order.',
+  accepted: 'The shop has accepted your order.',
   preparing: 'Your items are being packed right now.',
+  ready_for_pickup: 'Your order is packed and a rider is being assigned.',
   out_for_delivery: 'Your rider is on the way — keep your OTP handy.',
   delivered: 'Thank you for shopping with us. Reorder any time in one tap.',
   cancelled: 'This order was cancelled.',
@@ -23,14 +25,15 @@ export const STATUS_BLURB: Record<OrderStatus, string> = {
 
 export const STATUS_TONE: Record<OrderStatus, 'brand' | 'ok' | 'warn' | 'bad' | 'muted'> = {
   placed: 'brand',
-  confirmed: 'brand',
+  accepted: 'brand',
   preparing: 'warn',
+  ready_for_pickup: 'warn',
   out_for_delivery: 'warn',
   delivered: 'ok',
   cancelled: 'bad',
   rejected: 'bad',
 };
 
-export const FLOW: OrderStatus[] = ['placed', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
+export const FLOW: OrderStatus[] = ['placed', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered'];
 
 export const isFinal = (s: OrderStatus) => s === 'delivered' || s === 'cancelled' || s === 'rejected';

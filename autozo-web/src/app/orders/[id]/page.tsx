@@ -13,6 +13,7 @@ import { useCart } from '../../../context/CartContext';
 import { useToast } from '../../../context/ToastContext';
 import { Crumbs } from '../../../components/Crumbs';
 import { Icon } from '../../../components/Icon';
+import { LiveTrackMap } from '../../../components/LiveTrackMap';
 import { RequireAuth } from '../../../components/RequireAuth';
 import { Alert, Badge, Button, PageLoader } from '../../../components/ui';
 import s from '../orders.module.css';
@@ -61,7 +62,7 @@ function OrderInner() {
 
   const step = FLOW.indexOf(o.status);
   const loc = o.address.location;
-  const canCancel = o.status === 'placed' || o.status === 'confirmed';
+  const canCancel = o.status === 'placed' || o.status === 'accepted';
 
   const act = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -158,7 +159,11 @@ function OrderInner() {
             </section>
           ) : null}
 
-          {o.status === 'out_for_delivery' ? <RiderTracking order={o} /> : null}
+          {['accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery'].includes(o.status) && o.address.location ? (
+            <LiveTrackMap order={o} />
+          ) : o.status === 'out_for_delivery' ? (
+            <RiderTracking order={o} />
+          ) : null}
 
           <section className="card">
             <h2 className={`h3 ${s.secTitle}`}>

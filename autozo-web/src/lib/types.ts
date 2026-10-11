@@ -365,8 +365,9 @@ export interface CartView {
 
 export type OrderStatus =
   | 'placed'
-  | 'confirmed'
+  | 'accepted'
   | 'preparing'
+  | 'ready_for_pickup'
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
@@ -403,6 +404,8 @@ export interface Order {
   rider?: { name: string; phone?: string };
   /** Rider's last reported position while out for delivery. */
   riderLocation?: { lat: number; lng: number; at?: string };
+  /** Where the order is picked up, for the live map. */
+  shopLocation?: { lat: number; lng: number };
 }
 
 export interface UserProfile {

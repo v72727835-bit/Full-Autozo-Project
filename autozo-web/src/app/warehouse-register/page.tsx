@@ -31,6 +31,9 @@ export default function WarehouseRegisterPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const phone = f.phone.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '');
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter a valid 10-digit mobile number (it starts with 6, 7, 8 or 9).');
+    if (f.password.length < 6) return setError('Password must be at least 6 characters.');
     if (f.password !== f.confirm) return setError('The two passwords do not match.');
     if (!location) return setError('Please mark your warehouse on the map (or tap "Use my location") so riders and customers can find it.');
     setBusy(true);
@@ -38,7 +41,7 @@ export default function WarehouseRegisterPage() {
       setDone(
         await registerWarehouse({
           name: f.name.trim(),
-          phone: f.phone.replace(/[\s-]/g, ''),
+          phone,
           email: f.email.trim() || undefined,
           password: f.password,
           shopName: f.shopName.trim(),
@@ -78,7 +81,7 @@ export default function WarehouseRegisterPage() {
           </Field>
           <div className="two-col">
             <Field label="Mobile number (your login)" required>
-              <Input value={f.phone} onChange={(e) => set('phone', e.target.value)} inputMode="tel" autoComplete="tel" placeholder="9876543210" required />
+              <Input value={f.phone} onChange={(e) => set('phone', e.target.value.replace(/[^\d+\s-]/g, ''))} inputMode="tel" autoComplete="tel" placeholder="9876543210" maxLength={14} required />
             </Field>
             <Field label="Email">
               <Input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
