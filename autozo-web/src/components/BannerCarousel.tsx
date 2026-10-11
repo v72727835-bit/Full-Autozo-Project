@@ -9,7 +9,8 @@ import s from './BannerCarousel.module.css';
 
 /**
  * Promo rail. It scrolls by hand and advances on its own every six seconds,
- * pausing while the pointer is over it.
+ * pausing while the pointer is over it. With `bleed` it runs edge to edge
+ * under the header, with the dots laid over the slide instead of below it.
  *
  * The scroll handling is deliberately defensive. A programmatic smooth scroll
  * on a scroll-snapping container emits a long burst of scroll events, and
@@ -18,7 +19,7 @@ import s from './BannerCarousel.module.css';
  * when the index actually changes, and events are ignored while our own
  * animation is still running.
  */
-export function BannerCarousel({ items: all }: { items: Banner[] }) {
+export function BannerCarousel({ items: all, bleed = false }: { items: Banner[]; bleed?: boolean }) {
   // An uploaded banner whose image fails to load is dropped, not shown as an empty box.
   const [broken, setBroken] = useState<Set<string>>(() => new Set());
   const items = all.filter((b) => !broken.has(b.id));
@@ -94,7 +95,7 @@ export function BannerCarousel({ items: all }: { items: Banner[] }) {
 
   return (
     <section
-      className={s.wrap}
+      className={`${s.wrap} ${bleed ? s.bleed : ''}`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
