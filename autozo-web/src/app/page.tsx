@@ -8,7 +8,6 @@ import { DeliverySlots } from '../components/DeliverySlots';
 import { BannerCarousel } from '../components/BannerCarousel';
 import { CategoryCircle, CategoryTile } from '../components/CategoryTile';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { HomeWelcome } from '../components/HomeWelcome';
 import { Icon } from '../components/Icon';
 import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { Alert, Button, SectionHead } from '../components/ui';
@@ -34,36 +33,44 @@ export default function HomePage() {
   if (loading && !home) return <HomeSkeleton />;
   if (!home) return null;
 
+  // The banner runs edge to edge straight under the header; everything else
+  // sits in the page column below it.
+  const banners = home.sections.filter((x) => x.kind === 'bannerCarousel');
+  const rest = home.sections.filter((x) => x.kind !== 'bannerCarousel');
+
   return (
-    <div className="page rise" style={{ paddingTop: 20 }}>
-      {home.serviceable ? null : (
-        <div style={{ marginBottom: 20 }}>
-          <Alert tone="bad">
-            We don&apos;t deliver to your pinned address yet. Pick another address on the Addresses page to see what&apos;s available there.
-          </Alert>
-        </div>
-      )}
-      <HomeWelcome home={home} />
-      <DeliverySlots />
-      {home.sections.map((section) => (
-        // Per-section, so one malformed block can't blank the storefront.
+    <>
+      {banners.map((section) => (
         <ErrorBoundary key={section.id} label={section.kind}>
-          <Section section={section} />
+          <BannerCarousel items={section.items} bleed />
         </ErrorBoundary>
       ))}
-    </div>
+      <div className="page rise" style={{ paddingTop: 20 }}>
+        {home.serviceable ? null : (
+          <div style={{ marginBottom: 20 }}>
+            <Alert tone="bad">
+              We don&apos;t deliver to your pinned address yet. Pick another address on the Addresses page to see
+              what&apos;s available there.
+            </Alert>
+          </div>
+        )}
+        <DeliverySlots />
+        {rest.map((section) => (
+          // Per-section, so one malformed block can't blank the storefront.
+          <ErrorBoundary key={section.id} label={section.kind}>
+            <Section section={section} />
+          </ErrorBoundary>
+        ))}
+      </div>
+    </>
   );
 }
 
 function Section({ section }: { section: HomeSection }) {
   switch (section.kind) {
+    // Drawn full width above the page column by HomePage.
     case 'bannerCarousel':
-      // Phones skip the banner so products come first.
-      return (
-        <div className={s.noPhone}>
-          <BannerCarousel items={section.items} />
-        </div>
-      );
+      return null;
 
     case 'circleRail':
       return (

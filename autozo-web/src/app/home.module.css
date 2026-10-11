@@ -16,13 +16,6 @@
   padding: 0;
 }
 
-/* The home banner is hidden on phones; products take its place. */
-@media (max-width: 699px) {
-  .noPhone {
-    display: none;
-  }
-}
-
 .skHero {
   height: 172px;
   border-radius: var(--r-lg);
