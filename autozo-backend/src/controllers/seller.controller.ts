@@ -7,6 +7,7 @@ import { Product } from '../models/Product';
 import { Shop } from '../models/Shop';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
+import { importProducts } from '../services/bulkProducts.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { created, ok, pageMeta } from '../utils/response';
 import { assignRiderToOrder, freeRidersForOrder, moveOrderStatus, ridersForOrder } from '../services/orderFlow.service';
@@ -135,6 +136,16 @@ export const createMyProduct = asyncHandler(async (req, res) => {
   const { warehouse: _w, ...rest } = body;
   const product = await Product.create({ ...rest, shop: warehouse, seller: req.user!.id, isActive: true });
   created(res, product);
+});
+
+/** Many listings in one go; every row is checked on its own and reported back. */
+export const bulkCreateMyProducts = asyncHandler(async (req, res) => {
+  const me = await User.findById(req.user!.id).select('sellerWarehouses').lean();
+  if (!me) throw new ApiError(404, 'Account not found');
+  const shopIds = (me.sellerWarehouses ?? []).map(String);
+  if (!shopIds.length) throw new ApiError(409, 'No warehouse is assigned to you yet. Ask Autozo support to assign one.');
+  const { rows, dryRun } = req.body as { rows: Record<string, unknown>[]; dryRun?: boolean };
+  ok(res, await importProducts(rows, { mode: 'seller', sellerId: req.user!.id, shopIds, dryRun }));
 });
 
 /** Edit a listing: price, stock, text, photos, category, taking it off the shelf. */

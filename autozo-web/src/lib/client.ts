@@ -143,15 +143,22 @@ export function getErrorMessage(err: unknown): string {
     if (Array.isArray(payload?.details) && payload.details.length && typeof payload.details[0] === 'object') {
       return Array.from(new Set((payload.details as Problem[]).map(explainProblem))).join('. ');
     }
+    // Field problems arrive as an object in `details` (older servers used `errors`).
+    const fields =
+      payload?.errors ??
+      (payload?.details && typeof payload.details === 'object' && !Array.isArray(payload.details)
+        ? (payload.details as Record<string, string[] | string>)
+        : undefined);
     const details =
-      payload?.errors &&
-      Object.entries(payload.errors)
+      fields &&
+      Object.entries(fields)
         .flatMap(([field, value]) => {
           const messages = Array.isArray(value) ? value : [value];
           return messages.filter(Boolean).map((msg) => (field === '_form' ? msg : `${field}: ${msg}`));
         })
         .join(', ');
-    const message = details || payload?.message;
+    // The server's own headline is already a readable sentence; the raw field list is the fallback.
+    const message = payload?.message && payload.message !== 'Validation failed' ? payload.message : details || payload?.message;
     return message ?? `Something went wrong (${err.response.status}).`;
   }
   return 'Something went wrong.';
