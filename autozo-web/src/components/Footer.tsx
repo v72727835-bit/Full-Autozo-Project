@@ -112,6 +112,8 @@ export function Footer() {
             <Link href="/addresses" className={s.colLink}>Addresses</Link>
             <Link href="/wishlist" className={s.colLink}>{t('wishlist')}</Link>
             <Link href="/support" className={s.colLink}>{t('support')}</Link>
+            <Link href="/gallery" className={s.colLink}>Gallery</Link>
+            <Link href="/videos" className={s.colLink}>Videos</Link>
           </nav>
         </div>
 

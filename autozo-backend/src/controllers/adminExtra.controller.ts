@@ -1,5 +1,6 @@
 import { FilterQuery, Types } from 'mongoose';
 import { AdminAlert } from '../models/AdminAlert';
+import { MediaItem } from '../models/MediaItem';
 import { Notice } from '../models/Notice';
 import { IOrder, Order } from '../models/Order';
 import { Enquiry } from '../models/Enquiry';
@@ -15,6 +16,7 @@ import { getIntegrations, invalidateIntegrations } from '../services/integration
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
 import { seal } from '../utils/secretBox';
 import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
+import { presentMedia } from '../services/media.service';
 import { getSettingsDoc } from '../services/settings.service';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -364,3 +366,36 @@ export const testRazorpayAdmin = asyncHandler(async (_req, res) => {
   await testRazorpayKeys(keys);
   ok(res, { ok: true, message: 'Razorpay accepted these keys.' });
 });
+
+/* ============ Gallery and videos ============ */
+
+export const listMediaAdmin = asyncHandler(async (req, res) => {
+  const { kind } = req.query as { kind?: 'photo' | 'video' };
+  const items = await MediaItem.find(kind ? { kind } : {}).sort({ sortOrder: 1, createdAt: -1 }).lean();
+  ok(res, items.map(presentMedia));
+});
+
+export const createMedia = asyncHandler(async (req, res) => {
+  const body = req.body as Record<string, unknown>;
+  if (!body.thumbnail) delete body.thumbnail;
+  created(res, presentMedia((await MediaItem.create(body)).toObject()));
+});
+
+export const updateMedia = asyncHandler(async (req, res) => {
+  const item = await MediaItem.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).lean();
+  if (!item) throw new ApiError(404, 'Item not found');
+  ok(res, presentMedia(item));
+});
+
+export const deleteMedia = asyncHandler(async (req, res) => {
+  const item = await MediaItem.findByIdAndDelete(req.params.id);
+  if (!item) throw new ApiError(404, 'Item not found');
+  ok(res, { message: 'Deleted' });
+});
+
+/** Public: the Gallery page (kind=photo) and the Videos page (kind=video). */
+export const listMediaPublic = (kind: 'photo' | 'video') =>
+  asyncHandler(async (_req, res) => {
+    const items = await MediaItem.find({ kind, isActive: true }).sort({ sortOrder: 1, createdAt: -1 }).limit(200).lean();
+    ok(res, items.map(presentMedia));
+  });

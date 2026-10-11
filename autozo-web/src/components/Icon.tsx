@@ -7,6 +7,8 @@ import React from 'react';
 
 export type IconName =
   | 'home'
+  | 'play'
+  | 'image'
   | 'grid'
   | 'search'
   | 'cart'
@@ -141,6 +143,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   x: <path d="m6.5 6.5 11 11m0-11-11 11" />,
+  play: <path d="M8 5.5v13l11-6.5Z" />,
+  image: (
+    <>
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="m21 16-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5.5 19.5" />
+    </>
+  ),
   clock: (
     <>
       <circle cx="12" cy="12" r="8.5" />

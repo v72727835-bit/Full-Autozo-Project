@@ -76,6 +76,10 @@ router.patch('/users/:id', validate({ params: v.idParam, body: v.adminUserUpdate
 router.get('/settings', extra.getSettings);
 router.patch('/settings', validate({ body: v.adminSettingsBody }), extra.updateSettings);
 
+router.get('/media', validate({ query: v.mediaQuery }), extra.listMediaAdmin);
+router.post('/media', validate({ body: v.mediaBody }), extra.createMedia);
+router.patch('/media/:id', validate({ params: v.idParam, body: v.mediaUpdateBody }), extra.updateMedia);
+router.delete('/media/:id', validate({ params: v.idParam }), extra.deleteMedia);
 router.get('/notices', extra.listNoticesAdmin);
 router.post('/notices', validate({ body: v.noticeBody }), extra.createNotice);
 router.delete('/notices/:id', validate({ params: v.idParam }), extra.deleteNotice);

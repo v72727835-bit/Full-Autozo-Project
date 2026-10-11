@@ -103,6 +103,14 @@ export const updateUser = async (id: string, body: { isActive?: boolean; role?: 
   (await api.patch(`/admin/users/${id}`, body)).data.data;
 
 /* ---------- banners ---------- */
+export type MediaInput = Omit<import('../types').MediaItem, '_id' | 'videoType' | 'embedUrl'>;
+export const fetchMedia = async (kind: 'photo' | 'video'): Promise<import('../types').MediaItem[]> => (await api.get('/admin/media', { params: { kind } })).data.data;
+export const createMedia = async (body: MediaInput) => (await api.post('/admin/media', body)).data.data;
+export const updateMedia = async (id: string, body: Partial<MediaInput>) => (await api.patch(`/admin/media/${id}`, body)).data.data;
+export const deleteMedia = async (id: string): Promise<void> => {
+  await api.delete(`/admin/media/${id}`);
+};
+
 export type BannerInput = Omit<Banner, '_id' | 'category'> & { category: string | null };
 
 export const fetchBanners = async (): Promise<Banner[]> => (await api.get('/admin/banners')).data.data;
