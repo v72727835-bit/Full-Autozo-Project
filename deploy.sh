@@ -59,14 +59,19 @@ threads() { ps -u "$ME" -L --no-headers 2>/dev/null | wc -l; }
 # Frees the threads a running site holds while it is being rebuilt. The site
 # is down for those minutes; restart_app brings it back.
 stop_app() {
-  local app="$1"
-  if command -v cloudlinux-selector >/dev/null 2>&1 &&
-    cloudlinux-selector stop --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1; then
-    :
-  else
-    pkill -u "$ME" -f "lsnode:$ROOT/$app/" 2>/dev/null || true
+  local app="$1" pattern="lsnode:$ROOT/$app/"
+  if command -v cloudlinux-selector >/dev/null 2>&1; then
+    cloudlinux-selector stop --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1 || true
   fi
-  sleep 2
+  # The selector can report success while the old Node process keeps running
+  # (and keeps its threads), so end the app's own process as well.
+  pkill -TERM -u "$ME" -f "$pattern" 2>/dev/null || true
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -u "$ME" -f "$pattern" >/dev/null 2>&1 || break
+    sleep 1
+  done
+  pkill -KILL -u "$ME" -f "$pattern" 2>/dev/null || true
+  sleep 1
   echo "   paused $app while it rebuilds (threads in use: $(threads))"
 }
 
