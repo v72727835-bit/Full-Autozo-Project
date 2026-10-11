@@ -10,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getErrorMessage, getFieldErrors } from '../api/client';
+import { getErrorMessage, getFieldErrors, otpRequiredPhone } from '../api/client';
+import { OtpModal } from '../components/OtpModal';
 import { useAuth } from '../context/AuthContext';
 import { usePublicSettingsQuery } from '../store/catalogApi';
 import { facebookAccessToken, googleAccessToken, NOT_IN_BUILD } from '../utils/social';
@@ -36,6 +37,7 @@ export function LoginScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [otpPhone, setOtpPhone] = useState<string | null>(null);
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};
@@ -56,8 +58,10 @@ export function LoginScreen() {
       const id = identifier.trim();
       await signIn(isValidPhone(id) ? normalizePhone(id) : id.toLowerCase(), password);
     } catch (err) {
+      const needOtp = otpRequiredPhone(err);
       const fields = getFieldErrors(err);
-      if (Object.keys(fields).length) setErrors(fields);
+      if (needOtp !== null) setOtpPhone(needOtp || identifier.trim());
+      else if (Object.keys(fields).length) setErrors(fields);
       else setFormError(getErrorMessage(err));
     } finally {
       setBusy(false);
@@ -167,6 +171,21 @@ export function LoginScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      {otpPhone ? (
+        <OtpModal
+          phone={otpPhone}
+          onClose={() => setOtpPhone(null)}
+          onVerified={async (token) => {
+            const id = identifier.trim();
+            try {
+              await signIn(isValidPhone(id) ? normalizePhone(id) : id.toLowerCase(), password, token);
+            } catch (err) {
+              setOtpPhone(null);
+              setFormError(getErrorMessage(err));
+            }
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

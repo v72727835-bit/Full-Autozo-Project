@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { getIntegrations } from '../services/integrations.service';
+import { requireOtp } from '../services/firebase.service';
 import { User, UserDoc } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -21,21 +22,30 @@ async function issueTokens(user: UserDoc) {
   return { accessToken, refreshToken };
 }
 
+/** Every password login also needs an OTP for the account's own phone when the admin turned that on. */
+async function otpOnLogin(user: UserDoc, firebaseIdToken?: string) {
+  if (!/^[6-9]\d{9}$/.test(user.phone)) return; // social sign-ups without a real number yet
+  if (await requireOtp('login', user.phone, firebaseIdToken)) {
+    if (!user.phoneVerified) await User.updateOne({ _id: user._id }, { $set: { phoneVerified: true } });
+  }
+}
+
 export const register = asyncHandler(async (req, res) => {
-  const { name, phone, email, password } = req.body;
+  const { name, phone, email, password, firebaseIdToken } = req.body;
 
   const clash = await User.findOne({ $or: [{ phone }, ...(email ? [{ email }] : [])] }).select('phone email');
   if (clash) {
     throw new ApiError(409, clash.phone === phone ? 'Phone number already registered' : 'Email already registered');
   }
 
-  const user = await User.create({ name, phone, email, password, role: 'customer' });
+  const phoneVerified = await requireOtp('signup', phone, firebaseIdToken);
+  const user = await User.create({ name, phone, email, password, role: 'customer', phoneVerified });
   const tokens = await issueTokens(user);
   created(res, { user, ...tokens });
 });
 
 export const login = asyncHandler(async (req, res) => {
-  const { identifier, password } = req.body as { identifier: string; password: string };
+  const { identifier, password, firebaseIdToken } = req.body as { identifier: string; password: string; firebaseIdToken?: string };
 
   const query = identifier.includes('@')
     ? { email: identifier.toLowerCase() }
@@ -47,13 +57,14 @@ export const login = asyncHandler(async (req, res) => {
   }
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
   if (user.role !== 'customer') throw new ApiError(403, 'This login is for customers only. Use your own portal.');
+  await otpOnLogin(user, firebaseIdToken);
 
   const tokens = await issueTokens(user);
   ok(res, { user, ...tokens });
 });
 
 export const riderLogin = asyncHandler(async (req, res) => {
-  const { identifier, password } = req.body as { identifier: string; password: string };
+  const { identifier, password, firebaseIdToken } = req.body as { identifier: string; password: string; firebaseIdToken?: string };
   const query = identifier.includes('@')
     ? { email: identifier.toLowerCase() }
     : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '') };
@@ -61,6 +72,7 @@ export const riderLogin = asyncHandler(async (req, res) => {
   if (!user || !(await user.comparePassword(password))) throw new ApiError(401, 'Invalid phone/email or password');
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
   if (user.role !== 'rider') throw new ApiError(403, 'This login is only for riders.');
+  await otpOnLogin(user, firebaseIdToken);
   await user.populate('warehouse', 'name');
   const tokens = await issueTokens(user);
   ok(res, { user, ...tokens });

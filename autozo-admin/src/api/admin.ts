@@ -322,12 +322,23 @@ export interface IntegrationsView {
   razorpayKeyId: string;
   razorpaySecretSaved: boolean;
   razorpayEnabled: boolean;
-  live: { google: boolean; facebook: boolean; razorpay: boolean };
+  firebaseWeb: Record<'apiKey' | 'authDomain' | 'projectId' | 'appId' | 'messagingSenderId' | 'storageBucket' | 'vapidKey', string>;
+  firebaseServiceAccountSaved: boolean;
+  firebaseProjectId: string;
+  firebaseOtpOnSignup: boolean;
+  firebaseOtpOnLogin: boolean;
+  firebasePushEnabled: boolean;
+  live: { google: boolean; facebook: boolean; razorpay: boolean; firebaseOtp: boolean; firebasePush: boolean };
 }
 export const fetchIntegrations = async (): Promise<IntegrationsView> => (await api.get('/admin/integrations')).data.data;
 export const saveIntegrations = async (body: Record<string, unknown>): Promise<IntegrationsView> =>
   (await api.put('/admin/integrations', body)).data.data;
 export const testRazorpayKeys = async (): Promise<string> => (await api.post('/admin/integrations/razorpay/test')).data.data.message;
+
+export const testFirebase = async (): Promise<string> => {
+  const d = (await api.post('/admin/integrations/firebase/test')).data.data;
+  return `Firebase project "${d.projectId}" accepted the service account. Test push sent to ${d.sentToYourDevices} of your devices.`;
+};
 
 /* ---------- warehouse registrations ---------- */
 export const fetchWarehouseApplications = async (params: { status?: string; page?: number; limit?: number }) => {

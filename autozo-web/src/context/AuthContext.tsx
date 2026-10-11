@@ -10,8 +10,8 @@ import { setDeliveryPoint } from '../lib/deliveryPoint';
 interface AuthApiShape {
   user: UserProfile | null;
   loading: boolean;
-  login: (identifier: string, password: string) => Promise<void>;
-  register: (name: string, phone: string, password: string, email?: string) => Promise<void>;
+  login: (identifier: string, password: string, firebaseIdToken?: string) => Promise<void>;
+  register: (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string) => Promise<void>;
   loginWithSocial: (provider: 'google' | 'facebook', accessToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: UserProfile | null) => void;
@@ -30,8 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => setSessionExpiredHandler(null);
   }, []);
 
-  const login = async (identifier: string, password: string) => {
-    const u = await authApi.login(identifier, password);
+  const login = async (identifier: string, password: string, firebaseIdToken?: string) => {
+    const u = await authApi.login(identifier, password, firebaseIdToken);
     setUser(u);
   };
 
@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(await authApi.socialLogin(provider, accessToken));
   };
 
-  const register = async (name: string, phone: string, password: string, email?: string) => {
-    const u = await authApi.register(name, phone, password, email);
+  const register = async (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string) => {
+    const u = await authApi.register(name, phone, password, email, firebaseIdToken);
     setUser(u);
   };
 

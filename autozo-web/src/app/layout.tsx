@@ -15,6 +15,7 @@ import { BottomNav } from '../components/BottomNav';
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
 import { OrderProgressToast } from '../components/OrderProgressToast';
+import { PushRegister } from '../components/PushRegister';
 import { PwaRegister } from '../components/PwaRegister';
 import { RateOrderPrompt } from '../components/RateOrderPrompt';
 
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <OrderProgressToast />
                     <RateOrderPrompt />
                     <PwaRegister />
+                    <PushRegister />
                   </ToastProvider>
                  </WishlistProvider>
                 </CartProvider>

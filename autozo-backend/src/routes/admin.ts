@@ -31,6 +31,7 @@ router.get('/me', admin.me);
 router.get('/integrations', extra.getIntegrationsAdmin);
 router.put('/integrations', validate({ body: v.integrationsBody }), extra.updateIntegrationsAdmin);
 router.post('/integrations/razorpay/test', extra.testRazorpayAdmin);
+router.post('/integrations/firebase/test', extra.testFirebaseAdmin);
 router.get('/standard-categories', extra.listStandardCategories);
 router.post('/standard-categories', validate({ body: v.standardCategoryBody }), extra.createStandardCategory);
 router.patch('/standard-categories/:id', validate({ params: v.idParam, body: v.standardCategoryUpdateBody }), extra.updateStandardCategory);

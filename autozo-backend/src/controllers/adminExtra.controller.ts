@@ -15,6 +15,7 @@ import { clearCatalogCache } from '../middleware/cache';
 import { getIntegrations, invalidateIntegrations } from '../services/integrations.service';
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
 import { seal } from '../utils/secretBox';
+import { checkServiceAccount, pushToUsers } from '../services/firebase.service';
 import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
 import { presentMedia } from '../services/media.service';
 import { getSettingsDoc } from '../services/settings.service';
@@ -319,8 +320,14 @@ async function integrationsView() {
     razorpayKeyId: doc?.razorpay?.keyId ?? '',
     razorpaySecretSaved: !!doc?.razorpay?.keySecretEnc,
     razorpayEnabled: doc?.razorpay?.enabled ?? true,
+    firebaseWeb: { apiKey: '', authDomain: '', projectId: '', appId: '', messagingSenderId: '', storageBucket: '', vapidKey: '', ...(doc?.firebase?.webConfig ?? {}) },
+    firebaseServiceAccountSaved: !!doc?.firebase?.serviceAccountEnc,
+    firebaseProjectId: live.firebase.serviceAccount?.project_id ?? '',
+    firebaseOtpOnSignup: !!doc?.firebase?.otpOnSignup,
+    firebaseOtpOnLogin: !!doc?.firebase?.otpOnLogin,
+    firebasePushEnabled: !!doc?.firebase?.pushEnabled,
     /** Whether each one is actually working for customers right now (the .env file counts too). */
-    live: { google: !!live.googleClientId, facebook: !!(live.facebookAppId && live.facebookAppSecret), razorpay: !!(await razorpayKeys()) },
+    live: { google: !!live.googleClientId, facebook: !!(live.facebookAppId && live.facebookAppSecret), razorpay: !!(await razorpayKeys()), firebaseOtp: !!(live.firebase.webConfig.apiKey && live.firebase.webConfig.projectId), firebasePush: !!live.firebase.serviceAccount },
   };
 }
 
@@ -338,6 +345,12 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
     razorpayKeySecret?: string;
     clearRazorpaySecret?: boolean;
     razorpayEnabled?: boolean;
+    firebaseWeb?: Record<string, string | undefined>;
+    firebaseServiceAccount?: string;
+    clearFirebaseServiceAccount?: boolean;
+    firebaseOtpOnSignup?: boolean;
+    firebaseOtpOnLogin?: boolean;
+    firebasePushEnabled?: boolean;
   };
   const set: Record<string, unknown> = {};
   const unset: Record<string, 1> = {};
@@ -349,6 +362,23 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
   if (b.razorpayKeySecret) set['razorpay.keySecretEnc'] = seal(b.razorpayKeySecret);
   else if (b.clearRazorpaySecret) unset['razorpay.keySecretEnc'] = 1;
   if (b.razorpayEnabled !== undefined) set['razorpay.enabled'] = b.razorpayEnabled;
+  for (const [k, v] of Object.entries(b.firebaseWeb ?? {})) if (v !== undefined) set[`firebase.webConfig.${k}`] = v;
+  if (b.firebaseServiceAccount) {
+    let sa: { client_email?: string; private_key?: string; project_id?: string };
+    try {
+      sa = JSON.parse(b.firebaseServiceAccount);
+    } catch {
+      throw new ApiError(400, 'The service account is not valid JSON. Paste the whole file you downloaded from Firebase.');
+    }
+    if (!sa.client_email || !sa.private_key || !sa.project_id) {
+      throw new ApiError(400, 'That JSON is not a Firebase service account (client_email, private_key or project_id is missing).');
+    }
+    set['firebase.serviceAccountEnc'] = seal(b.firebaseServiceAccount);
+    if (!b.firebaseWeb?.projectId) set['firebase.webConfig.projectId'] ??= sa.project_id;
+  } else if (b.clearFirebaseServiceAccount) unset['firebase.serviceAccountEnc'] = 1;
+  if (b.firebaseOtpOnSignup !== undefined) set['firebase.otpOnSignup'] = b.firebaseOtpOnSignup;
+  if (b.firebaseOtpOnLogin !== undefined) set['firebase.otpOnLogin'] = b.firebaseOtpOnLogin;
+  if (b.firebasePushEnabled !== undefined) set['firebase.pushEnabled'] = b.firebasePushEnabled;
   await Integrations.updateOne(
     { key: 'global' },
     { ...(Object.keys(set).length ? { $set: set } : {}), ...(Object.keys(unset).length ? { $unset: unset } : {}) },
@@ -357,6 +387,13 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
   invalidateIntegrations();
   clearCatalogCache(); // the public settings carry the on/off flags and the public ids
   ok(res, await integrationsView());
+});
+
+/** Proves the service account works with Google, then sends a test push to the admin's own devices (if any). */
+export const testFirebaseAdmin = asyncHandler(async (req, res) => {
+  const projectId = await checkServiceAccount();
+  const sent = await pushToUsers([req.user!.id], { title: 'Autozo test', body: 'Push notifications are working.' });
+  ok(res, { projectId, sentToYourDevices: sent });
 });
 
 /** Checks the saved Razorpay keys against Razorpay itself, so a typo is caught before a customer pays. */

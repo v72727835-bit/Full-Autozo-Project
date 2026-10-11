@@ -438,6 +438,13 @@ export interface PublicSettings {
   onlinePaymentOn?: boolean;
   /** Public sign-in client ids; null while that provider is not set up. */
   social?: { googleClientId: string | null; facebookAppId: string | null };
+  firebase?: {
+    configured: boolean;
+    config: { apiKey?: string; authDomain?: string; projectId?: string; appId?: string; messagingSenderId?: string; storageBucket?: string; vapidKey?: string } | null;
+    otpOnSignup: boolean;
+    otpOnLogin: boolean;
+    pushEnabled: boolean;
+  };
 }
 
 export interface FestivalSection {

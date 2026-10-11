@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchRiderMe, logoutRequest, riderLoginRequest } from '../api/auth';
+import { unregisterPush } from '../firebase/push';
 import { setAccessToken, setSessionExpiredHandler } from '../api/client';
 import { tokenStore } from '../storage/tokens';
 import { User } from '../types';
 
-interface AuthContextValue { user: User | null; initializing: boolean; signInRider: (identifier: string, password: string) => Promise<void>; signOut: () => Promise<void>; }
+interface AuthContextValue { user: User | null; initializing: boolean; signInRider: (identifier: string, password: string, firebaseIdToken?: string) => Promise<void>; signOut: () => Promise<void>; }
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -27,13 +28,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; setSessionExpiredHandler(null); };
   }, []);
 
-  const signInRider = useCallback(async (identifier: string, password: string) => {
-    const result = await riderLoginRequest(identifier, password);
+  const signInRider = useCallback(async (identifier: string, password: string, firebaseIdToken?: string) => {
+    const result = await riderLoginRequest(identifier, password, firebaseIdToken);
     await tokenStore.save(result.accessToken, result.refreshToken);
     setAccessToken(result.accessToken);
     setUser(result.user);
   }, []);
   const signOut = useCallback(async () => {
+    await unregisterPush();
     try { await logoutRequest(await tokenStore.getRefresh()); } catch { /* server unreachable */ }
     await tokenStore.clear(); setAccessToken(null); setUser(null);
   }, []);

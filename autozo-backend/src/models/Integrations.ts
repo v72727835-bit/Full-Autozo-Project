@@ -9,6 +9,14 @@ export interface IIntegrations {
   google?: { clientId?: string };
   facebook?: { appId?: string; appSecretEnc?: string };
   razorpay?: { keyId?: string; keySecretEnc?: string; enabled?: boolean };
+  /** Firebase: phone OTP (sign-up / login) and push notifications. */
+  firebase?: {
+    webConfig?: { apiKey?: string; authDomain?: string; projectId?: string; appId?: string; messagingSenderId?: string; storageBucket?: string; vapidKey?: string };
+    serviceAccountEnc?: string;
+    otpOnSignup?: boolean;
+    otpOnLogin?: boolean;
+    pushEnabled?: boolean;
+  };
 }
 
 const schema = new Schema<IIntegrations>(
@@ -17,6 +25,21 @@ const schema = new Schema<IIntegrations>(
     google: { clientId: { type: String, trim: true } },
     facebook: { appId: { type: String, trim: true }, appSecretEnc: String },
     razorpay: { keyId: { type: String, trim: true }, keySecretEnc: String, enabled: { type: Boolean, default: true } },
+    firebase: {
+      webConfig: {
+        apiKey: { type: String, trim: true },
+        authDomain: { type: String, trim: true },
+        projectId: { type: String, trim: true },
+        appId: { type: String, trim: true },
+        messagingSenderId: { type: String, trim: true },
+        storageBucket: { type: String, trim: true },
+        vapidKey: { type: String, trim: true },
+      },
+      serviceAccountEnc: String,
+      otpOnSignup: { type: Boolean, default: false },
+      otpOnLogin: { type: Boolean, default: false },
+      pushEnabled: { type: Boolean, default: false },
+    },
   },
   { timestamps: true },
 );

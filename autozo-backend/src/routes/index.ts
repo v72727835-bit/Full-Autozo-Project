@@ -1,3 +1,4 @@
+import * as device from '../controllers/device.controller';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import * as auth from '../controllers/auth.controller';
@@ -38,6 +39,8 @@ router.post('/auth/facebook', authLimiter, validate({ body: v.socialLoginBody })
 router.post('/rider/auth/login', authLimiter, validate({ body: v.loginBody }), auth.riderLogin);
 router.post('/auth/refresh', authLimiter, validate({ body: v.refreshBody }), auth.refresh);
 router.post('/auth/logout', protect, auth.logout);
+router.post('/devices', protect, validate({ body: v.deviceBody }), device.registerDevice);
+router.delete('/devices', protect, validate({ body: v.deviceDeleteBody }), device.removeDevice);
 router.post('/auth/change-password', ...customerOnly, validate({ body: v.changePasswordBody }), auth.changePassword);
 
 /* ============ Public catalog (no login needed) ============ */

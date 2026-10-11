@@ -621,5 +621,13 @@ export const publicSettings = asyncHandler(async (_req, res) => {
     onlinePaymentOn: await razorpayEnabled(),
     // Public client ids only; the secrets never leave the server.
     social: { googleClientId: live.googleClientId ?? null, facebookAppId: live.facebookAppId ?? null },
+    // Public Firebase web config (it is meant to be public); the service account never leaves the server.
+    firebase: {
+      configured: !!(live.firebase.webConfig.apiKey && live.firebase.webConfig.projectId),
+      config: live.firebase.webConfig.apiKey ? live.firebase.webConfig : null,
+      otpOnSignup: live.firebase.otpOnSignup,
+      otpOnLogin: live.firebase.otpOnLogin,
+      pushEnabled: live.firebase.pushEnabled && !!live.firebase.serviceAccount,
+    },
   });
 });

@@ -1,8 +1,8 @@
 import { ApiEnvelope, AuthResult, User } from '../types';
 import { api } from './client';
 
-export async function loginRequest(identifier: string, password: string): Promise<AuthResult> {
-  const { data } = await api.post<ApiEnvelope<AuthResult>>('/auth/login', { identifier, password });
+export async function loginRequest(identifier: string, password: string, firebaseIdToken?: string): Promise<AuthResult> {
+  const { data } = await api.post<ApiEnvelope<AuthResult>>('/auth/login', { identifier, password, firebaseIdToken });
   return data.data;
 }
 
@@ -11,6 +11,8 @@ export interface RegisterInput {
   phone: string;
   email?: string;
   password: string;
+  /** Firebase ID token from the OTP step. */
+  firebaseIdToken?: string;
 }
 
 export async function registerRequest(input: RegisterInput): Promise<AuthResult> {
