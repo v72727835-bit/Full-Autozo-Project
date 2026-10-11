@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { fetchProduct, submitReview } from '../../../api/catalog';
 import { addToWishlist, fetchWishlist, removeFromWishlist } from '../../../api/account';
 import { getErrorMessage } from '../../../lib/client';
+import { videoSource } from '../../../lib/video';
 import { fitClass } from '../../../lib/art';
 import { Product } from '../../../lib/types';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -47,6 +48,7 @@ export default function ProductPage() {
   const [error, setError] = useState('');
   const [shot, setShot] = useState(0);
   const [zoom, setZoom] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [wished, setWished] = useState(false);
   const [busy, setBusy] = useState(false);
   const [stars, setStars] = useState(5);
@@ -97,6 +99,7 @@ export default function ProductPage() {
 
   const qty = quantityOf(p.id);
   const shots = p.images.length > 0 ? p.images : [p.art];
+  const video = videoSource(p.video);
   const saving = p.mrp ? p.mrp - p.price : 0;
 
   const act = async (fn: () => Promise<void>) => {
@@ -149,6 +152,21 @@ export default function ProductPage() {
 
       <div className={s.top}>
         <div className={s.gallery}>
+          {video && playing ? (
+            <div className={s.stage} style={{ cursor: 'default', aspectRatio: '16 / 10', background: '#000' }}>
+              {video.kind === 'file' ? (
+                <video src={video.src} controls autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <iframe
+                  src={video.src}
+                  title={`${p.name} video`}
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+                />
+              )}
+            </div>
+          ) : (
           <button className={s.stage} onClick={() => setZoom(true)} aria-label="Zoom in on this photo">
             <Image src={shots[shot]} alt={p.name} width={420} height={420} className={fitClass(shots[shot], s.shot)} unoptimized priority />
             {p.discountPercent > 0 ? <span className={`num ${s.off}`}>{p.discountPercent}% OFF</span> : null}
@@ -156,19 +174,37 @@ export default function ProductPage() {
               <Icon name="zoom-in" size={16} />
             </span>
           </button>
-          {shots.length > 1 ? (
+          )}
+          {shots.length > 1 || video ? (
             <div className={s.thumbs}>
               {shots.map((src, i) => (
                 <button
                   key={src}
                   className={s.thumb}
-                  data-on={i === shot}
-                  onClick={() => setShot(i)}
+                  data-on={i === shot && !playing}
+                  onClick={() => {
+                    setShot(i);
+                    setPlaying(false);
+                  }}
                   aria-label={`View image ${i + 1}`}
                 >
                   <Image src={src} alt="" width={112} height={112} className={fitClass(src, s.thumbArt)} unoptimized />
                 </button>
               ))}
+              {video ? (
+                <button className={s.thumb} data-on={playing} onClick={() => setPlaying(true)} aria-label="Watch the product video">
+                  {video.cover ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={video.cover} alt="" width={62} height={62} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                  ) : null}
+                  <span className={s.videoBadge}>
+                    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+                      <circle cx="12" cy="12" r="12" fill="var(--sun)" />
+                      <path d="M10 7.5v9l7-4.5Z" fill="var(--sun-ink)" />
+                    </svg>
+                  </span>
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>

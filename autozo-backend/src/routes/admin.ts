@@ -5,7 +5,7 @@ import * as uploads from '../controllers/upload.controller';
 import * as extra from '../controllers/adminExtra.controller';
 import * as seller from '../controllers/seller.controller';
 import { adminOnly } from '../middleware/auth';
-import { uploadProductImages } from '../middleware/upload';
+import { uploadProductImages, uploadProductVideo } from '../middleware/upload';
 import { validate } from '../middleware/validate';
 import * as v from '../validators/schemas';
 
@@ -39,6 +39,7 @@ router.patch('/me', validate({ body: v.adminProfileBody }), admin.updateMe);
 router.post('/me/password', validate({ body: v.adminPasswordBody }), admin.changeMyPassword);
 
 router.post('/uploads/images', uploadProductImages, uploads.uploadImages);
+router.post('/uploads/video', uploadProductVideo, uploads.uploadVideo);
 
 router.get('/products', validate({ query: v.adminProductsQuery }), admin.listProductsAdmin);
 router.get('/products/:id', validate({ params: v.idParam }), admin.getProductAdmin);

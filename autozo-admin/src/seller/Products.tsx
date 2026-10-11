@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { sellerCategories, sellerCreateProduct, sellerDeleteProduct, sellerProducts, sellerUpdateProduct, sellerUploadImages } from '../api/admin';
+import ProductVideoField from '../components/ProductVideoField';
+import { sellerUploadVideo, sellerCategories, sellerCreateProduct, sellerDeleteProduct, sellerProducts, sellerUpdateProduct, sellerUploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Thumb, money } from '../components/ui';
@@ -158,6 +159,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
     variantGroup: product?.variantGroup ?? '', variantLabel: product?.variantLabel ?? '',
   });
   const [images, setImages] = useState<string[]>(product?.images ?? []);
+  const [video, setVideo] = useState(product?.video ?? '');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -198,7 +200,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
       category: child,
       name: f.name, nameHi: f.nameHi, brand: f.brand, description: f.description,
       price, mrp, unit: f.unit, stock: Number(f.stock) || 0, foodType: f.foodType,
-      attributes: csv(f.attributes), tags: csv(f.tags), images,
+      attributes: csv(f.attributes), tags: csv(f.tags), images, video: video.trim(),
       ...(f.variantGroup ? { variantGroup: f.variantGroup } : {}),
       ...(f.variantLabel ? { variantLabel: f.variantLabel } : {}),
     };
@@ -286,6 +288,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
           </div>
           <div className="page-subtitle">The first photo is the main one. Bring a photo down to about 100 KB with any free image tool (for example the “pi7 image tool” site).</div>
         </Field>
+        <ProductVideoField value={video} onChange={setVideo} upload={sellerUploadVideo} maxMb={15} />
         <div className="modal-actions">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={busy || uploading}>{busy ? 'Saving…' : product ? 'Save changes' : 'Add product'}</Button>

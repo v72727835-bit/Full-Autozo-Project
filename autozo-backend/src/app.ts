@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import path from 'path';
 import { env } from './config/env';
 import { errorHandler, notFound } from './middleware/error';
+import { parseRange } from './utils/range';
 import { findImage } from './utils/imageStore';
 import routes from './routes';
 import { ensureSettings } from './services/settings.service';
@@ -31,11 +32,24 @@ app.get('/uploads/products/:name', async (req, res, next) => {
   try {
     const image = await findImage(req.params.name);
     if (!image) return next();
-    res.set({
+    const headers: Record<string, string> = {
       'Content-Type': image.contentType,
-      'Content-Length': String(image.length),
+      'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=2592000, immutable',
-    });
+    };
+    // Videos are played and skipped through with Range requests (Safari insists on them).
+    const range = parseRange(req.headers.range, image.length);
+    if (range === 'unsatisfiable') {
+      res.status(416).set({ 'Content-Range': `bytes */${image.length}` }).end();
+      return;
+    }
+    if (range) {
+      const { start, end } = range;
+      res.status(206).set({ ...headers, 'Content-Range': `bytes ${start}-${end}/${image.length}`, 'Content-Length': String(end - start + 1) });
+      image.open({ start, end }).on('error', next).pipe(res);
+      return;
+    }
+    res.set({ ...headers, 'Content-Length': String(image.length) });
     image.open().on('error', next).pipe(res);
   } catch (error) {
     next(error);

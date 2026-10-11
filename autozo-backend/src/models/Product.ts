@@ -10,6 +10,8 @@ export interface IProduct {
   brand?: string;
   description?: string;
   images: string[];
+  /** Optional product video: an uploaded .mp4/.webm file or a YouTube / Vimeo link. */
+  video?: string;
   /** Fluent Emoji Flat key used when there is no photograph. */
   icon?: string;
   price: number; // selling price
@@ -52,6 +54,7 @@ const productSchema = new Schema<IProduct>(
     brand: { type: String, trim: true, index: true },
     description: { type: String, trim: true },
     images: { type: [String], default: [] },
+    video: { type: String, trim: true },
     icon: String,
     price: { type: Number, required: true, min: 0 },
     mrp: { type: Number, required: true, min: 0 },

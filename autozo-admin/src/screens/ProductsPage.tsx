@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from '../navigation';
-import { createProduct, deleteProduct, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProduct, uploadImages } from '../api/admin';
+import ProductVideoField from '../components/ProductVideoField';
+import { uploadProductVideo, createProduct, deleteProduct, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProduct, uploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Thumb, money } from '../components/ui';
@@ -19,6 +20,7 @@ type FormState = {
   foodType: '' | 'veg' | 'nonveg';
   attributes: string;
   mainImage: string;
+  video: string;
   galleryImages: string;
   ratingLabel: string;
   variantGroup: string;
@@ -43,6 +45,7 @@ const EMPTY_FORM: FormState = {
   foodType: '',
   attributes: '',
   mainImage: '',
+  video: '',
   galleryImages: '',
   ratingLabel: '',
   variantGroup: '',
@@ -361,6 +364,7 @@ function ProductForm({
           foodType: product.foodType,
           attributes: product.attributes.join(', '),
           mainImage: product.images[0] ?? '',
+          video: product.video ?? '',
           galleryImages: product.images.slice(1).join(', '),
           ratingLabel: product.ratingLabel ?? '',
           variantGroup: product.variantGroup ?? '',
@@ -437,6 +441,7 @@ function ProductForm({
           .map((s) => s.trim())
           .filter(Boolean),
         images,
+        video: form.video.trim(),
         ratingLabel: form.ratingLabel.trim() || undefined,
         variantGroup: form.variantGroup.trim() || undefined,
         variantLabel: form.variantLabel.trim() || undefined,
@@ -622,6 +627,8 @@ function ProductForm({
             </div>
           )}
         </Field>
+
+        <ProductVideoField value={form.video} onChange={(url) => set('video', url)} upload={uploadProductVideo} maxMb={30} />
 
         <Field label="Gallery images">
           <label className="image-upload-zone compact">

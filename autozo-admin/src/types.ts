@@ -75,6 +75,8 @@ export interface Product {
   brand?: string;
   description?: string;
   images: string[];
+  /** Optional video: an uploaded file or a YouTube / Vimeo link. */
+  video?: string;
   icon?: string;
   price: number;
   mrp: number;

@@ -24,6 +24,7 @@ export interface RawProduct {
   brand?: string;
   description?: string;
   images?: string[];
+  video?: string;
   icon?: string;
   price: number;
   mrp?: number;
@@ -142,6 +143,8 @@ export interface Product {
   art: string;
   /** Real photographs, when the catalogue has any. */
   images: string[];
+  /** Optional product video (an uploaded file or a YouTube / Vimeo link). */
+  video?: string;
   /** First photograph, else the artwork - what a card shows. */
   photo: string;
   unit?: string;
