@@ -32,7 +32,16 @@ export UV_THREADPOOL_SIZE=2
 BUILD_NODE_OPTIONS="--max-old-space-size=3072"
 
 say() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
-fail() { printf '\n\033[1;31mDeploy stopped: %s\033[0m\nFull log: %s\n' "$*" "$LOG"; exit 1; }
+PAUSED=0
+fail() {
+  printf '\n\033[1;31mDeploy stopped: %s\033[0m\nFull log: %s\n' "$*" "$LOG"
+  # Never leave the sites down after a failed build: bring the old versions back.
+  if [ "$PAUSED" = 1 ]; then
+    echo "Starting the apps again so the sites stay up..."
+    for a in autozo-backend autozo-web autozo-admin; do restart_app "$a" || true; done
+  fi
+  exit 1
+}
 run() { "$@" >>"$LOG" 2>&1 || fail "'$*' failed (last lines below)$(printf '\n'; tail -25 "$LOG")"; }
 
 # The venv activate script is only for the backend; the Next.js builds use the
@@ -107,6 +116,14 @@ run git fetch origin main
 run git reset --hard origin/main
 echo "   now at $(git log -1 --format='%h %s')"
 
+# All three live apps are paused for the whole build, so Node gets the threads
+# it needs to start. MongoDB keeps running; sites are down until the restart.
+say "Pausing the live apps"
+stop_app autozo-backend
+stop_app autozo-web
+stop_app autozo-admin
+PAUSED=1
+
 say "Building backend"
 cd "$ROOT/autozo-backend"
 [ -f .env ] || fail "autozo-backend/.env is missing"
@@ -121,11 +138,10 @@ cd "$ROOT/autozo-backend"
 echo "   backend built"
 
 plain_node
-stop_app autozo-web
-stop_app autozo-admin
 build_next autozo-web
 build_next autozo-admin
 
+PAUSED=0
 say "Restarting apps"
 restart_app autozo-backend
 restart_app autozo-web
