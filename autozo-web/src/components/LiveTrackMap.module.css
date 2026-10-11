@@ -1,0 +1,108 @@
+.card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.eta {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.map {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: var(--surface-3);
+}
+
+@media (min-width: 700px) {
+  .map {
+    height: 360px;
+  }
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 10px 16px 12px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Marker badges (Leaflet divIcons are plain HTML, so they live in the global layer). */
+:global(.lt-pin) {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--lt-color, #0e8a3e);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  font-size: 18px;
+  line-height: 1;
+}
+
+:global(.lt-pin.lt-rider) {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  background: #ffd23f;
+  border-color: #fff;
+}
+
+:global(.lt-pin.lt-rider::after) {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 210, 63, 0.7);
+  animation: lt-pulse 1.8s ease-out infinite;
+}
+
+@keyframes lt-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.lt-pin.lt-rider::after) {
+    animation: none;
+  }
+}

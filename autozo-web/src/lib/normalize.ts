@@ -400,6 +400,7 @@ export function order(raw: Record<string, unknown>): Order {
     shop: ref(raw.shop as RawRef | undefined),
     rider: riderOf(raw.rider),
     riderLocation: point(raw.riderLocation) && { ...point(raw.riderLocation)!, at: (raw.riderLocation as { at?: string }).at },
+    shopLocation: point((raw.shop as { location?: unknown } | undefined)?.location),
   };
 }
 
