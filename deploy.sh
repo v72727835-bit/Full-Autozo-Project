@@ -66,7 +66,12 @@ stop_app() {
   else
     pkill -u "$ME" -f "lsnode:$ROOT/$app/" 2>/dev/null || true
   fi
-  sleep 2
+  # Wait for the process to really exit; its threads count against the limit until it does.
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -u "$ME" -f "lsnode:$ROOT/$app/" >/dev/null 2>&1 || break
+    pkill -u "$ME" -f "lsnode:$ROOT/$app/" 2>/dev/null || true
+    sleep 2
+  done
   echo "   paused $app while it rebuilds (threads in use: $(threads))"
 }
 
@@ -123,6 +128,7 @@ stop_app autozo-backend
 stop_app autozo-web
 stop_app autozo-admin
 PAUSED=1
+echo "   threads in use after pausing: $(threads) (MongoDB alone holds about 10-15)"
 
 say "Building backend"
 cd "$ROOT/autozo-backend"
@@ -133,7 +139,14 @@ cd "$ROOT/autozo-backend"
   source "$VENV/autozo-backend/$NODE_VER/bin/activate"
   set -u
   cd "$ROOT/autozo-backend"
-  npm install --include=dev --no-audit --no-fund >>"$LOG" 2>&1 && npm run build >>"$LOG" 2>&1
+  # npm needs many threads; skip it when the lockfile is unchanged since the last good install.
+  lock="$(sha256sum package-lock.json | cut -d' ' -f1)"
+  if [ -d node_modules ] && [ "$(cat node_modules/.autozo-lock 2>/dev/null)" = "$lock" ]; then
+    echo "   backend packages unchanged, skipping npm install"
+  else
+    npm install --include=dev --no-audit --no-fund >>"$LOG" 2>&1 && echo "$lock" > node_modules/.autozo-lock
+  fi
+  npm run build >>"$LOG" 2>&1
 ) || fail "backend build failed$(printf '\n'; tail -25 "$LOG")"
 echo "   backend built"
 
