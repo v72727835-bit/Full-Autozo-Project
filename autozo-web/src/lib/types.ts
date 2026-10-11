@@ -472,3 +472,17 @@ export interface Ticket {
   lastMessageAt: string;
   createdAt: string;
 }
+
+/** One photo of the Gallery page or one video of the Videos page. */
+export interface MediaItem {
+  id: string;
+  kind: 'photo' | 'video';
+  title: string;
+  caption?: string;
+  url: string;
+  /** Video cover (a YouTube cover is filled in by the server). */
+  thumbnail?: string;
+  videoType?: 'youtube' | 'vimeo' | 'file';
+  /** What to play: an iframe address for YouTube / Vimeo, the file link for a direct video. */
+  embedUrl?: string;
+}

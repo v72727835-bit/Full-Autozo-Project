@@ -18,6 +18,7 @@ import {
   FestivalPage,
   Home,
   HomeSection,
+  MediaItem,
   Notice,
   Order,
   OrderItem,
@@ -447,5 +448,19 @@ export function ticket(raw: Record<string, unknown>): Ticket {
     customerUnread: (raw.customerUnread as number) ?? 0,
     lastMessageAt: (raw.lastMessageAt as string) ?? new Date().toISOString(),
     createdAt: (raw.createdAt as string) ?? new Date().toISOString(),
+  };
+}
+
+
+export function media(raw: Record<string, unknown>): MediaItem {
+  return {
+    id: idOf(raw as { _id?: string; id?: string }),
+    kind: raw.kind === 'video' ? 'video' : 'photo',
+    title: (raw.title as string) ?? '',
+    caption: (raw.caption as string) || undefined,
+    url: (raw.url as string) ?? '',
+    thumbnail: (raw.thumbnail as string) || undefined,
+    videoType: raw.videoType as MediaItem['videoType'],
+    embedUrl: (raw.embedUrl as string) || undefined,
   };
 }

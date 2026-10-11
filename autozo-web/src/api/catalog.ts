@@ -4,6 +4,7 @@ import {
   Category,
   FestivalPage,
   Home,
+  MediaItem,
   Notice,
   Product,
   PublicSettings,
@@ -103,6 +104,16 @@ export const fetchFestival = async (): Promise<FestivalPage> => {
 export const fetchPublicSettings = async (): Promise<PublicSettings> => {
   const { data } = await api.get('/settings/public');
   return data.data as PublicSettings;
+};
+
+/** Photos for the Gallery page and videos for the Videos page, as arranged in the super admin. */
+export const fetchGallery = async (): Promise<MediaItem[]> => {
+  const { data } = await api.get('/gallery');
+  return (data.data as Record<string, unknown>[]).map(n.media);
+};
+export const fetchVideos = async (): Promise<MediaItem[]> => {
+  const { data } = await api.get('/videos');
+  return (data.data as Record<string, unknown>[]).map(n.media);
 };
 
 /** Announcements for the notification bell. */

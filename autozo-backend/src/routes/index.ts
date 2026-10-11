@@ -8,6 +8,7 @@ import * as orders from '../controllers/order.controller';
 import * as reviews from '../controllers/review.controller';
 import * as me from '../controllers/user.controller';
 import * as rider from '../controllers/rider.controller';
+import * as extra from '../controllers/adminExtra.controller';
 import * as support from '../controllers/support.controller';
 import * as seller from '../controllers/seller.controller';
 import { authorize, customerOnly, protect } from '../middleware/auth';
@@ -55,6 +56,8 @@ router.get('/products/:id/reviews', catalogCache, validate({ params: v.idParam, 
 router.get('/settings/public', catalogCache, catalog.publicSettings);
 router.get('/festival', catalogCache, validate({ query: v.homeQuery }), catalog.festival);
 router.get('/notices', catalogCache, support.listNotices);
+router.get('/gallery', catalogCache, extra.listMediaPublic('photo'));
+router.get('/videos', catalogCache, extra.listMediaPublic('video'));
 router.post('/enquiries', authLimiter, validate({ body: v.enquiryBody }), support.createEnquiry);
 router.post('/products/:id/notify', validate({ params: v.idParam, body: v.notifyMeBody }), support.notifyMe);
 
