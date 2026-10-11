@@ -6,7 +6,7 @@ export type { Palette };
 export { sectionTint };
 
 /* ============================================================================
- * Bingoor design system
+ * Autozo design system
  * One source of truth for colour, type, space, radius and elevation. Screens
  * never hard-code a hex or a magic number - which is what keeps thirty screens
  * looking like one product instead of thirty.
