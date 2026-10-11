@@ -16,7 +16,7 @@ import { authorize, customerOnly, protect } from '../middleware/auth';
 import { catalogCache, invalidateOnWrite } from '../middleware/cache';
 import { validate } from '../middleware/validate';
 import * as uploads from '../controllers/upload.controller';
-import { uploadSellerImages } from '../middleware/upload';
+import { uploadSellerImages, uploadSellerVideo } from '../middleware/upload';
 import * as v from '../validators/schemas';
 
 const router = Router();
@@ -76,6 +76,7 @@ router.get('/seller/me', ...sellerOnly, seller.getMe);
 router.post('/seller/ack-orders', ...sellerOnly, seller.ackOrders);
 router.put('/seller/profile', ...sellerOnly, validate({ body: v.sellerProfileBody }), seller.saveProfile);
 router.post('/seller/uploads/images', ...sellerOnly, uploadSellerImages, uploads.uploadImages);
+router.post('/seller/uploads/video', ...sellerOnly, uploadSellerVideo, uploads.uploadVideo);
 router.get('/seller/categories', ...sellerOnly, seller.categoryTree);
 router.get('/seller/products', ...sellerOnly, validate({ query: v.sellerProductsQuery }), seller.listMyProducts);
 router.get('/seller/dashboard', ...sellerOnly, seller.warehouseDashboard);

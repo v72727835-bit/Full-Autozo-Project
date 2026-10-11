@@ -12,3 +12,11 @@ export const uploadImages = asyncHandler(async (req, res) => {
 
   ok(res, { urls });
 });
+
+export const uploadVideo = asyncHandler(async (req, res) => {
+  const file = req.file;
+  if (!file) throw new ApiError(400, 'Choose a video to upload');
+  const forwardedProtocol = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const baseUrl = `${forwardedProtocol || req.protocol}://${req.get('host')}`;
+  ok(res, { url: `${baseUrl}/uploads/products/${file.filename}` });
+});

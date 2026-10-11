@@ -43,6 +43,11 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
   const { data } = await api.post('/admin/uploads/images', body);
   return data.data.urls;
 };
+export const uploadProductVideo = async (file: File): Promise<string> => {
+  const body = new FormData();
+  body.append('video', file);
+  return (await api.post('/admin/uploads/video', body, { timeout: 180000 })).data.data.url;
+};
 /* ---------- categories ---------- */
 export const fetchCategories = async (): Promise<Category[]> => (await api.get('/admin/categories')).data.data;
 
@@ -258,6 +263,11 @@ export const sellerBulkProducts = async (rows: Record<string, string>[], dryRun:
   (await api.post('/seller/products/bulk', { rows, dryRun })).data.data;
 export const sellerCreateProduct = async (body: Record<string, unknown>) => (await api.post('/seller/products', body)).data.data;
 export const sellerUpdateProduct = async (id: string, body: Record<string, unknown>) => (await api.patch(`/seller/products/${id}`, body)).data.data;
+export const sellerUploadVideo = async (file: File): Promise<string> => {
+  const body = new FormData();
+  body.append('video', file);
+  return (await api.post('/seller/uploads/video', body, { timeout: 180000 })).data.data.url;
+};
 export const sellerUploadImages = async (files: File[]): Promise<string[]> => {
   const body = new FormData();
   files.forEach((f) => body.append('images', f));

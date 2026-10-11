@@ -103,6 +103,7 @@ export function product(raw: RawProduct): Product {
     description: raw.description || undefined,
     art: artSrc(raw.icon),
     images,
+    video: raw.video || undefined,
     photo: images[0] ?? artSrc(raw.icon),
     unit: raw.unit || undefined,
     price,

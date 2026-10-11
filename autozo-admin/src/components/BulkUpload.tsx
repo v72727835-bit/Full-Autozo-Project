@@ -21,7 +21,7 @@ export interface BulkResponse {
 /** Same page size the server accepts per request. */
 const CHUNK = 300;
 
-const COLUMNS_ADMIN = ['name', 'category', 'price', 'mrp', 'unit', 'stock', 'warehouse', 'brand', 'description', 'images', 'foodType', 'tags', 'attributes', 'variantGroup', 'variantLabel', 'nameHi', 'points', 'sortCode'];
+const COLUMNS_ADMIN = ['name', 'category', 'price', 'mrp', 'unit', 'stock', 'warehouse', 'brand', 'description', 'images', 'video', 'foodType', 'tags', 'attributes', 'variantGroup', 'variantLabel', 'nameHi', 'points', 'sortCode'];
 const COLUMNS_SELLER = COLUMNS_ADMIN.filter((c) => c !== 'points' && c !== 'sortCode');
 const REQUIRED = ['name', 'category', 'price'];
 
@@ -69,7 +69,7 @@ export default function BulkUpload({
     const sample = (o: Record<string, string>) => columns.map((c) => o[c] ?? '');
     downloadCsv('autozo-products-template.csv', [
       columns,
-      sample({ name: 'Shimla Apple', category: cat, price: '120', mrp: '140', unit: '1 kg', stock: '30', warehouse: shop, brand: 'Fresh', description: 'Crisp and sweet', images: 'https://example.com/apple1.jpg|https://example.com/apple2.jpg', foodType: 'veg', tags: 'fruit|fresh', attributes: 'Premium', points: '2', sortCode: '1' }),
+      sample({ name: 'Shimla Apple', category: cat, price: '120', mrp: '140', unit: '1 kg', stock: '30', warehouse: shop, brand: 'Fresh', description: 'Crisp and sweet', images: 'https://example.com/apple1.jpg|https://example.com/apple2.jpg', video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', foodType: 'veg', tags: 'fruit|fresh', attributes: 'Premium', points: '2', sortCode: '1' }),
       sample({ name: 'Amul Taaza Milk', category: cat, price: '29', mrp: '32', unit: '500 ml', stock: '100', warehouse: shop, brand: 'Amul', foodType: 'veg' }),
     ]);
   };
@@ -157,6 +157,7 @@ export default function BulkUpload({
           <li><b>mrp</b> defaults to the price, <b>unit</b> to "1 pc", <b>stock</b> to 0.</li>
           <li><b>warehouse</b>: the {mode === 'admin' ? 'shop' : 'warehouse'} name{mode === 'seller' ? ' (leave empty if you have only one)' : ''}.</li>
           <li><b>images, tags, attributes</b>: separate several values with <b>|</b>. Images must be full links.</li>
+          <li><b>video</b>: one YouTube link or a direct .mp4 link (optional).</li>
           <li><b>foodType</b>: veg or nonveg (leave empty for other products).</li>
           {mode === 'admin' ? <li><b>points</b> (0-50) and <b>sortCode</b> are admin-only.</li> : null}
         </ul>

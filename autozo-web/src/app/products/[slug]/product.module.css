@@ -481,3 +481,15 @@
 .shareRow {
   margin-bottom: 20px;
 }
+
+/* The video's tile in the thumbnail row: a round play button over the cover. */
+.videoBadge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+}
+

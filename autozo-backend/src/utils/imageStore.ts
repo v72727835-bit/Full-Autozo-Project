@@ -29,6 +29,7 @@ export async function findImage(filename: string) {
   return {
     contentType: (file.metadata?.contentType as string | undefined) ?? 'application/octet-stream',
     length: file.length,
-    open: () => bucket().openDownloadStream(file._id),
+    open: (range?: { start: number; end: number }) =>
+      bucket().openDownloadStream(file._id, range ? { start: range.start, end: range.end + 1 } : undefined),
   };
 }
