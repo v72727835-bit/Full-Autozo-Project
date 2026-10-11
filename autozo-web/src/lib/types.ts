@@ -368,8 +368,9 @@ export interface CartView {
 
 export type OrderStatus =
   | 'placed'
-  | 'confirmed'
+  | 'accepted'
   | 'preparing'
+  | 'ready_for_pickup'
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
@@ -406,6 +407,8 @@ export interface Order {
   rider?: { name: string; phone?: string };
   /** Rider's last reported position while out for delivery. */
   riderLocation?: { lat: number; lng: number; at?: string };
+  /** Where the order is picked up, for the live map. */
+  shopLocation?: { lat: number; lng: number };
 }
 
 export interface UserProfile {
@@ -471,4 +474,18 @@ export interface Ticket {
   customerUnread: number;
   lastMessageAt: string;
   createdAt: string;
+}
+
+/** One photo of the Gallery page or one video of the Videos page. */
+export interface MediaItem {
+  id: string;
+  kind: 'photo' | 'video';
+  title: string;
+  caption?: string;
+  url: string;
+  /** Video cover (a YouTube cover is filled in by the server). */
+  thumbnail?: string;
+  videoType?: 'youtube' | 'vimeo' | 'file';
+  /** What to play: an iframe address for YouTube / Vimeo, the file link for a direct video. */
+  embedUrl?: string;
 }

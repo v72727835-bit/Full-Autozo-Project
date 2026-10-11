@@ -9,6 +9,7 @@ import { IProduct, Product } from '../models/Product';
 import { Shop } from '../models/Shop';
 import { IUser, User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
+import { importProducts } from '../services/bulkProducts.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { escapeRegex } from '../utils/helpers';
 import { sha256, signAccessToken, signRefreshToken } from '../utils/jwt';
@@ -249,6 +250,12 @@ export const createProduct = asyncHandler(async (req, res) => {
 
   const product = await Product.create(req.body);
   created(res, product);
+});
+
+/** Many products in one go; each row is checked on its own and reported back. */
+export const bulkCreateProducts = asyncHandler(async (req, res) => {
+  const { rows, dryRun } = req.body as { rows: Record<string, unknown>[]; dryRun?: boolean };
+  ok(res, await importProducts(rows, { mode: 'admin', dryRun }));
 });
 
 export const updateProduct = asyncHandler(async (req, res) => {

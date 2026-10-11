@@ -35,6 +35,8 @@ export default function Page() {
           <h2 className="h3">Company</h2>
           <ul className={s.list}>
             <li><Link href="/blog">Blog</Link></li>
+            <li><Link href="/gallery">Gallery</Link></li>
+            <li><Link href="/videos">Videos</Link></li>
             <li><Link href="/delivery-partner">Autozo Delivery Partner</Link></li>
             <li><Link href="/seller-partner">Autozo Seller Partner</Link></li>
             <li><Link href="/help">Help & Support</Link></li>

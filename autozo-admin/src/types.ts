@@ -429,3 +429,17 @@ export interface WarehouseApplication {
   };
   createdAt: string;
 }
+
+export interface MediaItem {
+  _id: string;
+  kind: 'photo' | 'video';
+  title: string;
+  caption?: string;
+  url: string;
+  thumbnail?: string;
+  /** Videos only: how the website plays the link, and its cover. */
+  videoType?: 'youtube' | 'vimeo' | 'file';
+  embedUrl?: string;
+  sortOrder: number;
+  isActive: boolean;
+}

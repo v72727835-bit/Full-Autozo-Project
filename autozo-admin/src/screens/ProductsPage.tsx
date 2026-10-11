@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from '../navigation';
+import BulkUpload from '../components/BulkUpload';
 import ProductVideoField from '../components/ProductVideoField';
-import { uploadProductVideo, createProduct, deleteProduct, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProduct, uploadImages } from '../api/admin';
+import { bulkCreateProducts, uploadProductVideo, createProduct, deleteProduct, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProduct, uploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Thumb, money } from '../components/ui';
@@ -57,6 +58,12 @@ const EMPTY_FORM: FormState = {
   isActive: true,
 };
 
+/** The aisle a child category sits under, so "Mangoes" under two aisles can be told apart in a sheet. */
+const leafParentName = (c: Category, all: Category[]): string | undefined => {
+  const parent = typeof c.parent === 'string' ? c.parent : (c.parent as { _id?: string } | null)?._id;
+  return all.find((x) => x._id === parent)?.name;
+};
+
 export default function ProductsPage() {
   const [params, setParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
@@ -70,9 +77,11 @@ export default function ProductsPage() {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(!!params.get('new'));
+  const [showBulk, setShowBulk] = useState(false);
 
   const [shops, setShops] = useState<Shop[]>([]);
   const [leafCategories, setLeafCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [optionsError, setOptionsError] = useState('');
@@ -92,6 +101,7 @@ export default function ProductsPage() {
       if (warehouseResult.status === 'fulfilled') setShops(warehouseResult.value);
       else errors.push('Warehouses: ' + getErrorMessage(warehouseResult.reason));
       if (categoryResult.status === 'fulfilled') {
+        setAllCategories(categoryResult.value);
         setLeafCategories(categoryResult.value.filter((c) => c.level === 3));
       } else errors.push('Categories: ' + getErrorMessage(categoryResult.reason));
       setOptionsError(errors.join(' '));
@@ -157,15 +167,30 @@ export default function ProductsPage() {
           <h1 className="page-title">Products</h1>
           <div className="page-subtitle">{meta ? `${meta.total} products` : ''}</div>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-        >
-          <IconPlus size={15} /> Add product
-        </Button>
+        <div className="row-flex" style={{ gap: 8 }}>
+          <Button variant="secondary" onClick={() => setShowBulk(true)}>
+            Bulk upload
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setShowForm(true);
+            }}
+          >
+            <IconPlus size={15} /> Add product
+          </Button>
+        </div>
       </div>
+      {showBulk ? (
+        <BulkUpload
+          mode="admin"
+          categories={leafCategories.map((c) => ({ name: c.name, parent: leafParentName(c, allCategories) }))}
+          shops={shops.map((s) => s.name)}
+          send={bulkCreateProducts}
+          onClose={() => setShowBulk(false)}
+          onDone={load}
+        />
+      ) : null}
 
       <div className="toolbar">
         <Tabs

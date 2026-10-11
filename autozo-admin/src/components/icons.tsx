@@ -45,6 +45,13 @@ export const IconImage = ({ size = 18, strokeWidth = 1.8, className }: P) => (
   </svg>
 );
 
+export const IconVideo = ({ size = 18, strokeWidth = 1.8, className }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}>
+    <rect x="3" y="5" width="18" height="14" rx="3" />
+    <path d="m10.5 9.5 4.2 2.5-4.2 2.5Z" />
+  </svg>
+);
+
 export const IconLayers = ({ size = 18, strokeWidth = 1.8, className }: P) => (
   <svg {...base(size, strokeWidth)} className={className}>
     <path d="m12 2.8 9 4.7-9 4.7-9-4.7 9-4.7Z" />

@@ -90,7 +90,8 @@ export function getErrorMessage(err: unknown): string {
           return messages.filter(Boolean).map((msg) => (field === '_form' ? msg : `${field}: ${msg}`));
         })
         .join(', ');
-    const message = details || payload?.message;
+    // The server's headline is already a readable sentence; the raw field list is the fallback.
+    const message = payload?.message && payload.message !== 'Validation failed' ? payload.message : details || payload?.message;
     return message ?? `Something went wrong (${err.response.status}).`;
   }
   return 'Something went wrong.';

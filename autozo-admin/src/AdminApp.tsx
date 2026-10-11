@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 
 const AnalyticsPage = dynamic(() => import('./screens/AnalyticsPage'), { ssr: false });
 const BannersPage = dynamic(() => import('./screens/BannersPage'), { ssr: false });
+const MediaPage = dynamic(() => import('./screens/MediaPage'), { ssr: false });
 const NoticesPage = dynamic(() => import('./screens/NoticesPage'), { ssr: false });
 const RidersPage = dynamic(() => import('./screens/RidersPage'), { ssr: false });
 const SettingsStorePage = dynamic(() => import('./screens/SettingsStorePage'), { ssr: false });
@@ -59,6 +60,10 @@ function CurrentPage({ pathname }: { pathname: string }) {
       return <CategoriesPage />;
     case '/banners':
       return <BannersPage />;
+    case '/gallery':
+      return <MediaPage kind="photo" />;
+    case '/videos':
+      return <MediaPage kind="video" />;
     case '/offers':
       return <OffersPage />;
     case '/orders':

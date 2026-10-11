@@ -617,3 +617,31 @@ export const sellerShopBody = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 export const sellerCustomersQuery = pagination.extend({ q: z.string().trim().max(60).optional() });
+
+/* ---------- gallery and videos ---------- */
+import { videoInfo } from '../services/media.service';
+const mediaBase = z.object({
+  kind: z.enum(['photo', 'video']),
+  title: z.string().trim().min(1, 'Add a title').max(100),
+  caption: z.string().trim().max(300).optional(),
+  url: z.string().trim().url('Paste a full link starting with https://').max(500),
+  thumbnail: z.string().trim().url('The cover must be a full link').max(500).optional().or(z.literal('')),
+  sortOrder: z.coerce.number().int().default(0),
+  isActive: z.boolean().default(true),
+});
+export const mediaBody = mediaBase.refine((m) => m.kind !== 'video' || videoInfo(m.url) !== null, {
+  path: ['url'],
+  message: 'Paste a YouTube or Vimeo link, or a direct .mp4 / .webm file link',
+});
+export const mediaUpdateBody = mediaBase.partial().refine((m) => m.kind !== 'video' || !m.url || videoInfo(m.url) !== null, {
+  path: ['url'],
+  message: 'Paste a YouTube or Vimeo link, or a direct .mp4 / .webm file link',
+});
+export const mediaQuery = z.object({ kind: z.enum(['photo', 'video']).optional() });
+
+/* ---------- bulk product upload ---------- */
+export const bulkProductsBody = z.object({
+  rows: z.array(z.record(z.unknown())).min(1, 'The file has no product rows').max(300, 'Upload at most 300 products at a time'),
+  /** Check everything and report, but save nothing. */
+  dryRun: z.boolean().optional(),
+});

@@ -43,6 +43,7 @@ router.post('/uploads/video', uploadProductVideo, uploads.uploadVideo);
 
 router.get('/products', validate({ query: v.adminProductsQuery }), admin.listProductsAdmin);
 router.get('/products/:id', validate({ params: v.idParam }), admin.getProductAdmin);
+router.post('/products/bulk', validate({ body: v.bulkProductsBody }), admin.bulkCreateProducts);
 router.post('/products', validate({ body: v.adminProductBody }), admin.createProduct);
 router.patch('/products/:id', validate({ params: v.idParam, body: v.adminProductUpdateBody }), admin.updateProduct);
 router.delete('/products/:id', validate({ params: v.idParam }), admin.deleteProduct);
@@ -77,6 +78,10 @@ router.patch('/users/:id', validate({ params: v.idParam, body: v.adminUserUpdate
 router.get('/settings', extra.getSettings);
 router.patch('/settings', validate({ body: v.adminSettingsBody }), extra.updateSettings);
 
+router.get('/media', validate({ query: v.mediaQuery }), extra.listMediaAdmin);
+router.post('/media', validate({ body: v.mediaBody }), extra.createMedia);
+router.patch('/media/:id', validate({ params: v.idParam, body: v.mediaUpdateBody }), extra.updateMedia);
+router.delete('/media/:id', validate({ params: v.idParam }), extra.deleteMedia);
 router.get('/notices', extra.listNoticesAdmin);
 router.post('/notices', validate({ body: v.noticeBody }), extra.createNotice);
 router.delete('/notices/:id', validate({ params: v.idParam }), extra.deleteNotice);
