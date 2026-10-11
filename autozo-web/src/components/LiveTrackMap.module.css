@@ -60,7 +60,7 @@
 }
 
 /* Marker badges (Leaflet divIcons are plain HTML, so they live in the global layer). */
-:global(.lt-pin) {
+.map :global(.lt-pin) {
   display: grid;
   place-items: center;
   width: 38px;
@@ -73,7 +73,7 @@
   line-height: 1;
 }
 
-:global(.lt-pin.lt-rider) {
+.map :global(.lt-pin.lt-rider) {
   width: 44px;
   height: 44px;
   font-size: 22px;
@@ -81,7 +81,7 @@
   border-color: #fff;
 }
 
-:global(.lt-pin.lt-rider::after) {
+.map :global(.lt-pin.lt-rider::after) {
   content: '';
   position: absolute;
   inset: -8px;
@@ -102,7 +102,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(.lt-pin.lt-rider::after) {
+  .map :global(.lt-pin.lt-rider::after) {
     animation: none;
   }
 }
