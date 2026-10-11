@@ -1,0 +1,317 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease), transform 0.18s var(--ease);
+}
+
+.card:hover {
+  border-color: var(--line-2);
+  box-shadow: var(--sh-2);
+  transform: translateY(-2px);
+}
+
+.art {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  aspect-ratio: 1 / 0.86;
+}
+
+.artBg {
+  position: absolute;
+  inset: 8px;
+  border-radius: var(--r-sm);
+  background: var(--tile, var(--surface-3));
+}
+
+.artImg {
+  position: relative;
+  width: auto;
+  height: 100%;
+  max-height: 92px;
+  object-fit: contain;
+  transition: transform 0.25s var(--ease);
+}
+
+.card:hover .artImg {
+  transform: scale(1.06);
+}
+
+.off {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--ok);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-bottom-right-radius: var(--r-sm);
+}
+
+.oos {
+  position: absolute;
+  inset: 8px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.oos span {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px 12px;
+  flex: 1;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 16px;
+  margin-bottom: 3px;
+}
+
+.unit {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-4);
+}
+
+.name {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+  min-height: 36px;
+}
+
+.name:hover {
+  color: var(--brand-text);
+}
+
+.rate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.buy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+/* ------------------------------- skeleton -------------------------------- */
+
+.skArt {
+  aspect-ratio: 1 / 0.86;
+  border-radius: var(--r-md);
+}
+
+.skRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* The admin's own label beside the stars. */
+.rateLabel {
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+/* Aisles the admin set to a slower promise say so on the card. */
+.days {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+/* Wishlist heart on the photo's corner, and the little timing / saving lines. */
+.heart {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-3);
+  box-shadow: var(--sh-1);
+  cursor: pointer;
+}
+
+.heart[data-on='true'] {
+  color: var(--bad);
+}
+
+.card,
+.cCard {
+  position: relative;
+}
+
+.timing {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.save {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ok);
+}
+
+/* ----------------- compact card (phone category layout) ------------------ */
+
+.cCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 8px;
+}
+
+.cArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  background: var(--tile, var(--surface-3));
+  overflow: hidden;
+}
+
+.cImg {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+}
+
+.cOos {
+  position: absolute;
+  inset: auto 6px 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-2);
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  padding: 3px 6px;
+}
+
+.cRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: -34px;
+  padding: 0 4px;
+}
+
+/* A slim ADD that sits on the photo's corner, like the size chip on the other. */
+.cRow > button,
+.cRow > div {
+  flex-shrink: 0;
+  width: auto !important;
+  min-width: 54px !important;
+  height: 28px !important;
+  padding: 0 8px !important;
+  font-size: 12px !important;
+}
+
+.cUnit {
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.cBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.cName {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.cRate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.cOptions {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  background: var(--brand-tint);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-text);
+}
+
+.cCard .heart {
+  top: 14px;
+  right: 14px;
+}

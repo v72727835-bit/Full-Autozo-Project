@@ -1,0 +1,89 @@
+/* Sits above the bottom navigation on a phone, bottom-right on a desktop. */
+.toast {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--bottom-nav, 64px) + 12px);
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--brand-line);
+  background: var(--surface);
+  box-shadow: var(--sh-3);
+  animation: toastIn 0.22s var(--ease);
+}
+
+@media (min-width: 720px) {
+  .toast {
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    width: 380px;
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  flex-shrink: 0;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.text {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.link {
+  font-weight: 700;
+  color: var(--brand-text);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.close:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}

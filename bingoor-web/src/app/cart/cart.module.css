@@ -1,0 +1,308 @@
+.freeBar {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--brand-tint);
+  border: 1px solid var(--brand-line);
+  margin-bottom: 18px;
+}
+
+.freeTop {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-text);
+  margin-bottom: 10px;
+}
+
+.track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--brand) 18%, transparent);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  transition: width 0.4s var(--ease);
+}
+
+.shopCard {
+  overflow: hidden;
+}
+
+.shopHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.shopIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  flex-shrink: 0;
+}
+
+.shopName {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.line {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  flex-shrink: 0;
+}
+
+.thumbArt {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.lineBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.lineName {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.lineName:hover {
+  color: var(--brand-text);
+}
+
+.lineUnit {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+
+.lineIssue {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--bad);
+  margin-top: 4px;
+}
+
+.lineFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.rm {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  color: var(--ink-4);
+  transition: color 0.16s var(--ease), background-color 0.16s var(--ease);
+}
+
+.rm:hover {
+  color: var(--bad);
+  background: var(--bad-tint);
+}
+
+.lineTotal {
+  margin-left: auto;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.shopFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 18px;
+}
+
+.minWarn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--warn);
+}
+
+.summary {
+  padding: 20px;
+}
+
+.safe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.off {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.row[data-big='true'] {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.good {
+  color: var(--ok);
+  font-weight: 750;
+}
+
+/* The delivery promise, centred and large — the first thing a customer
+   checks before paying. */
+.eta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+}
+
+.eta svg {
+  flex-shrink: 0;
+}
+
+.etaTime {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 520px) {
+  .etaTime {
+    font-size: 17px;
+  }
+}
+
+/* Customer care line, under the delivery time. */
+.care {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: -8px 0 16px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.care b {
+  color: var(--brand-text);
+}
+
+.was {
+  color: var(--ink-4);
+  font-weight: 500;
+}
+
+/* Checkout stays black-and-white until the basket is allowed through. */
+.mono {
+  background: var(--ink-4);
+  border-color: var(--ink-4);
+  filter: grayscale(1);
+}
+
+.topup {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+}
+
+.topupNote {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.topupRail {
+  display: flex;
+  gap: 10px;
+}
+
+.topupItem {
+  flex: 0 0 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 12px;
+  text-align: center;
+}
+
+.topupImg {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.topupName {
+  font-weight: 650;
+}
+
+.topupAdd {
+  color: var(--brand-text);
+  font-weight: 800;
+}

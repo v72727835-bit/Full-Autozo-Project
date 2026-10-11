@@ -1,0 +1,37 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { fetchAddresses } from '../api/account';
+import { fetchQuote } from '../api/cart';
+import { Quote, SlotKey } from './types';
+
+/**
+ * The delivery bill for the current basket: handling and delivery fees from
+ * the admin's distance bands, to the chosen (or default) address. `refreshKey`
+ * should change whenever the cart does.
+ */
+export function useQuote(slot: SlotKey, refreshKey: unknown, addressId?: string): Quote | null {
+  const [quote, setQuote] = useState<Quote | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        let id = addressId;
+        if (!id) {
+          const list = await fetchAddresses();
+          id = list.find((a) => a.isDefault)?.id ?? list[0]?.id;
+        }
+        const q = await fetchQuote({ addressId: id, slot });
+        if (live) setQuote(q);
+      } catch {
+        if (live) setQuote(null); // the cart still shows its own totals
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [slot, refreshKey, addressId]);
+
+  return quote;
+}

@@ -1,0 +1,264 @@
+.ft {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  margin-top: 56px;
+  padding: 40px 0 calc(90px + env(safe-area-inset-bottom));
+}
+
+.promises {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  margin-bottom: 32px;
+}
+
+.promise {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+}
+
+.pIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  flex-shrink: 0;
+}
+
+.pTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.pBody {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  padding: 32px 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: block;
+  object-fit: cover;
+}
+
+.word {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.tag {
+  font-size: 13px;
+  color: var(--ink-3);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.colTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 2px;
+}
+
+.colLink {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  width: fit-content;
+}
+
+.colLink:hover {
+  color: var(--brand-text);
+}
+
+/* A footer link is pure text, so on a phone it needs padding to become a
+   thumb-sized target rather than a 21px sliver. */
+@media (max-width: 699px) {
+  .col {
+    gap: 2px;
+  }
+  .colLink {
+    padding: 9px 0;
+  }
+}
+
+/* The store links carry their platform mark, so they read as downloads. */
+.store {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+  width: fit-content;
+  transition: border-color 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.store:hover {
+  border-color: var(--brand-line);
+  color: var(--brand-text);
+}
+
+.base {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  justify-content: space-between;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-4);
+}
+
+@media (min-width: 640px) {
+  .promises {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .cols {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+}
+
+@media (min-width: 700px) {
+  .ft {
+    padding-bottom: 40px;
+  }
+}
+
+
+/* ---- redesigned footer ---- */
+.top {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 1fr;
+  padding-bottom: 28px;
+}
+
+.brand .word {
+  font-size: 26px;
+  letter-spacing: -0.035em;
+}
+
+.call {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.call b {
+  color: var(--brand-text);
+}
+
+.appRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.store {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: var(--r-md);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.store small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 20px;
+  padding: 28px 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.catGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 16px;
+}
+
+.more {
+  font-weight: 700;
+  color: var(--brand-text);
+}
+
+/* Company pages exist only on desktop. */
+.deskOnly {
+  display: none;
+}
+
+.baseTools {
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .top {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: start;
+  }
+  .cols {
+    grid-template-columns: 0.9fr 1.6fr 1.2fr 0.9fr;
+  }
+  .wide {
+    grid-column: auto;
+  }
+  .catGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .deskOnly {
+    display: flex;
+  }
+}

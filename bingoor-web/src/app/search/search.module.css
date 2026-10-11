@@ -1,0 +1,35 @@
+.searchTop {
+  max-width: 540px;
+  margin-bottom: 22px;
+}
+
+.shopHead {
+  padding-bottom: 6px;
+}
+
+.shopTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.shopFacts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.idle {
+  padding-top: 8px;
+}
+
+.idleRail {
+  gap: 10px;
+}
+
+.idleAll {
+  margin-top: 28px;
+}

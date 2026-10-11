@@ -1,0 +1,98 @@
+import { RequestHandler } from 'express';
+import { Types } from 'mongoose';
+import { Category } from '../models/Category';
+import { ISettings, Settings } from '../models/Settings';
+
+/**
+ * Shop-wide settings plus the category rules derived from them, cached in
+ * memory. The rules are looked up for every product card, so they are
+ * resolved once (which aisles - including every child aisle - deliver in
+ * N days, and where COD is off) and then read synchronously.
+ */
+type SettingsLean = ISettings & { _id: Types.ObjectId };
+
+interface Cache {
+  at: number;
+  settings: SettingsLean;
+  sixDay: Set<string>;
+  codOff: Set<string>;
+}
+
+const TTL_MS = 30_000;
+let cache: Cache | null = null;
+let loading: Promise<Cache> | null = null;
+
+/** Every category id at or below the given ones (three levels deep). */
+async function withDescendants(roots: Types.ObjectId[]): Promise<Set<string>> {
+  const ids = new Set(roots.map(String));
+  let frontier = roots;
+  for (let depth = 0; depth < 2 && frontier.length; depth++) {
+    const kids = await Category.find({ parent: { $in: frontier } }).select('_id').lean();
+    frontier = kids.map((k) => k._id as Types.ObjectId);
+    frontier.forEach((id) => ids.add(String(id)));
+  }
+  return ids;
+}
+
+export async function getSettingsDoc(): Promise<SettingsLean> {
+  const found = await Settings.findOne({ key: 'global' }).lean();
+  if (found) return found as SettingsLean;
+  // First run: create the defaults. Fruits & vegetables start with COD off, as requested.
+  const fruitVeg = await Category.findOne({ level: 2, name: /vegetables|fruits/i }).select('_id').lean();
+  const created = await Settings.create({
+    key: 'global',
+    cod: fruitVeg ? { disabledCategories: [fruitVeg._id] } : undefined,
+  });
+  return created.toObject() as SettingsLean;
+}
+
+async function build(): Promise<Cache> {
+  const settings = await getSettingsDoc();
+  const [sixDay, codOff] = await Promise.all([
+    withDescendants(settings.sixDay?.categories ?? []),
+    withDescendants(settings.cod?.disabledCategories ?? []),
+  ]);
+  return { at: Date.now(), settings, sixDay, codOff };
+}
+
+export async function loadSettings(): Promise<Cache> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache;
+  loading ??= build().finally(() => {
+    loading = null;
+  });
+  cache = await loading;
+  return cache;
+}
+
+export function clearSettingsCache() {
+  cache = null;
+}
+
+/** Makes the rules available synchronously to everything after it. */
+export const ensureSettings: RequestHandler = (_req, _res, next) => {
+  loadSettings().then(() => next(), next);
+};
+
+const idOf = (category: unknown): string | null => {
+  if (!category) return null;
+  if (typeof category === 'object' && '_id' in (category as object)) return String((category as { _id: unknown })._id);
+  return String(category);
+};
+
+/** Delivery promise and COD availability for a product in this category. */
+export function productRules(category: unknown): { deliveryDays: number | null; codAvailable: boolean } {
+  const id = idOf(category);
+  if (!cache || !id) return { deliveryDays: null, codAvailable: true };
+  return {
+    deliveryDays: cache.sixDay.has(id) ? cache.settings.sixDay.days : null,
+    codAvailable: !cache.codOff.has(id),
+  };
+}
+
+export function codMessage(): string {
+  return cache?.settings.cod?.message ?? 'Cash on delivery is not available for some items in your cart.';
+}
+
+export function cachedSettings(): SettingsLean | null {
+  return cache?.settings ?? null;
+}

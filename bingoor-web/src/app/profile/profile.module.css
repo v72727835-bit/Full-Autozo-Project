@@ -1,0 +1,138 @@
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--r-xl);
+  background: linear-gradient(130deg, var(--brand-tint), var(--surface) 90%);
+  border: 1px solid var(--brand-line);
+  margin-bottom: 20px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 24px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.themeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  margin-left: auto;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 650;
+  flex-shrink: 0;
+}
+
+.themeBtn:hover {
+  border-color: var(--brand);
+  color: var(--brand-text);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  color: var(--ink-4);
+}
+
+.sIcon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-sm);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  flex-shrink: 0;
+}
+
+.sText {
+  flex: 1;
+  min-width: 0;
+}
+
+.sLabel {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.sBody {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.chev {
+  flex-shrink: 0;
+}
+
+.forms {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.out {
+  margin-top: 24px;
+}
+
+@media (min-width: 680px) {
+  .cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .shortcut {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .chev {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .forms {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Unopened replies from customer care, counted on the shortcut. */
+.unread {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--bad);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}

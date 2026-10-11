@@ -1,0 +1,166 @@
+.wrap {
+  margin-bottom: 32px;
+}
+
+/* Proximity, not mandatory: mandatory snapping fights a programmatic smooth
+   scroll and can keep the compositor re-snapping. */
+.track {
+  scroll-snap-type: x proximity;
+  /* The rail bleeds to the screen edge, so snapping must stop at the page gutter. */
+  scroll-padding: 0 var(--gut);
+  gap: 12px;
+}
+
+.banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  /* One slide fills the whole width, like Blinkit's hero banner. */
+  width: 100%;
+  min-height: 164px;
+  padding: 22px 24px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  color: #fff;
+  box-shadow: var(--sh-2);
+  background-image: linear-gradient(118deg, var(--from), var(--to));
+}
+
+/* Soft highlight so the flat gradient reads as a lit surface. */
+.banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 85% 20%, rgba(255, 255, 255, 0.22), transparent 60%);
+  pointer-events: none;
+}
+
+/* Uploaded artwork: the image is the slide, edge to edge, in a fixed 26:9
+   frame (the admin preview uses the same) so every slide lines up. */
+.banner[data-photo] {
+  min-height: 0;
+  aspect-ratio: 26 / 9;
+  padding: 0 24px;
+  background: var(--surface-3);
+}
+
+.banner[data-photo]::after {
+  display: none;
+}
+
+/* Darken the left side only when text is drawn over the photo. */
+.banner[data-photo='text']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.15) 70%, transparent);
+  pointer-events: none;
+}
+
+.banner[data-photo='text'] .copy {
+  z-index: 2;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.kicker {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.title {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.sub {
+  font-size: 13px;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.95);
+  color: #16050f;
+  font-size: 12.5px;
+  font-weight: 750;
+  transition: transform 0.16s var(--ease);
+}
+
+.banner:hover .cta {
+  transform: translateX(3px);
+}
+
+.art {
+  position: relative;
+  z-index: 1;
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25));
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-2);
+  transition: width 0.22s var(--ease), background-color 0.22s var(--ease);
+}
+
+.dot[data-on='true'] {
+  width: 22px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+}
+
+@media (min-width: 900px) {
+  .banner {
+    min-height: 220px;
+    padding: 30px 44px;
+  }
+  .title {
+    font-size: 30px;
+  }
+  /* Blinkit's hero shape on wide screens: full width, about a fifth as tall. */
+  .banner[data-photo] {
+    aspect-ratio: 52 / 10;
+  }
+  .sub {
+    font-size: 15px;
+  }
+  .art {
+    width: 116px;
+    height: 116px;
+  }
+}

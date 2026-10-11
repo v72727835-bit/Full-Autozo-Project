@@ -1,0 +1,360 @@
+import { api } from './client';
+import { WarehouseApplication, StandardCategory, Enquiry, SellerRow, SellerStats, SellerProfile, AdminAlert, AdminUser, AppUser, Banner, Category, Notice, RiderRow, RiderTotals, Settings, StockAlert, Ticket, Coupon, DashboardStats, Order, OrderStatus, PageMeta, Product, Shop } from '../types';
+
+interface Paged<T> {
+  items: T[];
+  meta: PageMeta;
+}
+
+async function paged<T>(url: string, params?: Record<string, unknown>): Promise<Paged<T>> {
+  const { data } = await api.get(url, { params });
+  return { items: data.data, meta: data.meta };
+}
+
+/* ---------- dashboard ---------- */
+export const fetchStats = async (days = 14): Promise<DashboardStats> =>
+  (await api.get('/admin/stats', { params: { days } })).data.data;
+
+/* ---------- products ---------- */
+export const fetchProducts = (params: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  category?: string;
+  shop?: string;
+  isActive?: boolean;
+}) => paged<Product>('/admin/products', params);
+
+export const createProduct = async (body: Partial<Product> & { shop: string; category: string }): Promise<Product> =>
+  (await api.post('/admin/products', body)).data.data;
+
+export const updateProduct = async (id: string, body: Partial<Product>): Promise<Product> =>
+  (await api.patch(`/admin/products/${id}`, body)).data.data;
+
+export const deleteProduct = async (id: string): Promise<void> => {
+  await api.delete(`/admin/products/${id}`);
+};
+
+export const uploadImages = async (files: File[]): Promise<string[]> => {
+  const body = new FormData();
+  files.forEach((file) => body.append('images', file));
+  const { data } = await api.post('/admin/uploads/images', body);
+  return data.data.urls;
+};
+/* ---------- categories ---------- */
+export const fetchCategories = async (): Promise<Category[]> => (await api.get('/admin/categories')).data.data;
+
+export const createCategory = async (
+  body: Pick<Category, 'name' | 'nameHi' | 'level' | 'icon' | 'image' | 'tint' | 'sortOrder' | 'isActive'> & { parent: string | null },
+): Promise<Category> => (await api.post('/admin/categories', body)).data.data;
+
+export const updateCategory = async (id: string, body: Partial<Category>): Promise<Category> =>
+  (await api.patch(`/admin/categories/${id}`, body)).data.data;
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  await api.delete(`/admin/categories/${id}`);
+};
+
+/* ---------- orders ---------- */
+export const fetchOrders = (params: { page?: number; limit?: number; status?: string; q?: string; rider?: string }) =>
+  paged<Order>('/admin/orders', params);
+
+export const fetchOrder = async (id: string): Promise<Order> => (await api.get(`/admin/orders/${id}`)).data.data;
+
+export const updateOrderStatus = async (id: string, status: OrderStatus, note?: string): Promise<Order> =>
+  (await api.patch(`/admin/orders/${id}/status`, { status, note })).data.data;
+
+/* ---------- shops ---------- */
+export const fetchShops = (params: { page?: number; limit?: number }) => paged<Shop>('/admin/shops', params);
+
+// Product selectors need every warehouse, not only the first page.
+export async function fetchAllShops(): Promise<Shop[]> {
+  const shops: Shop[] = [];
+  let page = 1;
+  while (true) {
+    const result = await fetchShops({ page, limit: 50 });
+    shops.push(...result.items);
+    if (!result.meta.hasNext) return shops;
+    page += 1;
+  }
+}
+
+export const createShop = async (
+  body: Partial<Shop> & { location: { lat: number; lng: number } },
+): Promise<Shop> => (await api.post('/admin/shops', body)).data.data;
+
+export const updateShop = async (
+  id: string,
+  body: Partial<Omit<Shop, 'location'>> & { location?: { lat: number; lng: number } },
+): Promise<Shop> => (await api.patch(`/admin/shops/${id}`, body)).data.data;
+
+export const deleteShop = async (id: string): Promise<void> => {
+  await api.delete(`/admin/shops/${id}`);
+};
+
+export const createRider = async (body: { name: string; phone: string; email?: string; password: string; warehouse: string }): Promise<AppUser> =>
+  (await api.post('/admin/riders', body)).data.data;
+
+/* ---------- users ---------- */
+export const fetchUsers = (params: { page?: number; limit?: number; role?: string; q?: string }) =>
+  paged<AppUser>('/admin/users', params);
+
+export const updateUser = async (id: string, body: { isActive?: boolean; role?: string; warehouse?: string | null }): Promise<AppUser> =>
+  (await api.patch(`/admin/users/${id}`, body)).data.data;
+
+/* ---------- banners ---------- */
+export type BannerInput = Omit<Banner, '_id' | 'category'> & { category: string | null };
+
+export const fetchBanners = async (): Promise<Banner[]> => (await api.get('/admin/banners')).data.data;
+
+export const createBanner = async (body: BannerInput): Promise<Banner> => (await api.post('/admin/banners', body)).data.data;
+
+export const updateBanner = async (id: string, body: Partial<BannerInput>): Promise<Banner> =>
+  (await api.patch(`/admin/banners/${id}`, body)).data.data;
+
+export const deleteBanner = async (id: string): Promise<void> => {
+  await api.delete(`/admin/banners/${id}`);
+};
+
+/* ---------- coupons / offers ---------- */
+export const fetchCoupons = (params: { page?: number; limit?: number; q?: string; isActive?: boolean }) =>
+  paged<Coupon>('/admin/coupons', params);
+
+export const createCoupon = async (body: Partial<Coupon>): Promise<Coupon> =>
+  (await api.post('/admin/coupons', body)).data.data;
+
+export const updateCoupon = async (id: string, body: Partial<Coupon>): Promise<Coupon> =>
+  (await api.patch(`/admin/coupons/${id}`, body)).data.data;
+
+export const deleteCoupon = async (id: string): Promise<void> => {
+  await api.delete(`/admin/coupons/${id}`);
+};
+
+/* ---------- my account ---------- */
+export const fetchMe = async (): Promise<AdminUser & { lastLoginAt?: string; createdAt?: string }> =>
+  (await api.get('/admin/me')).data.data;
+
+export const updateMe = async (body: { name?: string; email?: string; phone?: string }): Promise<AdminUser> =>
+  (await api.patch('/admin/me', body)).data.data;
+
+export const changeMyPassword = async (
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ accessToken: string; refreshToken: string }> =>
+  (await api.post('/admin/me/password', { currentPassword, newPassword })).data.data;
+
+/* ---------- settings ---------- */
+export const fetchSettings = async (): Promise<Settings> => (await api.get('/admin/settings')).data.data;
+
+export const saveSettings = async (body: DeepPartial<Settings>): Promise<Settings> =>
+  (await api.patch('/admin/settings', body)).data.data;
+
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
+
+/* ---------- notification bell ---------- */
+export const fetchNotices = async (): Promise<Notice[]> => (await api.get('/admin/notices')).data.data;
+
+export const createNotice = async (message: string): Promise<Notice> =>
+  (await api.post('/admin/notices', { message })).data.data;
+
+export const deleteNotice = async (id: string): Promise<void> => {
+  await api.delete(`/admin/notices/${id}`);
+};
+
+/* ---------- chat with customer care ---------- */
+export const fetchTickets = (params: { page?: number; limit?: number; status?: string }) =>
+  paged<Ticket>('/admin/tickets', params) as Promise<{ items: Ticket[]; meta: PageMeta & { unread?: number } }>;
+
+export const fetchTicket = async (id: string): Promise<Ticket> => (await api.get(`/admin/tickets/${id}`)).data.data;
+
+export const replyTicket = async (id: string, text: string): Promise<Ticket> =>
+  (await api.post(`/admin/tickets/${id}/reply`, { text })).data.data;
+
+export const setTicketStatus = async (id: string, status: 'open' | 'closed'): Promise<Ticket> =>
+  (await api.patch(`/admin/tickets/${id}`, { status })).data.data;
+
+/* ---------- "notify me" requests ---------- */
+export const fetchStockAlerts = (params: { page?: number; limit?: number }) => paged<StockAlert>('/admin/stock-alerts', params);
+
+export const setStockAlertNotified = async (id: string, notified: boolean): Promise<StockAlert> =>
+  (await api.patch(`/admin/stock-alerts/${id}`, { notified })).data.data;
+
+export const deleteStockAlert = async (id: string): Promise<void> => {
+  await api.delete(`/admin/stock-alerts/${id}`);
+};
+
+/* ---------- riders: online, COD, pause ---------- */
+export const fetchRiders = async (params: { q?: string; online?: boolean } = {}): Promise<{ items: RiderRow[]; meta: RiderTotals }> => {
+  const { data } = await api.get('/admin/riders', { params });
+  return { items: data.data, meta: data.meta };
+};
+
+export const setRiderPaused = async (id: string, paused: boolean): Promise<void> => {
+  await api.patch(`/admin/riders/${id}/pause`, { paused });
+};
+
+export const settleRiderCod = async (id: string): Promise<void> => {
+  await api.post(`/admin/riders/${id}/settle-cod`);
+};
+
+/* ---------- dashboard bell ---------- */
+export const fetchAdminAlerts = async (): Promise<{ items: AdminAlert[]; unread: number }> => {
+  const { data } = await api.get('/admin/alerts');
+  return { items: data.data, unread: data.meta?.unread ?? 0 };
+};
+
+export const markAdminAlertsRead = async (): Promise<void> => {
+  await api.post('/admin/alerts/read');
+};
+
+export const setRiderLongDistance = async (id: string, longDistance: boolean): Promise<void> => {
+  await api.patch(`/admin/riders/${id}/long-distance`, { longDistance });
+};
+
+/* ---------- contact forms ---------- */
+export const fetchEnquiries = (params: { page?: number; limit?: number; kind?: string }) => paged<Enquiry>('/admin/enquiries', params);
+export const deleteEnquiry = async (id: string): Promise<void> => {
+  await api.delete(`/admin/enquiries/${id}`);
+};
+
+/* ---------- sellers ---------- */
+export const fetchSellers = (params: { page?: number; limit?: number; q?: string }) => paged<SellerRow>('/admin/sellers', params);
+export const createSeller = async (body: { name: string; phone: string; email?: string; password: string; warehouses: string[] }) =>
+  (await api.post('/admin/sellers', body)).data.data;
+export const setSellerWarehouses = async (id: string, warehouses: string[]): Promise<void> => {
+  await api.patch(`/admin/sellers/${id}/warehouses`, { warehouses });
+};
+export const clearSellerProfile = async (id: string): Promise<void> => {
+  await api.delete(`/admin/sellers/${id}/profile`);
+};
+export const setSellerActive = async (id: string, isActive: boolean): Promise<void> => {
+  await api.patch(`/admin/sellers/${id}/active`, { isActive });
+};
+
+/* ---------- seller panel (a seller's own session) ---------- */
+export const sellerMe = async (): Promise<{
+  user: { name: string; phone: string; email?: string; sellerId?: string; sellerProfile?: SellerProfile };
+  stats: SellerStats;
+}> => (await api.get('/seller/me')).data.data;
+export const sellerAckOrders = async (): Promise<void> => {
+  await api.post('/seller/ack-orders');
+};
+export const sellerSaveProfile = async (body: Record<string, unknown>): Promise<{ sellerId: string; sellerProfile: SellerProfile }> =>
+  (await api.put('/seller/profile', body)).data.data;
+export const sellerCategories = async (): Promise<{ _id: string; name: string; nameHi?: string; parent: string | null; level: 1 | 2 | 3 }[]> =>
+  (await api.get('/seller/categories')).data.data;
+export const sellerProducts = (params: { page?: number; limit?: number; q?: string; status?: string; category?: string }) => paged<import('../types').Product>('/seller/products', params);
+export const sellerCreateProduct = async (body: Record<string, unknown>) => (await api.post('/seller/products', body)).data.data;
+export const sellerUpdateProduct = async (id: string, body: Record<string, unknown>) => (await api.patch(`/seller/products/${id}`, body)).data.data;
+export const sellerUploadImages = async (files: File[]): Promise<string[]> => {
+  const body = new FormData();
+  files.forEach((f) => body.append('images', f));
+  return (await api.post('/seller/uploads/images', body)).data.data.urls;
+};
+
+/* ---------- assigning a free rider ---------- */
+export interface FreeRider { _id: string; name: string; phone: string; lastSeenAt?: string }
+export const adminFreeRiders = async (orderId: string): Promise<FreeRider[]> => (await api.get(`/admin/orders/${orderId}/free-riders`)).data.data;
+export const adminAssignRider = async (orderId: string, rider: string): Promise<void> => {
+  await api.post(`/admin/orders/${orderId}/assign-rider`, { rider });
+};
+export const sellerFreeRiders = async (orderId: string): Promise<FreeRider[]> => (await api.get(`/seller/orders/${orderId}/free-riders`)).data.data;
+export const sellerAssignRider = async (orderId: string, rider: string): Promise<void> => {
+  await api.post(`/seller/orders/${orderId}/assign-rider`, { rider });
+};
+export const sellerOrders = (params: { page?: number; limit?: number; status?: string; q?: string }) => paged<Order>('/seller/orders', params);
+export const sellerSetOrderStatus = async (id: string, status: string): Promise<void> => {
+  await api.patch(`/seller/orders/${id}/status`, { status });
+};
+export const sellerDeleteProduct = async (id: string): Promise<void> => {
+  await api.delete(`/seller/products/${id}`);
+};
+
+/* ---------- warehouse panel logins ---------- */
+export interface WarehouseLogin { shop: string; _id: string; name: string; phone: string; isActive: boolean }
+export const fetchWarehouseLogins = async (): Promise<WarehouseLogin[]> => (await api.get('/admin/shops/logins')).data.data;
+export const setWarehouseLogin = async (shopId: string, body: { name?: string; phone: string; password?: string; isActive?: boolean }): Promise<void> => {
+  await api.put(`/admin/shops/${shopId}/login`, body);
+};
+export interface WarehouseRider { _id: string; name: string; phone: string; isActive: boolean; online: boolean; busy: boolean; paused: boolean; lastSeenAt?: string }
+export const sellerRiders = async (): Promise<WarehouseRider[]> => (await api.get('/seller/riders')).data.data;
+export const sellerCreateRider = async (body: { name: string; phone: string; password: string; warehouse?: string }): Promise<void> => {
+  await api.post('/seller/riders', body);
+};
+
+/* ---------- standard categories (home-screen rows on the top / bottom) ---------- */
+export const fetchStandardCategories = async (): Promise<StandardCategory[]> => (await api.get('/admin/standard-categories')).data.data;
+export const createStandardCategory = async (body: Partial<StandardCategory>): Promise<StandardCategory> =>
+  (await api.post('/admin/standard-categories', body)).data.data;
+export const updateStandardCategory = async (id: string, body: Partial<StandardCategory>): Promise<StandardCategory> =>
+  (await api.patch(`/admin/standard-categories/${id}`, body)).data.data;
+export const deleteStandardCategory = async (id: string): Promise<void> => {
+  await api.delete(`/admin/standard-categories/${id}`);
+};
+
+/* ---------- integrations: Google / Facebook login and Razorpay ---------- */
+export interface IntegrationsView {
+  googleClientId: string;
+  facebookAppId: string;
+  facebookSecretSaved: boolean;
+  razorpayKeyId: string;
+  razorpaySecretSaved: boolean;
+  razorpayEnabled: boolean;
+  live: { google: boolean; facebook: boolean; razorpay: boolean };
+}
+export const fetchIntegrations = async (): Promise<IntegrationsView> => (await api.get('/admin/integrations')).data.data;
+export const saveIntegrations = async (body: Record<string, unknown>): Promise<IntegrationsView> =>
+  (await api.put('/admin/integrations', body)).data.data;
+export const testRazorpayKeys = async (): Promise<string> => (await api.post('/admin/integrations/razorpay/test')).data.data.message;
+
+/* ---------- warehouse registrations ---------- */
+export const fetchWarehouseApplications = async (params: { status?: string; page?: number; limit?: number }) => {
+  const { data } = await api.get('/admin/warehouse-applications', { params });
+  return { items: data.data as WarehouseApplication[], pending: (data.meta?.pending ?? 0) as number };
+};
+export const approveWarehouse = async (id: string): Promise<void> => {
+  await api.post(`/admin/warehouse-applications/${id}/approve`);
+};
+export const rejectWarehouse = async (id: string, reason: string): Promise<void> => {
+  await api.post(`/admin/warehouse-applications/${id}/reject`, { reason });
+};
+
+/* ---------- warehouse panel: dashboard, store, customers, account ---------- */
+export interface WarehouseDashboard {
+  orders: { byStatus: Record<string, number>; total: number };
+  today: { orders: number; revenue: number };
+  deliveredRevenue: number;
+  trend: { date: string; orders: number; revenue: number }[];
+  topProducts: { _id: string; name: string; qty: number; revenue: number }[];
+  lowStock: { _id: string; name: string; stock: number; unit: string; images?: string[] }[];
+  outOfStock: number;
+  products: { live: number; off: number };
+  recent: { _id: string; orderNumber: string; status: string; total: number; createdAt: string; paymentMethod: string }[];
+}
+export const sellerDashboard = async (): Promise<WarehouseDashboard> => (await api.get('/seller/dashboard')).data.data;
+export interface WarehouseShop {
+  _id: string;
+  name: string;
+  description?: string;
+  phone?: string;
+  logo?: string;
+  banner?: string;
+  isOpen: boolean;
+  isActive: boolean;
+  deliveryRadiusKm: number;
+  minOrderAmount: number;
+  deliveryFee: number;
+  address: { line1?: string; city?: string; state?: string; pincode?: string };
+  location: { coordinates: [number, number] };
+}
+export const sellerShops = async (): Promise<WarehouseShop[]> => (await api.get('/seller/shops')).data.data;
+export const sellerUpdateShop = async (id: string, body: Record<string, unknown>): Promise<WarehouseShop> => (await api.patch(`/seller/shops/${id}`, body)).data.data;
+export interface WarehouseCustomer { _id: string; name: string; phone: string; orders: number; spent: number; last: string }
+export const sellerCustomers = (params: { page?: number; limit?: number; q?: string }) => paged<WarehouseCustomer>('/seller/customers', params);
+export const sellerChangePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+  await api.post('/seller/change-password', { currentPassword, newPassword });
+};
+
+export interface OrderRider { _id: string; name: string; phone: string; lastSeenAt?: string; state: 'free' | 'busy' | 'offline' | 'paused' | 'long_distance_only' | 'not_long_distance'; free: boolean }
+export interface OrderRiders { warehouse: string; radiusKm: number | null; distanceKm: number | null; longDistance: boolean; riders: OrderRider[] }
+export const sellerOrderRiders = async (orderId: string): Promise<OrderRiders> => (await api.get(`/seller/orders/${orderId}/riders`)).data.data;

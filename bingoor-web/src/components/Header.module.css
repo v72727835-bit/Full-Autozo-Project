@@ -1,0 +1,312 @@
+.hdr {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brandBar {
+  background: linear-gradient(104deg, var(--plum-deep), var(--plum) 58%, var(--brand-press));
+  color: #fff;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 68px;
+}
+
+/* --------------------------------- brand --------------------------------- */
+
+/* Shrinkable, unlike the controls beside it: when a narrow phone runs out of
+   room the brand gives up width first, and the word truncates rather than
+   pushing the cart off the screen. */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  display: block;
+  object-fit: cover;
+}
+
+.word {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.promise {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.82;
+}
+
+/* -------------------------------- location -------------------------------- */
+
+.place {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding-left: 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.placeText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.placeLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.placeName {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.searchWide {
+  display: none;
+  flex: 1;
+  max-width: 460px;
+}
+
+/* --------------------------------- tools --------------------------------- */
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-pill);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background-color 0.16s var(--ease);
+  flex-shrink: 0;
+}
+
+.tool:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.account,
+.cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background-color 0.16s var(--ease), transform 0.12s var(--ease);
+  flex-shrink: 0;
+}
+
+.account:hover,
+.cart:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.account:active,
+.cart:active {
+  transform: scale(0.97);
+}
+
+.accountText {
+  display: none;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart[data-filled='true'] {
+  background: #fff;
+  color: var(--brand-press);
+}
+
+.cartText {
+  display: none;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.cartCount {
+  font-size: 10px;
+  font-weight: 650;
+  opacity: 0.75;
+}
+
+.cartTotal {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.searchNarrow {
+  padding-bottom: 14px;
+}
+
+/* ----------------------------- category strip ----------------------------- */
+
+.strip {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+}
+
+.stripRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: 48px;
+  overflow-x: auto;
+}
+
+.stripLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.stripLink:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.stripLink[data-on='true'] {
+  background: var(--brand-tint);
+  color: var(--brand-text);
+}
+
+/* ------------------------------- responsive ------------------------------- */
+
+@media (min-width: 700px) {
+  .accountText,
+  .cartText {
+    display: flex;
+  }
+}
+
+@media (min-width: 860px) {
+  .searchWide {
+    display: block;
+  }
+  .onlyNarrow {
+    display: none;
+  }
+  .searchNarrow {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .place {
+    display: flex;
+  }
+}
+
+@media (max-width: 859px) {
+  .onlyWide {
+    display: none;
+  }
+}
+
+@media (max-width: 699px) {
+  .row {
+    height: 60px;
+    gap: 8px;
+  }
+  .strip {
+    display: none;
+  }
+
+  /* The bottom bar already carries Account, and the Profile page carries the
+     theme switch, so repeating them here only cost width - six controls plus
+     the brand overflowed every phone narrower than about 420px. */
+  .account,
+  .tools .tool:not(.onlyNarrow) {
+    display: none;
+  }
+
+  /* What is left gets a proper touch target. */
+  .tools {
+    gap: 6px;
+  }
+  .tool,
+  .cart {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .mark {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+  /* The brand is the way home, so it gets a full-height target. */
+  .logo {
+    min-height: 44px;
+  }
+  .word {
+    font-size: 17px;
+  }
+}
+
+/* Below the narrowest common phone the brand drops to the mark alone. */
+@media (max-width: 339px) {
+  .word {
+    display: none;
+  }
+}
+
+/* The tab strip is also a .rail, whose phone-edge bleed margins would push it past a tablet's edge. */
+.strip .stripRow {
+  margin-left: auto;
+  margin-right: auto;
+}

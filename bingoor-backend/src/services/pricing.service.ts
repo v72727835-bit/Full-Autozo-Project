@@ -1,0 +1,107 @@
+import { ISettings } from '../models/Settings';
+import { round2 } from '../utils/helpers';
+
+export type Slot = 'instant' | 'twoHour' | 'nextDay';
+
+export interface Quote {
+  distanceKm: number | null;
+  /** Items minus nothing: the amount the free-delivery and minimum rules look at. */
+  subtotal: number;
+  minOrder: number;
+  meetsMinOrder: boolean;
+  handlingFee: number;
+  /** The charge for the slot or distance, before any waiver. */
+  baseDeliveryFee: number;
+  /** What is actually charged: 0 once the free-delivery amount is reached. */
+  deliveryFee: number;
+  freeAbove: number;
+  /** "Add Rs X more for free delivery" - 0 when already free. */
+  addForFree: number;
+  twoHourFee: number;
+  /** Delivery days (0 = same day). */
+  days: number;
+  redOrder: boolean;
+  /** Beyond the last band: routed to the special long-distance rider, COD off. */
+  longDistance: boolean;
+  codAllowed: boolean;
+  codMessage?: string;
+  total: number;
+}
+
+type Pricing = ISettings['pricing'];
+
+const DEFAULTS: Pricing = {
+  handlingFee: 2,
+  bands: [
+    { upToKm: 9, minOrder: 199, freeAbove: 199, fee: 39, nextDay: false, redOrder: false },
+    { upToKm: 15, minOrder: 199, freeAbove: 999, fee: 39, nextDay: false, redOrder: true },
+    { upToKm: 25, minOrder: 199, freeAbove: 699, fee: 39, nextDay: true, redOrder: false },
+    { upToKm: 30, minOrder: 199, freeAbove: 1199, fee: 39, nextDay: true, redOrder: false },
+  ],
+  beyondDays: 3,
+  beyondMinOrder: 199,
+};
+
+/**
+ * Prices one delivery from the admin's distance bands. Distance to the
+ * warehouse picks the band; the slot can add the 2 hour charge. The
+ * handling fee is added in every case.
+ */
+export function quoteDelivery(
+  settings: Pick<ISettings, 'pricing' | 'twoHourCharge'> | null,
+  input: { subtotal: number; distanceKm: number | null; slot: Slot; fallbackFee?: number },
+): Quote {
+  const pricing = settings?.pricing?.bands?.length ? settings.pricing : DEFAULTS;
+  const handlingFee = pricing.handlingFee ?? DEFAULTS.handlingFee;
+  const bands = [...pricing.bands].sort((a, b) => a.upToKm - b.upToKm);
+  const { subtotal, distanceKm, slot } = input;
+
+  let minOrder = bands[0].minOrder;
+  let freeAbove = bands[0].freeAbove;
+  let fee = bands[0].fee;
+  let days = 0;
+  let redOrder = false;
+  let longDistance = false;
+
+  if (distanceKm !== null) {
+    const band = bands.find((b) => distanceKm <= b.upToKm);
+    if (band) {
+      minOrder = band.minOrder;
+      freeAbove = band.freeAbove;
+      fee = band.fee;
+      days = band.nextDay ? 1 : 0;
+      redOrder = band.redOrder;
+    } else {
+      const last = bands[bands.length - 1];
+      minOrder = pricing.beyondMinOrder ?? last.minOrder;
+      freeAbove = last.freeAbove;
+      fee = last.fee;
+      days = pricing.beyondDays ?? 3;
+      longDistance = true;
+    }
+  }
+  if (slot === 'nextDay' && days < 1) days = 1;
+
+  const twoHourFee = slot === 'twoHour' && settings?.twoHourCharge?.enabled ? settings.twoHourCharge.amount : 0;
+  const deliveryFee = subtotal >= freeAbove ? 0 : fee;
+  const addForFree = Math.max(0, round2(freeAbove - subtotal));
+
+  return {
+    distanceKm: distanceKm === null ? null : round2(distanceKm),
+    subtotal,
+    minOrder,
+    meetsMinOrder: subtotal >= minOrder,
+    handlingFee,
+    baseDeliveryFee: fee,
+    deliveryFee,
+    freeAbove,
+    addForFree,
+    twoHourFee,
+    days,
+    redOrder,
+    longDistance,
+    codAllowed: !longDistance,
+    codMessage: longDistance ? 'For long distance delivery, the "COD" option is not available.' : undefined,
+    total: round2(subtotal + deliveryFee + handlingFee + twoHourFee),
+  };
+}

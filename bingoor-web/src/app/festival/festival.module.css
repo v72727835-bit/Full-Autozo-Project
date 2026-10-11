@@ -1,0 +1,64 @@
+/* A wide cover, so the festival art reads like a shop window. */
+.banner {
+  position: relative;
+  aspect-ratio: 26 / 9;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  margin-bottom: 26px;
+  box-shadow: var(--sh-1);
+}
+
+.bannerSkeleton {
+  aspect-ratio: 26 / 9;
+  border-radius: var(--r-lg);
+  margin-bottom: 26px;
+  background: var(--surface-2);
+  animation: festivalPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes festivalPulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.title {
+  margin-bottom: 22px;
+}
+
+.section {
+  margin-bottom: 34px;
+}
+
+/* "See all" sits under the row, pointing into the aisle itself. */
+.seeAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 9px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-size: 13.5px;
+  font-weight: 700;
+  transition: background-color 0.16s var(--ease);
+}
+
+.seeAll:hover {
+  background: var(--surface-2);
+}
+
+@media (max-width: 899px) {
+  .banner,
+  .bannerSkeleton {
+    aspect-ratio: 16 / 9;
+    margin-bottom: 20px;
+  }
+
+  .section {
+    margin-bottom: 28px;
+  }
+}

@@ -1,0 +1,483 @@
+.top {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  padding-bottom: 8px;
+}
+
+/* --------------------------------- gallery -------------------------------- */
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 0.82;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}
+
+.shot {
+  width: 58%;
+  height: auto;
+  max-height: 74%;
+  object-fit: contain;
+}
+
+.off {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--ok);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+}
+
+.thumbs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  transition: border-color 0.16s var(--ease);
+}
+
+.thumb[data-on='true'] {
+  border-color: var(--brand);
+}
+
+.thumbArt {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+/* --------------------------------- buy box -------------------------------- */
+
+.title {
+  font-size: clamp(22px, 3.4vw, 30px);
+  margin: 4px 0 10px;
+}
+
+.facts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.unit {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--ink-3);
+}
+
+.priceBox {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.now {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.was {
+  font-size: 17px;
+  color: var(--ink-4);
+  text-decoration: line-through;
+}
+
+.tax {
+  display: block;
+  margin-top: 2px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.wish {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink-3);
+  margin-left: auto;
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease), background-color 0.16s var(--ease);
+}
+
+.wish:hover {
+  color: var(--brand);
+  border-color: var(--brand-line);
+}
+
+.wish[data-on='true'] {
+  color: var(--brand);
+  background: var(--brand-tint);
+  border-color: var(--brand-line);
+}
+
+/* An icon row, two to a line, the way a shopper scans the guarantees. */
+.promises {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+  padding: 16px;
+  background: var(--surface-3);
+  border-radius: var(--r-md);
+  margin-bottom: 18px;
+}
+
+.promises li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.promises li svg {
+  color: var(--brand);
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .promises {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shopLink {
+  color: var(--brand-text);
+  font-weight: 700;
+}
+
+.attrs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.attr {
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+/* --------------------------------- reviews -------------------------------- */
+
+.reviews {
+  margin-top: 44px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.revGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.revTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.whoName {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.whoWhen {
+  display: block;
+  font-size: 11.5px;
+}
+
+.revBody {
+  margin-top: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.starRow {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.star {
+  color: var(--line-2);
+  transition: color 0.14s var(--ease), transform 0.14s var(--ease);
+}
+
+.star[data-on='true'] {
+  color: #f0a92b;
+}
+
+.star:hover {
+  transform: scale(1.12);
+}
+
+.related {
+  margin-top: 44px;
+}
+
+@media (min-width: 880px) {
+  .top {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 44px;
+    align-items: start;
+  }
+  .revGrid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .write {
+    position: sticky;
+    top: 136px;
+  }
+}
+
+
+/* ------------------------- zoom, variants, share ------------------------- */
+
+.stage {
+  cursor: zoom-in;
+  width: 100%;
+}
+
+/* The magnifier only hints at the zoom; the whole photo is the target. */
+.zoomHint {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+}
+
+.lightbox {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(12, 6, 10, 0.88);
+  animation: lightFade 0.16s var(--ease);
+}
+
+@keyframes lightFade {
+  from {
+    opacity: 0;
+  }
+}
+
+.lightArt {
+  width: auto;
+  height: auto;
+  max-width: min(92vw, 720px);
+  max-height: 86vh;
+  object-fit: contain;
+  cursor: zoom-out;
+}
+
+.lightClose {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.lightClose:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.ratingLabel {
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.variants {
+  margin-bottom: 20px;
+}
+
+.variantsLabel {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.variantRow {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  /* Room for the saving badge, which sits on each chip's top edge. */
+  padding-top: 9px;
+}
+
+/* Each size is its own product, so a size is a link, not a toggle. */
+.variant {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+  padding: 11px 13px 9px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  transition: border-color 0.16s var(--ease), background-color 0.16s var(--ease);
+}
+
+/* The saving rides on the chip's top edge, where a shelf label would be. */
+.variantOff {
+  position: absolute;
+  top: -9px;
+  left: 9px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.variantPrices {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.variantMrp {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-4);
+  text-decoration: line-through;
+}
+
+.variantOut {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--bad);
+}
+
+.variant:hover {
+  border-color: var(--brand-line);
+}
+
+.variant[data-on='true'] {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+}
+
+.variant[data-out='true'] {
+  opacity: 0.55;
+}
+
+.variantName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.variantPrice {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--brand-text);
+}
+
+.shareRow {
+  margin-bottom: 20px;
+}

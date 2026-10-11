@@ -1,0 +1,76 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.form {
+  padding: 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .row {
+    flex-direction: column;
+  }
+}
+
+.cardBtn {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1.5px solid var(--bad);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--bad);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dialog {
+  width: min(340px, 100%);
+  padding: 20px;
+  border-radius: var(--r-lg, 18px);
+  background: var(--surface);
+  box-shadow: var(--sh-3);
+}
+
+.dialogTitle {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+}

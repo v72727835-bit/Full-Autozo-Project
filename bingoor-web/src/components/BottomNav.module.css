@@ -1,0 +1,60 @@
+.nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 50;
+  display: flex;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 0 8px;
+  color: var(--ink-4);
+  transition: color 0.16s var(--ease);
+}
+
+.tab[data-on='true'] {
+  color: var(--brand);
+}
+
+.ico {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.dot {
+  position: absolute;
+  top: -5px;
+  right: -9px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 9.5px;
+  font-weight: 800;
+  border: 2px solid var(--surface);
+}
+
+.label {
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+
+@media (min-width: 700px) {
+  .nav {
+    display: none;
+  }
+}

@@ -1,0 +1,151 @@
+.hintRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+/* The "?" beside the password label; its note shows on hover, focus and tap. */
+.tip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brand);
+  color: var(--brand-text);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: help;
+}
+
+.tipBox {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-25%);
+  width: max-content;
+  max-width: min(230px, 62vw);
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.14s var(--ease);
+  z-index: 5;
+}
+
+.tip:hover .tipBox,
+.tip:focus .tipBox,
+.tip:focus-within .tipBox {
+  opacity: 1;
+  visibility: visible;
+}
+
+.copyLogin {
+  display: block;
+  margin: -4px 0 14px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* The "Account Created" card shown right after sign-up. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dialog {
+  width: min(380px, 100%);
+  padding: 28px 22px 20px;
+  border-radius: var(--r-lg, 20px);
+  background: var(--surface);
+  text-align: center;
+  box-shadow: var(--sh-3, 0 20px 50px rgba(0, 0, 0, 0.3));
+}
+
+.tick {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--ok-tint, #e3f6ec);
+  color: var(--ok, #16a34a);
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.dialogTitle {
+  margin: 14px 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.dialogLead {
+  margin: 0 0 16px;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+
+.creds {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2, var(--surface-3));
+  text-align: left;
+}
+
+.creds > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.creds > div + div {
+  border-top: 1px solid var(--line);
+}
+
+.creds dt {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.creds dd {
+  margin: 0;
+  font-weight: 800;
+  word-break: break-all;
+}
+
+.continueLink {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}

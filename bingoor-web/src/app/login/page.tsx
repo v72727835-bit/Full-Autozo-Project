@@ -1,0 +1,125 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { Suspense, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import { facebookAccessToken, googleAccessToken } from '../../lib/social';
+import { Icon } from '../../components/Icon';
+import ps from './login.module.css';
+import { getErrorMessage } from '../../lib/client';
+import { AuthShell } from '../../components/AuthShell';
+import { Alert, Button, Field, Input, PageLoader } from '../../components/ui';
+
+function LoginInner() {
+  const { login, loginWithSocial } = useAuth();
+  const settings = useSettings();
+  const [usePhone, setUsePhone] = useState(false);
+  const [busy, setBusy] = useState<'google' | 'facebook' | null>(null);
+  const router = useRouter();
+  const next = useSearchParams().get('next') || '/';
+
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await login(identifier.trim(), password);
+      router.replace(next);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const social = async (provider: 'google' | 'facebook') => {
+    setError('');
+    const id = provider === 'google' ? settings?.social?.googleClientId : settings?.social?.facebookAppId;
+    if (!id) {
+      setError(`Login with ${provider === 'google' ? 'Gmail' : 'Facebook'} is coming soon. Please continue with your phone number for now.`);
+      return;
+    }
+    setBusy(provider);
+    try {
+      const token = provider === 'google' ? await googleAccessToken(id) : await facebookAccessToken(id);
+      await loginWithSocial(provider, token);
+      router.replace(next);
+    } catch (err) {
+      setError(err instanceof Error && !('isAxiosError' in err) ? err.message : getErrorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <AuthShell
+      title="Welcome back"
+      lead="Sign in with your phone number or email."
+      footer={
+        <>
+          New to Bingoor?{' '}
+          <Link href={`/signup?next=${encodeURIComponent(next)}`} style={{ color: 'var(--brand-text)', fontWeight: 700 }}>
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      {error ? <Alert tone="bad">{error}</Alert> : null}
+      <div className={ps.methods}>
+        <button type="button" className={ps.method} onClick={() => social('google')} disabled={busy !== null}>
+          <span className={ps.g}>G</span>
+          Continue with Gmail
+        </button>
+        <button type="button" className={ps.method} onClick={() => social('facebook')} disabled={busy !== null}>
+          <span className={ps.f}>f</span>
+          Continue with Facebook
+        </button>
+        <button type="button" className={ps.method} data-on={usePhone} onClick={() => setUsePhone((v) => !v)}>
+          <Icon name="phone" size={18} />
+          Continue with Phone number
+        </button>
+      </div>
+      {usePhone ? (
+      <form onSubmit={submit}>
+        <Field label="Your phone number" required>
+          <Input
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            autoComplete="username"
+            placeholder="9876543210"
+            required
+          />
+        </Field>
+        <Field label="Password" required>
+          <Input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </Field>
+        <Button type="submit" size="lg" full loading={loading}>
+          Login
+        </Button>
+      </form>
+      ) : null}
+    </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <LoginInner />
+    </Suspense>
+  );
+}

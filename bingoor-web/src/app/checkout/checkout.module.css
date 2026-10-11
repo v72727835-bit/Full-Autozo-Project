@@ -1,0 +1,236 @@
+.secHead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.secAction {
+  margin-left: auto;
+}
+
+.pick,
+.pay {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease), background-color 0.16s var(--ease);
+}
+
+.pick:hover,
+.pay:hover {
+  border-color: var(--brand-line);
+}
+
+.pick[data-on='true'],
+.pay[data-on='true'] {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+}
+
+.pick input,
+.pay input {
+  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+}
+
+.pickBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pickTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cap {
+  text-transform: capitalize;
+  font-size: 14px;
+}
+
+.pickWho {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.pickAddr {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.pays {
+  display: grid;
+  gap: 10px;
+}
+
+.pay {
+  align-items: center;
+}
+
+.payIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--brand-text);
+  flex-shrink: 0;
+}
+
+.payTitle {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.payBody {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.summary {
+  padding: 20px;
+}
+
+.items {
+  display: grid;
+  gap: 11px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.itemArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-xs);
+  background: var(--surface-3);
+  flex-shrink: 0;
+}
+
+.itemArtImg {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.itemQty {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.itemName {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.itemPrice {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.row[data-big='true'] {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.good {
+  color: var(--ok);
+  font-weight: 750;
+}
+
+@media (min-width: 920px) {
+  .summary {
+    padding: 20px;
+  }
+}
+
+/* The reasons an order cannot be placed (or just failed), where the customer is looking. */
+.blockers {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--bad);
+  border-radius: var(--r-md);
+  background: var(--bad-tint);
+  color: var(--bad-text, var(--bad));
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.blockers ul {
+  list-style: disc;
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.blockers li + li {
+  margin-top: 4px;
+}

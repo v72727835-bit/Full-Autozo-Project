@@ -1,0 +1,229 @@
+.group {
+  margin-bottom: 38px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+/* The share row pushes to the far end of the header. */
+.head > :last-child {
+  margin-left: auto;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Child aisles as a scrolling rail of chips. */
+.childRail {
+  margin: 18px 0 6px;
+}
+
+.childChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  padding: 7px 15px 7px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  transition: border-color 0.16s var(--ease), background-color 0.16s var(--ease);
+}
+
+.childChip:hover {
+  border-color: var(--brand-line);
+  background: var(--brand-tint);
+}
+
+.childFrame {
+  position: relative;
+  display: block;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.childArt {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+}
+
+.art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--tile, var(--brand-tint));
+  flex-shrink: 0;
+}
+
+.artImg {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.skTile {
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+}
+
+.skLabel {
+  height: 11px;
+  width: 70%;
+  margin: 8px auto 0;
+}
+
+/* ------------------- phone layout: title bar, rail, grid ------------------- */
+
+.mBar,
+.mSearch,
+.sideRail {
+  display: none;
+}
+
+.catBody {
+  display: block;
+}
+
+.catMain {
+  min-width: 0;
+}
+
+@media (max-width: 699px) {
+  .topBar,
+  .head,
+  .childRail {
+    display: none;
+  }
+
+  .mBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    margin: 0 -16px;
+    padding: 10px 12px;
+    background: var(--bg, var(--surface));
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mBack {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    border-radius: 50%;
+  }
+
+  .mTitle {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    text-align: center;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mSearch {
+    display: block;
+    margin: 10px 0 12px;
+  }
+
+  .catBody {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 10px;
+    margin: 0 -8px 0 -16px;
+    padding-right: 8px;
+  }
+
+  .sideRail {
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+    position: sticky;
+    top: 62px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    border-right: 1px solid var(--line);
+    scrollbar-width: none;
+  }
+
+  .railItem {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 4px;
+    text-align: center;
+    color: var(--ink-3);
+  }
+
+  .railItem[data-active='true'] {
+    background: var(--brand-tint);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .railItem[data-active='true']::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+    background: var(--brand);
+  }
+
+  .railFrame {
+    position: relative;
+    display: block;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+  }
+
+  .railArt {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+  }
+
+  .railName {
+    font-size: 12px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+}

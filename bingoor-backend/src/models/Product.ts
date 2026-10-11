@@ -1,0 +1,90 @@
+import { Schema, Types, model } from 'mongoose';
+import { uniqueSlug } from '../utils/helpers';
+
+export interface IProduct {
+  shop: Types.ObjectId;
+  /** Always the deepest (level 3) category, so listings can roll up cleanly. */
+  category: Types.ObjectId;
+  name: string;
+  slug: string;
+  brand?: string;
+  description?: string;
+  images: string[];
+  /** Fluent Emoji Flat key used when there is no photograph. */
+  icon?: string;
+  price: number; // selling price
+  mrp: number; // maximum retail price (>= price)
+  unit: string; // e.g. "1 kg", "500 ml", "1 pc"
+  stock: number;
+  /** Short chips shown under the name: "Cotton", "Spicy", "SPF 50". */
+  attributes: string[];
+  /** Drives the green/brown veg marker; empty for non-food. */
+  foodType: 'veg' | 'nonveg' | '';
+  tags: string[];
+  isActive: boolean;
+  rating: number;
+  ratingCount: number;
+  /** Shown instead of the count when set, e.g. "5L+", "20K", "12". */
+  ratingLabel?: string;
+  /** Products sharing a group are sizes/variants of one another (e.g. 100 g, 200 g). */
+  variantGroup?: string;
+  /** This product's chip in the size picker, e.g. "200 g". Defaults to `unit`. */
+  variantLabel?: string;
+  soldCount: number;
+  /** Hindi name; shown when a customer picks Hindi. */
+  nameHi?: string;
+  /** Hidden cart-points value for this size (0-50). */
+  points: number;
+  /** Admin-set ordering (lower first); the default is last, so unsorted items fall back to A-Z. */
+  sortCode: number;
+  /** Set when a seller listed it. */
+  seller?: Types.ObjectId;
+  /** Home-screen rows this product appears in (top / bottom of the home page). */
+  standardCategories?: Types.ObjectId[];
+}
+
+const productSchema = new Schema<IProduct>(
+  {
+    shop: { type: Schema.Types.ObjectId, ref: 'Shop', required: true, index: true },
+    category: { type: Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, unique: true, lowercase: true, trim: true },
+    brand: { type: String, trim: true, index: true },
+    description: { type: String, trim: true },
+    images: { type: [String], default: [] },
+    icon: String,
+    price: { type: Number, required: true, min: 0 },
+    mrp: { type: Number, required: true, min: 0 },
+    unit: { type: String, default: '1 pc', trim: true },
+    stock: { type: Number, default: 0, min: 0 },
+    attributes: { type: [String], default: [] },
+    foodType: { type: String, enum: ['veg', 'nonveg', ''], default: '' },
+    tags: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    ratingCount: { type: Number, default: 0 },
+    ratingLabel: { type: String, trim: true },
+    variantGroup: { type: String, trim: true, lowercase: true, index: true },
+    variantLabel: { type: String, trim: true },
+    soldCount: { type: Number, default: 0 },
+    nameHi: { type: String, trim: true },
+    points: { type: Number, default: 0, min: 0, max: 50 },
+    sortCode: { type: Number, default: 1_000_000 },
+    seller: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    standardCategories: { type: [{ type: Schema.Types.ObjectId, ref: 'StandardCategory' }], default: undefined, index: true },
+  },
+  { timestamps: true },
+);
+
+productSchema.index({ isActive: 1, category: 1, price: 1 });
+productSchema.index({ isActive: 1, soldCount: -1 });
+productSchema.index({ name: 1 });
+productSchema.index({ isActive: 1, brand: 1 });
+
+productSchema.pre('validate', function (next) {
+  if (!this.slug) this.slug = uniqueSlug(this.name);
+  if (this.mrp < this.price) this.mrp = this.price;
+  next();
+});
+
+export const Product = model<IProduct>('Product', productSchema);

@@ -1,0 +1,199 @@
+import bcrypt from 'bcryptjs';
+import { HydratedDocument, Model, Schema, Types, model } from 'mongoose';
+
+export interface IAddress {
+  _id: Types.ObjectId;
+  label: 'home' | 'work' | 'other';
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  location?: { lat: number; lng: number };
+  isDefault: boolean;
+}
+
+export interface IUser {
+  name: string;
+  phone: string;
+  email?: string;
+  password: string;
+  role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller';
+  warehouse?: Types.ObjectId;
+  avatar?: string;
+  isActive: boolean;
+  addresses: Types.DocumentArray<IAddress>;
+  wishlist: Types.ObjectId[];
+  refreshTokens: { hash: string; createdAt: Date }[];
+  lastLoginAt?: Date;
+  /** Riders: last request from the app; recent = online. Cleared on logout. */
+  lastSeenAt?: Date | null;
+  /** Riders: paused riders get no new orders until an admin resumes them. */
+  riderPaused?: boolean;
+  riderPausedAt?: Date | null;
+  /** Riders: deliveries they accepted and then dropped. */
+  riderCancelCount?: number;
+  /** The one rider (or few) who receives orders beyond the last distance band. */
+  riderLongDistance?: boolean;
+  /** Customers who signed in with Google / Facebook. */
+  googleId?: string;
+  facebookId?: string;
+  /** Sellers: unique id shown on their dashboard and in the admin panel. */
+  sellerId?: string;
+  /** Sellers: the warehouses whose orders they see and where their listings are stocked. */
+  sellerWarehouses?: Types.ObjectId[];
+  /** Sellers: the one-time registration form. Once `locked`, only the admin can clear it. */
+  sellerProfile?: {
+    firm: string;
+    address: string;
+    mobile: string;
+    aadhaar?: string;
+    pan?: string;
+    bankName: string;
+    accountNumber: string;
+    holderName: string;
+    accountType: 'current' | 'savings';
+    ifsc: string;
+    locked: boolean;
+    submittedAt: Date;
+  };
+  /** Sellers: orders placed before this moment have been seen (popup closed). */
+  sellerAckAt?: Date;
+  /** Warehouses that registered themselves: no login until the admin approves. Absent = admin-created (approved). */
+  sellerStatus?: 'pending' | 'approved' | 'rejected';
+  sellerRejectReason?: string;
+  warehouseApplication?: {
+    shopName: string;
+    line1: string;
+    city: string;
+    state: string;
+    pincode: string;
+    lat: number;
+    lng: number;
+    gst?: string;
+    note?: string;
+    submittedAt: Date;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface IUserMethods {
+  comparePassword(candidate: string): Promise<boolean>;
+}
+
+export type UserDoc = HydratedDocument<IUser, IUserMethods>;
+type UserModel = Model<IUser, {}, IUserMethods>;
+
+const addressSchema = new Schema<IAddress>({
+  label: { type: String, enum: ['home', 'work', 'other'], default: 'home' },
+  name: { type: String, required: true, trim: true },
+  phone: { type: String, required: true, trim: true },
+  line1: { type: String, required: true, trim: true },
+  line2: { type: String, trim: true },
+  landmark: { type: String, trim: true },
+  city: { type: String, required: true, trim: true },
+  state: { type: String, required: true, trim: true },
+  pincode: { type: String, required: true, trim: true },
+  location: { lat: Number, lng: Number },
+  isDefault: { type: Boolean, default: false },
+});
+
+const userSchema = new Schema<IUser, UserModel, IUserMethods>(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    phone: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, lowercase: true, trim: true, unique: true, sparse: true },
+    password: { type: String, required: true, select: false },
+    role: {
+      type: String,
+      enum: ['customer', 'rider', 'shop', 'admin', 'seller'],
+      default: 'customer',
+      index: true,
+    },
+    avatar: String,
+    warehouse: { type: Schema.Types.ObjectId, ref: 'Shop', index: true },
+    isActive: { type: Boolean, default: true },
+    addresses: [addressSchema],
+    wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
+    refreshTokens: {
+      type: [{ hash: String, createdAt: { type: Date, default: Date.now }, _id: false }],
+      select: false,
+      default: [],
+    },
+    lastLoginAt: Date,
+    lastSeenAt: { type: Date, default: null },
+    riderPaused: { type: Boolean, default: false },
+    riderPausedAt: { type: Date, default: null },
+    riderCancelCount: { type: Number, default: 0 },
+    riderLongDistance: { type: Boolean, default: false },
+    googleId: { type: String, unique: true, sparse: true },
+    facebookId: { type: String, unique: true, sparse: true },
+    sellerId: { type: String, unique: true, sparse: true },
+    sellerWarehouses: { type: [{ type: Schema.Types.ObjectId, ref: 'Shop' }], default: undefined },
+    sellerProfile: {
+      type: {
+        firm: String,
+        address: String,
+        mobile: String,
+        aadhaar: String,
+        pan: String,
+        bankName: String,
+        accountNumber: String,
+        holderName: String,
+        accountType: { type: String, enum: ['current', 'savings'] },
+        ifsc: String,
+        locked: { type: Boolean, default: true },
+        submittedAt: Date,
+        _id: false,
+      },
+      default: undefined,
+    },
+    sellerAckAt: Date,
+    sellerStatus: { type: String, enum: ['pending', 'approved', 'rejected'], index: true },
+    sellerRejectReason: String,
+    warehouseApplication: {
+      type: {
+        shopName: String,
+        line1: String,
+        city: String,
+        state: String,
+        pincode: String,
+        lat: Number,
+        lng: Number,
+        gst: String,
+        note: String,
+        submittedAt: Date,
+        _id: false,
+      },
+      default: undefined,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (_doc, ret: Record<string, unknown>) => {
+        delete ret.password;
+        delete ret.refreshTokens;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  },
+);
+
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+userSchema.methods.comparePassword = function (candidate: string) {
+  return bcrypt.compare(candidate, this.password);
+};
+
+export const User = model<IUser, UserModel>('User', userSchema);

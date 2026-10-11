@@ -1,0 +1,616 @@
+import { z } from 'zod';
+
+export const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+
+/** Indian mobile number. Accepts +91 / 91 prefix, spaces and dashes; stores 10 digits. */
+export const phone = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, ''))
+  .pipe(z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'));
+
+const password = z.string().min(6, 'Password must be at least 6 characters').max(72);
+const boolFromQuery = z.enum(['true', 'false']).transform((v) => v === 'true');
+
+/* ---------- common ---------- */
+export const idParam = z.object({ id: objectId });
+export const pagination = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+/* ---------- auth ---------- */
+export const registerBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email()
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  password,
+});
+
+export const loginBody = z.object({
+  identifier: z.string().trim().min(3), // phone or email
+  password: z.string().min(1),
+});
+
+export const refreshBody = z.object({ refreshToken: z.string().min(10) });
+
+export const changePasswordBody = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: password,
+});
+
+/* ---------- profile / addresses ---------- */
+export const updateProfileBody = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    email: z.string().trim().toLowerCase().email(),
+    avatar: z.string().url(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+const addressFields = {
+  label: z.enum(['home', 'work', 'other']).default('home'),
+  name: z.string().trim().min(2).max(80),
+  phone,
+  line1: z.string().trim().min(3).max(200),
+  line2: z.string().trim().max(200).optional(),
+  landmark: z.string().trim().max(100).optional(),
+  city: z.string().trim().min(2).max(60),
+  state: z.string().trim().min(2).max(60),
+  pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+  location: z
+    .object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
+    .optional(),
+  isDefault: z.boolean().optional(),
+};
+export const addressBody = z.object(addressFields);
+export const addressUpdateBody = z
+  .object(addressFields)
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export const addressIdParam = z.object({ addressId: objectId });
+export const productIdParam = z.object({ productId: objectId });
+
+/* ---------- catalog ---------- */
+export const geoQuery = z.object({
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+});
+
+export const homeQuery = geoQuery.refine((v) => (v.lat === undefined) === (v.lng === undefined), {
+  message: 'Send both lat and lng, or neither',
+});
+
+export const categoriesQuery = z.object({
+  parent: objectId.optional(),
+  level: z.coerce.number().int().min(1).max(3).optional(),
+  all: boolFromQuery.optional(), // all=true -> flat list of every level
+});
+
+export const shopsQuery = pagination
+  .merge(geoQuery)
+  .extend({
+    radiusKm: z.coerce.number().min(1).max(100).default(10),
+    q: z.string().trim().max(60).optional(),
+    isOpen: boolFromQuery.optional(),
+  })
+  .refine((v) => (v.lat === undefined) === (v.lng === undefined), {
+    message: 'Send both lat and lng, or neither',
+  });
+
+export const PRODUCT_SORTS = ['relevance', 'newest', 'price_asc', 'price_desc', 'popular', 'rating', 'name'] as const;
+
+export const productsQuery = pagination.extend({
+  q: z.string().trim().max(60).optional(),
+  category: z.string().trim().optional(), // id or slug
+  shop: z.string().trim().optional(), // id or slug
+  brand: z.string().trim().max(60).optional(),
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
+  inStock: boolFromQuery.optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  minDiscount: z.coerce.number().min(0).max(100).optional(),
+  foodType: z.enum(['veg', 'nonveg']).optional(),
+  sort: z.enum(PRODUCT_SORTS).default('relevance'),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+});
+
+export const suggestQuery = z.object({
+  q: z.string().trim().min(1).max(60),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+});
+
+export const idOrSlugParam = z.object({ idOrSlug: z.string().trim().min(1).max(120) });
+
+/* ---------- reviews ---------- */
+export const reviewBody = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(1000).optional(),
+});
+
+/* ---------- cart ---------- */
+export const addCartItemBody = z.object({
+  productId: objectId,
+  quantity: z.number().int().min(1).max(20).default(1),
+});
+export const updateCartItemBody = z.object({ quantity: z.number().int().min(0).max(20) });
+
+/* ---------- orders ---------- */
+export const placeOrderBody = z.object({
+  addressId: objectId,
+  paymentMethod: z.enum(['cod', 'online']).default('cod'),
+  note: z.string().trim().max(300).optional(),
+  slot: z.enum(['instant', 'twoHour', 'nextDay']).default('instant'),
+});
+
+export const socialLoginBody = z.object({ accessToken: z.string().min(10).max(4000) });
+
+export const confirmPaymentBody = z.object({
+  razorpay_order_id: z.string().min(5).max(80),
+  razorpay_payment_id: z.string().min(5).max(80),
+  razorpay_signature: z.string().min(10).max(200),
+});
+
+export const ordersQuery = pagination.extend({
+  status: z
+    .enum(['placed', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled', 'rejected'])
+    .optional(),
+  active: boolFromQuery.optional(), // active=true -> only in-progress orders
+});
+
+export const cancelOrderBody = z.object({ reason: z.string().trim().max(200).optional() });
+export const riderOrdersQuery = pagination.extend({
+  status: z.enum(['ready_for_pickup', 'out_for_delivery', 'delivered']).optional(),
+});
+
+export const riderLocationBody = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+
+export const riderDeliveryBody = z.object({ otp: z.string().regex(/^\d{4}$/, 'Enter the 4-digit delivery OTP') });
+
+/* ---------- admin ---------- */
+export const adminLoginBody = z.object({
+  identifier: z.string().trim().min(3),
+  password: z.string().min(1),
+});
+
+const geoPoint = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+
+export const adminProductBody = z.object({
+  shop: objectId,
+  category: objectId,
+  name: z.string().trim().min(2).max(150),
+  brand: z.string().trim().max(60).optional(),
+  description: z.string().trim().max(2000).optional(),
+  images: z.array(z.string().url()).max(10).default([]),
+  icon: z.string().trim().max(80).optional(),
+  price: z.number().min(0),
+  mrp: z.number().min(0),
+  unit: z.string().trim().min(1).max(30).default('1 pc'),
+  stock: z.number().int().min(0).default(0),
+  attributes: z.array(z.string().trim().max(40)).max(10).default([]),
+  foodType: z.enum(['veg', 'nonveg', '']).default(''),
+  tags: z.array(z.string().trim().max(40)).max(10).default([]),
+  isActive: z.boolean().default(true),
+  ratingLabel: z.string().trim().max(20).optional(),
+  variantGroup: z.string().trim().max(60).optional(),
+  variantLabel: z.string().trim().max(30).optional(),
+  nameHi: z.string().trim().max(150).optional(),
+  /** Hidden cart-points value (0-50) for this size; never shown to customers. */
+  points: z.coerce.number().int().min(0).max(50).optional(),
+  /** Admin-only ordering; lower comes first. Empty = alphabetical. */
+  sortCode: z.preprocess((v) => (v === null || v === '' ? 1_000_000 : v), z.coerce.number().int().min(0).max(1_000_000)).optional(),
+  /** Home-screen rows (Standard categories) this product is shown in. */
+  standardCategories: z.array(objectId).max(10).optional(),
+});
+export const adminProductUpdateBody = adminProductBody.partial();
+
+export const adminProductsQuery = pagination.extend({
+  q: z.string().trim().max(60).optional(),
+  category: objectId.optional(),
+  shop: objectId.optional(),
+  isActive: boolFromQuery.optional(),
+});
+
+export const adminCategoryBody = z.object({
+  name: z.string().trim().min(1).max(80),
+  nameHi: z.string().trim().max(80).optional(),
+  parent: objectId.nullable().default(null),
+  level: z.coerce.number().int().min(1).max(3),
+  icon: z.string().trim().max(80).optional(),
+  image: z.string().trim().max(300).optional(),
+  tint: z.string().trim().max(20).optional(),
+  sortOrder: z.coerce.number().int().default(0),
+  isActive: z.boolean().default(true),
+});
+export const adminCategoryUpdateBody = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    nameHi: z.string().trim().max(80),
+    parent: objectId.nullable(),
+    icon: z.string().trim().max(80),
+    image: z.string().trim().max(300),
+    tint: z.string().trim().max(20),
+    sortOrder: z.coerce.number().int(),
+    isActive: z.boolean(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+export const adminShopBody = z.object({
+  name: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(1000).optional(),
+  logo: z.string().trim().max(300).optional(),
+  banner: z.string().trim().max(300).optional(),
+  phone: z.string().trim().max(20).optional(),
+  address: z.object({
+    line1: z.string().trim().max(200).optional(),
+    city: z.string().trim().max(60).optional(),
+    state: z.string().trim().max(60).optional(),
+    pincode: z.string().trim().max(10).optional(),
+  }).default({}),
+  location: geoPoint.default({ lat: 24.7, lng: 83.07 }), // Robertsganj, Sonbhadra
+  isOpen: z.boolean().default(true),
+  isActive: z.boolean().default(true),
+  deliveryRadiusKm: z.number().min(1).max(100).default(10),
+  minOrderAmount: z.number().min(0).default(0),
+  deliveryFee: z.number().min(0).default(30),
+});
+export const adminShopUpdateBody = adminShopBody.partial();
+
+export const adminOrderStatusBody = z.object({
+  status: z.enum(['placed', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled', 'rejected']),
+  note: z.string().trim().max(300).optional(),
+});
+
+export const adminOrdersQuery = pagination.extend({
+  rider: z.string().trim().max(60).optional(),
+  status: z
+    .enum(['placed', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled', 'rejected'])
+    .optional(),
+  q: z.string().trim().max(60).optional(),
+});
+
+export const adminUsersQuery = pagination.extend({
+  role: z.enum(['customer', 'rider', 'shop', 'admin']).optional(),
+  q: z.string().trim().max(60).optional(),
+});
+
+export const adminUserUpdateBody = z
+  .object({
+    isActive: z.boolean(),
+    role: z.enum(['customer', 'rider', 'shop', 'admin']),
+    warehouse: objectId.nullable(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+export const adminRiderBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  email: z.string().trim().toLowerCase().email().optional().or(z.literal('').transform(() => undefined)),
+  password: password,
+  warehouse: objectId,
+});
+
+/* ---------- admin: banners ---------- */
+
+export const adminBannerBody = z.object({
+  title: z.string().trim().max(80).optional(),
+  subtitle: z.string().trim().max(140).optional(),
+  cta: z.string().trim().max(30).optional(),
+  image: z.string().trim().min(1, 'Upload a banner image').max(300),
+  category: objectId.nullable().default(null),
+  sortOrder: z.coerce.number().int().default(0),
+  isActive: z.boolean().default(true),
+});
+export const adminBannerUpdateBody = z
+  .object({
+    title: z.string().trim().max(80),
+    subtitle: z.string().trim().max(140),
+    cta: z.string().trim().max(30),
+    image: z.string().trim().min(1).max(300),
+    category: objectId.nullable(),
+    sortOrder: z.coerce.number().int(),
+    isActive: z.boolean(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+/* ---------- admin: coupons & account ---------- */
+
+export const adminCouponBody = z.object({
+  code: z.string().trim().min(3).max(24).transform((s) => s.toUpperCase()),
+  description: z.string().trim().max(200).optional(),
+  discountType: z.enum(['percent', 'flat']).default('percent'),
+  value: z.coerce.number().min(0),
+  maxDiscount: z.coerce.number().min(0).default(0),
+  minOrderAmount: z.coerce.number().min(0).default(0),
+  startsAt: z.coerce.date().nullable().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
+  usageLimit: z.coerce.number().int().min(0).default(0),
+  perUserLimit: z.coerce.number().int().min(0).default(1),
+  shops: z.array(objectId).default([]),
+  isActive: z.boolean().default(true),
+});
+export const adminCouponUpdateBody = adminCouponBody.partial().refine(
+  (v) => Object.keys(v).length > 0,
+  'Nothing to update',
+);
+
+export const adminCouponsQuery = pagination.extend({
+  q: z.string().trim().max(40).optional(),
+  isActive: z.coerce.boolean().optional(),
+});
+
+export const adminStatsQuery = z.object({
+  days: z.coerce.number().int().min(7).max(90).optional(),
+});
+
+export const adminProfileBody = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    email: z.string().trim().email().max(120),
+    phone: z.string().trim().min(10).max(15),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+export const adminPasswordBody = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8).max(72),
+});
+
+/* ---------- settings, notices, care chat, stock alerts, riders ---------- */
+
+export const adminSettingsBody = z
+  .object({
+    festival: z
+      .object({
+        enabled: z.boolean(),
+        name: z.string().trim().min(1).max(30),
+        banner: z.string().trim().max(300),
+        sections: z.array(z.object({ title: z.string().trim().max(60), category: objectId })).max(20),
+      })
+      .partial(),
+    sixDay: z.object({ days: z.coerce.number().int().min(1).max(60), categories: z.array(objectId).max(100) }).partial(),
+    cod: z.object({ disabledCategories: z.array(objectId).max(100), message: z.string().trim().max(300) }).partial(),
+    riderCodLimit: z.coerce.number().min(0).max(1_000_000),
+    appLinks: z.object({ android: z.string().trim().max(500), ios: z.string().trim().max(500) }).partial(),
+    imageMaxKb: z.coerce.number().int().min(20).max(5000),
+    supportPhone: z.string().trim().max(20),
+    deliverySlots: z
+      .array(z.object({ key: z.enum(['instant', 'twoHour', 'nextDay']), label: z.string().trim().min(1).max(30), enabled: z.boolean() }))
+      .max(3),
+    twoHourCharge: z.object({ enabled: z.boolean(), amount: z.coerce.number().min(0).max(1000) }).partial(),
+    pricing: z
+      .object({
+        handlingFee: z.coerce.number().min(0).max(500),
+        bands: z
+          .array(
+            z.object({
+              upToKm: z.coerce.number().min(1).max(500),
+              minOrder: z.coerce.number().min(0).max(100000),
+              freeAbove: z.coerce.number().min(0).max(100000),
+              fee: z.coerce.number().min(0).max(1000),
+              nextDay: z.boolean().default(false),
+              redOrder: z.boolean().default(false),
+            }),
+          )
+          .max(10),
+        beyondDays: z.coerce.number().int().min(1).max(30),
+        beyondMinOrder: z.coerce.number().min(0).max(100000),
+      })
+      .partial(),
+    filters: z
+      .array(
+        z.object({
+          key: z.string().trim().min(1).max(30),
+          label: z.string().trim().min(1).max(30),
+          kind: z.enum(['brand', 'price', 'discount', 'rating', 'diet', 'stock']),
+          enabled: z.boolean(),
+        }),
+      )
+      .max(20),
+    priceSortEnabled: z.boolean(),
+    googleReviewUrl: z.string().trim().max(500),
+    cartPoints: z
+      .object({ enabled: z.boolean(), target: z.coerce.number().int().min(1).max(5000), suggestions: z.array(objectId).max(60) })
+      .partial(),
+  })
+  .partial();
+
+export const noticeBody = z.object({ message: z.string().trim().min(1).max(500) });
+
+const indianPhone = z
+  .string()
+  .trim()
+  .transform((s) => s.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, ''))
+  .refine((s) => /^[6-9]\d{9}$/.test(s), 'Enter a valid 10-digit mobile number');
+
+export const notifyMeBody = z.object({ phone: indianPhone });
+export const ticketBody = z.object({ query: z.string().trim().min(3).max(1000), phone: indianPhone });
+export const ticketMessageBody = z.object({ text: z.string().trim().min(1).max(1000) });
+export const ticketStatusBody = z.object({ status: z.enum(['open', 'closed']) });
+export const adminTicketsQuery = pagination.extend({ status: z.enum(['open', 'closed']).optional() });
+export const stockAlertUpdateBody = z.object({ notified: z.boolean() });
+export const adminRidersQuery = z.object({ q: z.string().trim().max(60).optional(), online: boolFromQuery.optional() });
+export const riderPauseBody = z.object({ paused: z.boolean() });
+
+/* ---------- enquiry forms ---------- */
+export const ENQUIRY_KINDS = ['city_manager', 'invest', 'delivery_partner', 'seller', 'advertise', 'complaint'] as const;
+export const enquiryBody = z.object({
+  kind: z.enum(ENQUIRY_KINDS),
+  fullName: z.string().trim().min(2).max(100),
+  email: z.string().trim().toLowerCase().email().max(120),
+  mobile: indianPhone,
+  otherPhone: z.string().trim().max(20).optional(),
+  reason: z.string().trim().min(3).max(2000),
+});
+export const adminEnquiriesQuery = pagination.extend({ kind: z.enum(ENQUIRY_KINDS).optional() });
+export const riderLongDistanceBody = z.object({ longDistance: z.boolean() });
+export const quoteQuery = z.object({
+  addressId: z.string().trim().optional(),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  slot: z.enum(['instant', 'twoHour', 'nextDay']).default('instant'),
+  paymentMethod: z.enum(['cod', 'online']).default('cod'),
+});
+
+/* ---------- sellers ---------- */
+export const sellerProfileBody = z.object({
+  firm: z.string().trim().min(2).max(120),
+  address: z.string().trim().min(5).max(300),
+  mobile: indianPhone,
+  aadhaar: z.string().trim().regex(/^\d{12}$/, 'Aadhaar must be 12 digits').optional().or(z.literal('').transform(() => undefined)),
+  pan: z.string().trim().toUpperCase().regex(/^[A-Z]{5}\d{4}[A-Z]$/, 'Enter a valid PAN').optional().or(z.literal('').transform(() => undefined)),
+  bankName: z.string().trim().min(2).max(80),
+  accountNumber: z.string().trim().regex(/^\d{6,20}$/, 'Enter a valid account number'),
+  accountType: z.enum(['current', 'savings']),
+  ifsc: z.string().trim().toUpperCase().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Enter a valid IFSC code'),
+});
+export const sellerProductBody = z.object({
+  category: objectId,
+  warehouse: objectId.optional(),
+  name: z.string().trim().min(2).max(150),
+  nameHi: z.string().trim().max(150).optional(),
+  brand: z.string().trim().max(60).optional(),
+  description: z.string().trim().max(2000).optional(),
+  images: z.array(z.string().url()).max(10).default([]),
+  price: z.number().min(0),
+  mrp: z.number().min(0),
+  unit: z.string().trim().min(1).max(30).default('1 pc'),
+  stock: z.number().int().min(0).default(0),
+  attributes: z.array(z.string().trim().max(40)).max(10).default([]),
+  foodType: z.enum(['veg', 'nonveg', '']).default(''),
+  tags: z.array(z.string().trim().max(40)).max(15).default([]),
+  variantGroup: z.string().trim().max(60).optional(),
+  variantLabel: z.string().trim().max(30).optional(),
+});
+export const sellerProductUpdateBody = z
+  .object({
+    stock: z.number().int().min(0),
+    isActive: z.boolean(),
+    price: z.number().min(0),
+    mrp: z.number().min(0),
+    name: z.string().trim().min(2).max(150),
+    nameHi: z.string().trim().max(150),
+    brand: z.string().trim().max(60),
+    description: z.string().trim().max(2000),
+    unit: z.string().trim().min(1).max(30),
+    images: z.array(z.string().url()).max(10),
+    category: objectId,
+    foodType: z.enum(['veg', 'nonveg', '']),
+    attributes: z.array(z.string().trim().max(40)).max(10),
+    tags: z.array(z.string().trim().max(40)).max(15),
+    variantGroup: z.string().trim().max(60),
+    variantLabel: z.string().trim().max(30),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export const adminSellerBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  email: z.string().trim().toLowerCase().email().optional().or(z.literal('').transform(() => undefined)),
+  password: password,
+  warehouses: z.array(objectId).min(1, 'Select at least one warehouse').max(50),
+});
+export const sellerWarehousesBody = z.object({ warehouses: z.array(objectId).min(1, 'Select at least one warehouse').max(50) });
+export const assignRiderBody = z.object({ rider: objectId });
+export const sellerOrderStatusBody = z.object({
+  status: z.enum(['accepted', 'rejected', 'preparing', 'ready_for_pickup', 'cancelled']),
+  note: z.string().trim().max(300).optional(),
+});
+export const sellerOrdersQuery = pagination.extend({
+  q: z.string().trim().max(40).optional(),
+  status: z.enum(['placed', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled', 'rejected']).optional(),
+});
+export const adminSellersQuery = pagination.extend({ q: z.string().trim().max(60).optional() });
+export const activeBody = z.object({ isActive: z.boolean() });
+
+export const warehouseLoginBody = z.object({
+  name: z.string().trim().min(2).max(80).optional(),
+  phone,
+  password: password.optional(),
+  isActive: z.boolean().optional(),
+});
+export const sellerRiderBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  password: password,
+  warehouse: objectId.optional(),
+});
+
+export const standardCategoryBody = z.object({
+  name: z.string().trim().min(2).max(60),
+  nameHi: z.string().trim().max(60).optional(),
+  position: z.enum(['top', 'bottom']).default('top'),
+  sortOrder: z.coerce.number().int().min(0).max(100000).default(0),
+  isActive: z.boolean().default(true),
+});
+export const standardCategoryUpdateBody = standardCategoryBody.partial();
+
+/** Secrets are only changed when a new value is sent; `clear...` removes a saved one. */
+export const integrationsBody = z.object({
+  googleClientId: z.string().trim().max(300).optional(),
+  facebookAppId: z.string().trim().max(100).optional(),
+  facebookAppSecret: z.string().trim().max(200).optional(),
+  clearFacebookSecret: z.boolean().optional(),
+  razorpayKeyId: z.string().trim().max(100).optional(),
+  razorpayKeySecret: z.string().trim().max(200).optional(),
+  clearRazorpaySecret: z.boolean().optional(),
+  razorpayEnabled: z.boolean().optional(),
+});
+
+/* ---------- warehouse self-registration ---------- */
+export const warehouseRegisterBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone: indianPhone,
+  email: z.string().trim().toLowerCase().email().max(120).optional(),
+  password,
+  shopName: z.string().trim().min(2).max(100),
+  line1: z.string().trim().min(5).max(200),
+  city: z.string().trim().min(2).max(60),
+  state: z.string().trim().min(2).max(60),
+  pincode: z.string().trim().regex(/^\d{6}$/, 'Enter a 6-digit PIN code'),
+  location: z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
+  gst: z.string().trim().max(20).optional(),
+  note: z.string().trim().max(500).optional(),
+});
+export const warehouseApplicationsQuery = pagination.extend({ status: z.enum(['pending', 'approved', 'rejected']).optional() });
+export const warehouseRejectBody = z.object({ reason: z.string().trim().min(3).max(300) });
+
+/* ---------- warehouse panel ---------- */
+export const sellerProductsQuery = pagination.extend({
+  q: z.string().trim().max(60).optional(),
+  status: z.enum(['live', 'off', 'out', 'low']).optional(),
+  category: objectId.optional(),
+});
+export const sellerShopBody = z
+  .object({
+    name: z.string().trim().min(2).max(100),
+    description: z.string().trim().max(500),
+    phone: z.string().trim().max(20),
+    logo: z.string().url().or(z.literal('')),
+    banner: z.string().url().or(z.literal('')),
+    isOpen: z.boolean(),
+    deliveryRadiusKm: z.number().min(0).max(100),
+    minOrderAmount: z.number().min(0).max(100000),
+    deliveryFee: z.number().min(0).max(5000),
+    address: z.object({ line1: z.string().trim().max(200), city: z.string().trim().max(60), state: z.string().trim().max(60), pincode: z.string().trim().max(10) }).partial(),
+    location: z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export const sellerCustomersQuery = pagination.extend({ q: z.string().trim().max(60).optional() });

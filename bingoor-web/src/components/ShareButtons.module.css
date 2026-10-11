@@ -1,0 +1,63 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  transition: transform 0.12s var(--ease), background-color 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* Each network in its own colour, so the row is scannable at a glance. */
+.wa:hover {
+  background: #25d366;
+  border-color: #25d366;
+  color: #fff;
+}
+
+.fb:hover {
+  background: #1877f2;
+  border-color: #1877f2;
+  color: #fff;
+}
+
+.tw:hover {
+  background: #0f1419;
+  border-color: #0f1419;
+  color: #fff;
+}
+
+.more:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* The compact row rides on a card header rather than its own line. */
+.compact .btn {
+  width: 32px;
+  height: 32px;
+}

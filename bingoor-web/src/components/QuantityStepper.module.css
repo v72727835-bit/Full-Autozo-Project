@@ -1,0 +1,95 @@
+.add,
+.step {
+  height: 40px;
+  width: 96px;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+
+.sm.add,
+.sm.step {
+  height: 34px;
+  width: 78px;
+}
+
+/* ------------------------------- add state ------------------------------- */
+
+.add {
+  border: 1.5px solid var(--brand-line);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease),
+    transform 0.12s var(--ease);
+}
+
+.sm.add {
+  font-size: 12.5px;
+}
+
+.add:hover:not(:disabled) {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+
+.add:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.add:disabled {
+  background: var(--surface-3);
+  border-color: var(--line);
+  color: var(--ink-4);
+  cursor: not-allowed;
+}
+
+/* ------------------------------ stepper state ---------------------------- */
+
+.step {
+  background: var(--brand);
+  color: var(--brand-ink);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  box-shadow: var(--sh-brand);
+  transition: opacity 0.15s var(--ease);
+}
+
+.step[data-busy='true'] {
+  opacity: 0.6;
+}
+
+.step button {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: inherit;
+}
+
+.step button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.qty {
+  font-size: 15px;
+  font-weight: 800;
+  min-width: 18px;
+  text-align: center;
+}
+
+.sm .qty {
+  font-size: 13.5px;
+}
+
+/* Two cards to a row on a 320px phone leave about 117px inside each card. */
+@media (max-width: 380px) {
+  .add,
+  .step {
+    width: 84px;
+    height: 38px;
+  }
+}

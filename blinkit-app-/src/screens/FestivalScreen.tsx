@@ -1,0 +1,148 @@
+import Icon from '@react-native-vector-icons/ionicons/static';
+import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { Image, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { ProductCard } from '../components/ProductCard';
+import type { TabScreenProps } from '../navigation/TabsContext';
+import type { AppNav } from '../navigation/types';
+import { useFestivalQuery } from '../store/catalogApi';
+import { useDeliveryPointKey } from '../store/deliveryPoint';
+import { gutter, ms, radius, space, themed, useTheme } from '../theme';
+import { Banner, EmptyState } from '../ui/Feedback';
+import { Screen } from '../ui/Screen';
+import { ProductCardSkeleton, SkeletonBlock } from '../ui/Skeleton';
+import { Txt } from '../ui/Text';
+import { useGrid } from '../utils/layout';
+
+/**
+ * The festival tab - Rakhi, Diwali, whatever the admin has running.
+ *
+ * Everything on it comes from Store Settings: the name on the tab, the cover
+ * art, and which aisles make up the rows. A new festival is a few minutes in
+ * the admin panel rather than a release.
+ */
+export function FestivalScreen({ active }: TabScreenProps) {
+  const nav = useNavigation<AppNav>();
+  const { c } = useTheme();
+  const grid = useGrid(158, space.md);
+  const area = useDeliveryPointKey();
+  const { data, error: queryError, isLoading, refetch } = useFestivalQuery(area, { skip: !active });
+  const [refreshing, setRefreshing] = useState(false);
+
+  const error = typeof queryError === 'string' ? queryError : queryError ? 'Something went wrong' : null;
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  if (isLoading && !data) {
+    return (
+      <Screen>
+        <ScrollView contentContainerStyle={styles.content}>
+          <SkeletonBlock height={ms(150)} radius={radius.lg} style={styles.bannerSkeleton} />
+          <View style={styles.grid}>
+            {[0, 1, 2, 3].map((i) => (
+              <ProductCardSkeleton key={i} width={grid.cardWidth} />
+            ))}
+          </View>
+        </ScrollView>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[c.brand]} />}
+      >
+        {error ? <Banner tone="danger" message={error} style={styles.banner} /> : null}
+
+        {data?.banner ? (
+          <Image source={{ uri: data.banner }} style={styles.bannerArt} resizeMode="cover" accessibilityIgnoresInvertColors />
+        ) : (
+          <Txt variant="display" style={styles.title}>
+            {data?.name ?? 'Festival'}
+          </Txt>
+        )}
+
+        {data && (!data.enabled || data.sections.length === 0) ? (
+          <EmptyState
+            icon="gift-outline"
+            title={`${data.name} is on its way`}
+            message="Nothing here just yet. Come back soon for the festival picks."
+          />
+        ) : null}
+
+        {data?.sections.map((section) => (
+          <View key={section.category._id} style={styles.section}>
+            <Txt variant="h2" numberOfLines={2} style={styles.sectionTitle}>
+              {section.title || section.category.name}
+            </Txt>
+
+            <View style={styles.grid}>
+              {section.items.map((p) => (
+                <ProductCard
+                  key={p._id}
+                  product={p}
+                  width={grid.cardWidth}
+                  onPress={() => nav.navigate('ProductDetail', { id: p._id, name: p.name })}
+                />
+              ))}
+            </View>
+
+            {/* Straight into the aisle, where every child aisle is listed. */}
+            <Pressable
+              onPress={() =>
+                nav.navigate('CategoryBrowse', { slug: section.category.slug, name: section.category.name })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`See all ${section.category.name}`}
+              style={({ pressed }) => [styles.seeAll, pressed && { opacity: 0.8 }]}
+            >
+              <Txt variant="label" tone="brand">
+                See all {section.category.name}
+              </Txt>
+              <Icon name="arrow-forward" size={ms(16)} color={c.brandText} />
+            </Pressable>
+          </View>
+        ))}
+      </ScrollView>
+    </Screen>
+  );
+}
+
+const styles = themed(({ c }) => ({
+  content: { paddingHorizontal: gutter, paddingTop: space.md, paddingBottom: space.xxl },
+  banner: { marginBottom: space.md },
+  bannerSkeleton: { marginBottom: space.lg },
+  bannerArt: {
+    width: '100%',
+    aspectRatio: 26 / 9,
+    borderRadius: radius.lg,
+    backgroundColor: c.surfaceSunken,
+    marginBottom: space.lg,
+  },
+  title: { marginBottom: space.lg },
+  section: { marginBottom: space.xl },
+  sectionTitle: { marginBottom: space.md },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  seeAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: space.xs,
+    marginTop: space.md,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: c.brandBorder,
+    backgroundColor: c.brandSurface,
+  },}));

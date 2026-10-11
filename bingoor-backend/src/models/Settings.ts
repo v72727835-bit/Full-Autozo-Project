@@ -1,0 +1,139 @@
+import { Schema, Types, model } from 'mongoose';
+
+/**
+ * One document of shop-wide switches the admin panel edits: the festival tab,
+ * the "6 days delivery" aisles, aisles where cash on delivery is off, the
+ * rider cash limit and the app download links.
+ */
+export interface ISettings {
+  key: 'global';
+  festival: {
+    enabled: boolean;
+    /** Menu label, e.g. "Rakhi", "Diwali" - changed per festival. */
+    name: string;
+    banner?: string;
+    /** Rows on the festival page: a title and the aisle its products come from. */
+    sections: { title: string; category: Types.ObjectId }[];
+  };
+  sixDay: {
+    /** Delivery promise for these aisles, in days. */
+    days: number;
+    /** Sub categories (and everything under them) that ship in `days`. */
+    categories: Types.ObjectId[];
+  };
+  cod: {
+    /** Sub categories (and everything under them) where cash on delivery is off. */
+    disabledCategories: Types.ObjectId[];
+    message: string;
+  };
+  /** A rider is paused automatically once this much COD cash is unsettled. */
+  riderCodLimit: number;
+  appLinks: { android?: string; ios?: string };
+  /** Largest product photo (KB) the image tips recommend. */
+  imageMaxKb: number;
+  /** Shown in the cart header so a customer can call for help. */
+  supportPhone?: string;
+  /** The three delivery promises on the home page; each can be renamed or hidden. */
+  deliverySlots: { key: 'instant' | 'twoHour' | 'nextDay'; label: string; enabled: boolean }[];
+  /** Optional charge for the 2 hour slot. */
+  twoHourCharge: { enabled: boolean; amount: number };
+  /** Delivery pricing by distance from the warehouse. */
+  pricing: {
+    handlingFee: number;
+    bands: { upToKm: number; minOrder: number; freeAbove: number; fee: number; nextDay: boolean; redOrder: boolean }[];
+    /** Beyond the last band: delivery in this many days, COD off. */
+    beyondDays: number;
+    beyondMinOrder: number;
+  };
+  /** Filters shown on listing pages; the admin can rename, reorder and hide them. */
+  filters: { key: string; label: string; kind: 'brand' | 'price' | 'discount' | 'rating' | 'diet' | 'stock'; enabled: boolean }[];
+  priceSortEnabled: boolean;
+  /** Where customers are sent to leave a Google review after delivery. */
+  googleReviewUrl?: string;
+  /** Hidden cart-points rule: checkout opens once the basket reaches `target`. */
+  cartPoints: { enabled: boolean; target: number; suggestions: Types.ObjectId[] };
+}
+
+const settingsSchema = new Schema<ISettings>(
+  {
+    key: { type: String, default: 'global', unique: true },
+    festival: {
+      enabled: { type: Boolean, default: true },
+      name: { type: String, default: 'Rakhi', trim: true },
+      banner: String,
+      sections: {
+        type: [{ title: { type: String, trim: true }, category: { type: Schema.Types.ObjectId, ref: 'Category' }, _id: false }],
+        default: [],
+      },
+    },
+    sixDay: {
+      days: { type: Number, default: 6, min: 1, max: 60 },
+      categories: [{ type: Schema.Types.ObjectId, ref: 'Category' }],
+    },
+    cod: {
+      disabledCategories: [{ type: Schema.Types.ObjectId, ref: 'Category' }],
+      message: {
+        type: String,
+        default: 'Cash on delivery is not available for fruits and vegetables. You can buy other products with COD.',
+      },
+    },
+    riderCodLimit: { type: Number, default: 2000, min: 0 },
+    appLinks: { android: String, ios: String },
+    imageMaxKb: { type: Number, default: 200 },
+    supportPhone: { type: String, trim: true },
+    deliverySlots: {
+      type: [{ key: String, label: { type: String, trim: true }, enabled: { type: Boolean, default: true }, _id: false }],
+      default: [
+        { key: 'instant', label: '19 minutes', enabled: true },
+        { key: 'twoHour', label: '2 hours', enabled: true },
+        { key: 'nextDay', label: 'Next day delivery', enabled: true },
+      ],
+    },
+    twoHourCharge: { enabled: { type: Boolean, default: false }, amount: { type: Number, default: 0, min: 0 } },
+    pricing: {
+      handlingFee: { type: Number, default: 2, min: 0 },
+      bands: {
+        type: [
+          {
+            upToKm: Number,
+            minOrder: Number,
+            freeAbove: Number,
+            fee: Number,
+            nextDay: { type: Boolean, default: false },
+            redOrder: { type: Boolean, default: false },
+            _id: false,
+          },
+        ],
+        default: [
+          { upToKm: 9, minOrder: 199, freeAbove: 199, fee: 39, nextDay: false, redOrder: false },
+          { upToKm: 15, minOrder: 199, freeAbove: 999, fee: 39, nextDay: false, redOrder: true },
+          { upToKm: 25, minOrder: 199, freeAbove: 699, fee: 39, nextDay: true, redOrder: false },
+          { upToKm: 30, minOrder: 199, freeAbove: 1199, fee: 39, nextDay: true, redOrder: false },
+        ],
+      },
+      beyondDays: { type: Number, default: 3, min: 1 },
+      beyondMinOrder: { type: Number, default: 199, min: 0 },
+    },
+    filters: {
+      type: [{ key: String, label: { type: String, trim: true }, kind: String, enabled: { type: Boolean, default: true }, _id: false }],
+      default: [
+        { key: 'brand', label: 'Brand', kind: 'brand', enabled: true },
+        { key: 'price', label: 'Price', kind: 'price', enabled: true },
+        { key: 'discount', label: 'Discount', kind: 'discount', enabled: true },
+        { key: 'rating', label: 'Customer rating', kind: 'rating', enabled: true },
+        { key: 'diet', label: 'Veg / Non-veg', kind: 'diet', enabled: true },
+        { key: 'stock', label: 'In stock only', kind: 'stock', enabled: true },
+      ],
+    },
+    priceSortEnabled: { type: Boolean, default: true },
+    googleReviewUrl: { type: String, trim: true },
+    cartPoints: {
+      enabled: { type: Boolean, default: false },
+      target: { type: Number, default: 47, min: 1, max: 5000 },
+      suggestions: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
+    },
+  },
+  { timestamps: true },
+);
+
+export const Settings = model<ISettings>('Settings', settingsSchema);

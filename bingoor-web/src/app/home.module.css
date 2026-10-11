@@ -1,0 +1,42 @@
+.section {
+  margin-bottom: 34px;
+}
+
+.circleSection {
+  margin-bottom: 30px;
+}
+
+.circleRail {
+  gap: 10px;
+}
+
+/* The deals rail gets a tinted frame so it reads as a promotion. */
+.deals {
+  /* No frame: the deals row sits on the page like every other row. */
+  padding: 0;
+}
+
+/* The home banner is hidden on phones; products take its place. */
+@media (max-width: 699px) {
+  .noPhone {
+    display: none;
+  }
+}
+
+.skHero {
+  height: 172px;
+  border-radius: var(--r-lg);
+  margin-bottom: 30px;
+}
+
+.skCircles {
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.skCircle {
+  width: 78px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
