@@ -6,3 +6,6 @@ dist/
 .env
 .env.local
 *.log
+
+# cPanel/Passenger restart marker
+tmp/
