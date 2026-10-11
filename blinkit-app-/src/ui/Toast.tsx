@@ -30,9 +30,9 @@ const ToastContext = createContext<ToastApi | undefined>(undefined);
 /* Toasts stay dark in both themes. A snackbar is an overlay, not part of the
  * page, and a light one on a light page reads as a broken dialog. */
 const SKIN: Record<ToastTone, { bg: string; icon: IconName; action: string }> = {
-  success: { bg: '#1E1024', icon: 'checkmark-circle', action: '#FF9CC8' },
+  success: { bg: '#12261A', icon: 'checkmark-circle', action: '#FFD23F' },
   error: { bg: '#3A1216', icon: 'alert-circle', action: '#FFB4B4' },
-  info: { bg: '#1E1B24', icon: 'information-circle', action: '#FF9CC8' },
+  info: { bg: '#18221C', icon: 'information-circle', action: '#FFD23F' },
 };
 
 /**

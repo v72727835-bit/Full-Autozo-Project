@@ -2,7 +2,7 @@
  * One-off script to create (or promote) an admin-panel login.
  *
  * Usage:
- *   npm run create-admin -- "Admin Name" 9876543210 admin@bingoor.com MySecretPass123
+ *   npm run create-admin -- "Admin Name" 9876543210 admin@autozo.org MySecretPass123
  *
  * Phone is required (every user needs one); email + password are what you'll
  * actually log in to the admin panel with. Re-running with the same phone or
@@ -14,7 +14,7 @@ import { User } from './models/User';
 async function main() {
   const [name, phone, email, password] = process.argv.slice(2);
   if (!name || !phone || !email || !password) {
-    console.error('Usage: npm run create-admin -- "Admin Name" 9876543210 admin@bingoor.com MySecretPass123');
+    console.error('Usage: npm run create-admin -- "Admin Name" 9876543210 admin@autozo.org MySecretPass123');
     process.exit(1);
   }
 

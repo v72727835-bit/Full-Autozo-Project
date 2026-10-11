@@ -6,3 +6,6 @@ dist
 .next/
 out/
 *.log
+
+# cPanel/Passenger restart marker
+tmp/

@@ -5,8 +5,8 @@
 }
 
 .brandBar {
-  background: linear-gradient(104deg, var(--plum-deep), var(--plum) 58%, var(--brand-press));
-  color: #fff;
+  background: var(--bar);
+  color: var(--bar-ink);
 }
 
 .row {
@@ -33,7 +33,7 @@
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14), 0 0 0 2px rgba(255, 255, 255, 0.7);
   display: block;
   object-fit: cover;
 }
@@ -68,7 +68,7 @@
   align-items: center;
   gap: 7px;
   padding-left: 18px;
-  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  border-left: 1px solid var(--bar-line);
   flex-shrink: 0;
 }
 
@@ -111,14 +111,14 @@
   width: 38px;
   height: 38px;
   border-radius: var(--r-pill);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--bar-ink);
+  background: var(--bar-tool);
   transition: background-color 0.16s var(--ease);
   flex-shrink: 0;
 }
 
 .tool:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--bar-tool-hover);
 }
 
 .account,
@@ -131,15 +131,26 @@
   border-radius: var(--r-pill);
   font-size: 13.5px;
   font-weight: 650;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--bar-ink);
+  background: var(--bar-tool);
   transition: background-color 0.16s var(--ease), transform 0.12s var(--ease);
   flex-shrink: 0;
 }
 
 .account:hover,
 .cart:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--bar-tool-hover);
+}
+
+/* The cart is the one action that matters most, so it always wears the brand green. */
+.cart {
+  background: var(--brand);
+  color: var(--brand-ink);
+  box-shadow: var(--sh-brand);
+}
+
+.cart:hover {
+  background: var(--brand-hover);
 }
 
 .account:active,
@@ -156,8 +167,8 @@
 }
 
 .cart[data-filled='true'] {
-  background: #fff;
-  color: var(--brand-press);
+  background: var(--brand);
+  color: var(--brand-ink);
 }
 
 .cartText {
@@ -219,8 +230,9 @@
 }
 
 .stripLink[data-on='true'] {
-  background: var(--brand-tint);
-  color: var(--brand-text);
+  background: var(--sun-tint);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--sun-line);
 }
 
 /* ------------------------------- responsive ------------------------------- */

@@ -84,7 +84,7 @@ export default function IntegrationsPage() {
           Continue with Gmail {status(data.live.google)}
         </h2>
         <div className="page-subtitle" style={{ marginBottom: 12 }}>
-          Google Cloud Console → APIs &amp; Services → Credentials → OAuth client ID (Web). Add https://bingoor.com as an authorised JavaScript origin.
+          Google Cloud Console → APIs &amp; Services → Credentials → OAuth client ID (Web). Add https://shop.autozo.org as an authorised JavaScript origin.
         </div>
         <Field label="Google Client ID">
           <input value={google} onChange={(e) => setGoogle(e.target.value)} placeholder="1234567890-abc.apps.googleusercontent.com" />
@@ -101,7 +101,7 @@ export default function IntegrationsPage() {
           Continue with Facebook {status(data.live.facebook)}
         </h2>
         <div className="page-subtitle" style={{ marginBottom: 12 }}>
-          developers.facebook.com → your app → Settings → Basic. Turn on Facebook Login and add https://bingoor.com as a valid domain.
+          developers.facebook.com → your app → Settings → Basic. Turn on Facebook Login and add https://shop.autozo.org as a valid domain.
         </div>
         <div className="field-row">
           <Field label="Facebook App ID">

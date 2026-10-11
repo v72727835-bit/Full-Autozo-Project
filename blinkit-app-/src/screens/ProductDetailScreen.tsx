@@ -324,7 +324,7 @@ export function ProductDetailScreen() {
         {/* ------------------------------------------------ promises -- */}
         <View style={styles.promises}>
           {[
-            { icon: 'shield-checkmark-outline' as const, title: 'Fulfilled by', body: 'bingoor.com' },
+            { icon: 'shield-checkmark-outline' as const, title: 'Fulfilled by', body: 'Autozo' },
             product.codAvailable === false
               ? { icon: 'card-outline' as const, title: 'COD', body: 'Not available' }
               : { icon: 'cash-outline' as const, title: 'COD available', body: 'Pay when it arrives' },

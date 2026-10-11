@@ -20,7 +20,7 @@ export function SearchBar({
 }: {
   autoFocus?: boolean;
   onNavigate?: () => void;
-  /** 'light' sits on the plum header bar, 'plain' on a page background. */
+  /** 'light' sits on the yellow header bar, 'plain' on a page background. */
   variant?: 'light' | 'plain';
 }) {
   const [q, setQ] = useState('');

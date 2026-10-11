@@ -42,7 +42,7 @@ export default function LoginPage() {
           <input
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="admin@bingoor.com"
+            placeholder="admin@autozo.org"
             autoFocus
             required
           />

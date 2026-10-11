@@ -6,7 +6,7 @@ import { User } from './models/User';
 async function main() {
   const [name, phone, email, password] = process.argv.slice(2);
   if (!name || !phone || !email || !password) {
-    console.error('Usage: npm run create-rider -- "Demo Rider" 9111111111 rider.demo@bingoor.com Rider@12345');
+    console.error('Usage: npm run create-rider -- "Demo Rider" 9111111111 rider.demo@autozo.org Rider@12345');
     process.exit(1);
   }
   await connectDB();

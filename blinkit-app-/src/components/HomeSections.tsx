@@ -171,8 +171,8 @@ function BannerCarousel({ items: all, onPress }: { items: Banner[]; onPress: (b:
   );
 }
 
-const FALLBACK_FROM = '#B8005F';
-const FALLBACK_TO = '#6E0A4C';
+const FALLBACK_FROM = '#0E8A3E';
+const FALLBACK_TO = '#0A4D29';
 
 /**
  * One slide. A banner uploaded from the admin panel is a picture that fills
