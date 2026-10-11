@@ -25,11 +25,11 @@ mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/deploy-$(date +%Y%m%d-%H%M%S).log"
 
 # The account's process limit counts threads, and MongoDB plus the three live
-# apps already use most of it. Build-time Node processes get small thread
-# pools so npm and next build fit in what is left.
+# apps already use most of it. Build-time Node gets a small libuv pool (and
+# next.config.ts limits the build to one CPU worker) so npm and next build
+# fit in what is left.
 export UV_THREADPOOL_SIZE=2
-BUILD_NODE_OPTIONS="--max-old-space-size=3072 --v8-pool-size=1"
-export NODE_OPTIONS="--v8-pool-size=1"
+BUILD_NODE_OPTIONS="--max-old-space-size=3072"
 
 say() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[1;31mDeploy stopped: %s\033[0m\nFull log: %s\n' "$*" "$LOG"; exit 1; }
