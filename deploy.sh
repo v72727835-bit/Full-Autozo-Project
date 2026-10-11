@@ -59,7 +59,8 @@ threads() { ps -u "$ME" -L --no-headers 2>/dev/null | wc -l; }
 # Frees the threads a running site holds while it is being rebuilt. The site
 # is down for those minutes; restart_app brings it back.
 stop_app() {
-  local app="$1" pattern="lsnode:$ROOT/$app/"
+  local app="$1"
+  local pattern="lsnode:$ROOT/$app/"
   if command -v cloudlinux-selector >/dev/null 2>&1; then
     cloudlinux-selector stop --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1 || true
   fi
