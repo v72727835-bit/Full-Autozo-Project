@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { sellerCategories, sellerCreateProduct, sellerDeleteProduct, sellerProducts, sellerUpdateProduct, sellerUploadImages } from '../api/admin';
+import BulkUpload from '../components/BulkUpload';
+import { sellerBulkProducts, sellerCategories, sellerCreateProduct, sellerDeleteProduct, sellerProducts, sellerUpdateProduct, sellerUploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Thumb, money } from '../components/ui';
@@ -27,6 +28,7 @@ export default function Products({ warehouses }: { warehouses: Wh[] }) {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Product | 'new' | null>(null);
+  const [showBulk, setShowBulk] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(() => {
@@ -55,8 +57,21 @@ export default function Products({ warehouses }: { warehouses: Wh[] }) {
           <h1 className="page-title">Products</h1>
           <div className="page-subtitle">Everything stocked in your warehouse. Add new products, edit prices and photos, or take items off the shelf.</div>
         </div>
-        <Button onClick={() => setEditing('new')}><IconPlus size={15} /> Add product</Button>
+        <div className="row-flex" style={{ gap: 8 }}>
+          <Button variant="secondary" onClick={() => setShowBulk(true)}>Bulk upload</Button>
+          <Button onClick={() => setEditing('new')}><IconPlus size={15} /> Add product</Button>
+        </div>
       </div>
+      {showBulk && (
+        <BulkUpload
+          mode="seller"
+          categories={cats.filter((c) => c.level === 3).map((c) => ({ name: c.name, parent: cats.find((x) => x._id === c.parent)?.name }))}
+          shops={warehouses.map((w) => w.name)}
+          send={sellerBulkProducts}
+          onClose={() => setShowBulk(false)}
+          onDone={load}
+        />
+      )}
       <div className="row-flex" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
         <Tabs value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={FILTERS.map(([value, label]) => ({ value, label }))} />
         <form className="row-flex" onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(q.trim()); }}>

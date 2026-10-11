@@ -614,3 +614,10 @@ export const sellerShopBody = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 export const sellerCustomersQuery = pagination.extend({ q: z.string().trim().max(60).optional() });
+
+/* ---------- bulk product upload ---------- */
+export const bulkProductsBody = z.object({
+  rows: z.array(z.record(z.unknown())).min(1, 'The file has no product rows').max(300, 'Upload at most 300 products at a time'),
+  /** Check everything and report, but save nothing. */
+  dryRun: z.boolean().optional(),
+});

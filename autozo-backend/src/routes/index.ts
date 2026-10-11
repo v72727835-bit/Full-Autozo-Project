@@ -80,6 +80,7 @@ router.get('/seller/shops', ...sellerOnly, seller.listMyShops);
 router.patch('/seller/shops/:id', ...sellerOnly, validate({ params: v.idParam, body: v.sellerShopBody }), seller.updateMyShop);
 router.get('/seller/customers', ...sellerOnly, validate({ query: v.sellerCustomersQuery }), seller.listMyCustomers);
 router.post('/seller/change-password', ...sellerOnly, validate({ body: v.changePasswordBody }), seller.changeMyPassword);
+router.post('/seller/products/bulk', ...sellerOnly, invalidateOnWrite, validate({ body: v.bulkProductsBody }), seller.bulkCreateMyProducts);
 router.post('/seller/products', ...sellerOnly, invalidateOnWrite, validate({ body: v.sellerProductBody }), seller.createMyProduct);
 router.delete('/seller/products/:id', ...sellerOnly, invalidateOnWrite, validate({ params: v.idParam }), seller.deleteMyProduct);
 router.get('/seller/riders', ...sellerOnly, seller.listMyRiders);
