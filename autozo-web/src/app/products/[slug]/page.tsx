@@ -255,7 +255,7 @@ export default function ProductPage() {
           <ul className={s.promises}>
             <li>
               <Icon name="shield" size={16} />
-              Fulfilled by bingoor.com
+              Fulfilled by Autozo
             </li>
             <li>
               <Icon name="wallet" size={16} />

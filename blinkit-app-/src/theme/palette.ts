@@ -83,35 +83,35 @@ export interface Palette {
 export const light: Palette = {
   mode: 'light',
 
-  brand: '#E0006E',
-  brandPressed: '#B8005F',
-  brandDeep: '#8E0A57',
-  brandText: '#B0005A',
-  brandSurface: '#FDE8F1',
-  brandSurfaceStrong: '#FAD0E3',
-  brandBorder: '#F2A9CB',
+  brand: '#0E8A3E',
+  brandPressed: '#0B7534',
+  brandDeep: '#0A5C2C',
+  brandText: '#0A6B2F',
+  brandSurface: '#E8F6ED',
+  brandSurfaceStrong: '#D0EDDA',
+  brandBorder: '#A3D9B5',
   onBrand: '#FFFFFF',
 
-  accent: '#C2410C',
-  accentSurface: '#FFEDE3',
-  gold: '#E8A100',
+  accent: '#A15C00',
+  accentSurface: '#FFF6D6',
+  gold: '#F5B800',
   save: '#1558B0',
   saveSurface: '#E8F1FB',
 
-  ink: '#15101A',
-  inkBody: '#372F3F',
-  inkMuted: '#61586B',
-  inkFaint: '#8B8295',
+  ink: '#111A14',
+  inkBody: '#334038',
+  inkMuted: '#5A675F',
+  inkFaint: '#848F88',
 
   surface: '#FFFFFF',
-  surfaceSunken: '#F3F0F5',
+  surfaceSunken: '#F1F5F2',
   surfaceRaised: '#FFFFFF',
-  surfaceTint: '#FBEAF2',
-  overlay: 'rgba(21, 17, 26, 0.55)',
-  skeleton: '#ECE8EF',
+  surfaceTint: '#EEF8F1',
+  overlay: 'rgba(17, 26, 20, 0.55)',
+  skeleton: '#E6ECE8',
 
-  border: '#EAE4EE',
-  borderStrong: '#D4CBDB',
+  border: '#E2E9E4',
+  borderStrong: '#CAD5CE',
 
   success: '#0B7A4B',
   successSurface: '#E6F4EC',
@@ -126,56 +126,56 @@ export const light: Palette = {
   veg: '#1E8E3E',
   nonveg: '#A3341F',
 
-  headerFrom: '#6E0A4C',
-  headerTo: '#B8005F',
+  headerFrom: '#0A4D29',
+  headerTo: '#0E8A3E',
   onHeader: '#FFFFFF',
   onHeaderMuted: 'rgba(255,255,255,0.88)',
 
-  shadow: '#3A0A28',
-  headerGlow: 'rgba(255, 92, 160, 0.55)',
-  dealsFrom: '#8E0A57',
-  dealsTo: '#D4006C',
-  priceMark: '#FFE15A',
+  shadow: '#0A2E19',
+  headerGlow: 'rgba(255, 210, 63, 0.45)',
+  dealsFrom: '#0A5C2C',
+  dealsTo: '#11A04A',
+  priceMark: '#FFD23F',
   onPriceMark: '#15101A',
-  glow: 'rgba(224, 0, 110, 0.38)',
+  glow: 'rgba(14, 138, 62, 0.38)',
 
-  brandStrong: '#8E0A57',
-  brandInk: '#B0005A',
-  brandLight: '#FF3D8E',
+  brandStrong: '#0A5C2C',
+  brandInk: '#0A6B2F',
+  brandLight: '#2FBF6A',
 };
 
 export const dark: Palette = {
   mode: 'dark',
 
-  brand: '#E0127A',
-  brandPressed: '#FF3D8E',
-  brandDeep: '#FF79B4',
-  brandText: '#FF79B4',
-  brandSurface: '#2E1226',
-  brandSurfaceStrong: '#431936',
-  brandBorder: '#6A2452',
+  brand: '#178F47',
+  brandPressed: '#2FBF6A',
+  brandDeep: '#6FE09C',
+  brandText: '#6FE09C',
+  brandSurface: '#10261A',
+  brandSurfaceStrong: '#163824',
+  brandBorder: '#245C3C',
   onBrand: '#FFFFFF',
 
-  accent: '#FF9A66',
-  accentSurface: '#3A2418',
-  gold: '#FFC247',
+  accent: '#FFC93C',
+  accentSurface: '#2E2710',
+  gold: '#FFC93C',
   save: '#86BBFF',
   saveSurface: '#182739',
 
-  ink: '#F6F2F8',
-  inkBody: '#DAD2E0',
-  inkMuted: '#A89FB1',
-  inkFaint: '#8A8193',
+  ink: '#F1F7F3',
+  inkBody: '#D0DBD4',
+  inkMuted: '#9CA9A1',
+  inkFaint: '#7F8C84',
 
-  surface: '#17131B',
-  surfaceSunken: '#0D0A10',
-  surfaceRaised: '#211B26',
-  surfaceTint: '#1F1420',
+  surface: '#121A15',
+  surfaceSunken: '#0A100C',
+  surfaceRaised: '#1A241E',
+  surfaceTint: '#14211A',
   overlay: 'rgba(0, 0, 0, 0.68)',
-  skeleton: '#261F2C',
+  skeleton: '#1F2A23',
 
-  border: '#2C2532',
-  borderStrong: '#443B4C',
+  border: '#25322A',
+  borderStrong: '#3A4A40',
 
   success: '#52D18E',
   successSurface: '#16301F',
@@ -190,22 +190,22 @@ export const dark: Palette = {
   veg: '#52D18E',
   nonveg: '#FF8A7A',
 
-  headerFrom: '#1C0717',
-  headerTo: '#4A0830',
+  headerFrom: '#06180E',
+  headerTo: '#0C3A21',
   onHeader: '#FFFFFF',
   onHeaderMuted: 'rgba(255,255,255,0.80)',
 
   shadow: '#000000',
-  headerGlow: 'rgba(224, 18, 122, 0.45)',
-  dealsFrom: '#3A0826',
-  dealsTo: '#6E0C47',
+  headerGlow: 'rgba(255, 201, 60, 0.28)',
+  dealsFrom: '#0A2E19',
+  dealsTo: '#0F4A28',
   priceMark: '#FFD23F',
   onPriceMark: '#1A1400',
-  glow: 'rgba(255, 61, 142, 0.45)',
+  glow: 'rgba(47, 191, 106, 0.45)',
 
-  brandStrong: '#FF3D8E',
-  brandInk: '#FF79B4',
-  brandLight: '#FF79B4',
+  brandStrong: '#2FBF6A',
+  brandInk: '#6FE09C',
+  brandLight: '#6FE09C',
 };
 
 /**
@@ -222,7 +222,7 @@ export function sectionTint(hex: string | undefined, p: Palette): string {
   // A fifth of the pastel over the card surface the tiles sit on. Enough for
   // each aisle to read as its own colour, not enough to lift the background
   // into the range where the label stops clearing AA.
-  const base = [0x17, 0x13, 0x1b];
+  const base = [0x12, 0x1a, 0x15];
   const mix = [r, g, b].map((v, i) => Math.round(base[i] + (v - base[i]) * 0.22));
   return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }

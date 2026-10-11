@@ -39,8 +39,8 @@ export function statusTone(s: OrderStatus): Tone {
 export const STATUS_COLOR: Record<string, string> = {
   placed: '#4d8dff',
   accepted: '#7c6cff',
-  preparing: '#ff2e88',
-  ready_for_pickup: '#ff6fae',
+  preparing: '#ff9f43',
+  ready_for_pickup: '#ffc93c',
   out_for_delivery: '#3bc9f5',
   delivered: '#2ed47a',
   cancelled: '#ff5470',

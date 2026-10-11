@@ -21,6 +21,12 @@ import { shortDelivery } from '../utils/delivery';
 import { tapConfirm } from '../utils/haptics';
 import { useGrid, useRailCardWidth } from '../utils/layout';
 
+const TRUST = [
+  { icon: 'leaf-outline', label: 'Fresh every day' },
+  { icon: 'pricetag-outline', label: 'Honest prices' },
+  { icon: 'shield-checkmark-outline', label: 'Easy returns' },
+] as const;
+
 const ALL: Category = { _id: 'all', name: 'All', slug: 'all', icon: 'shopping-bags', short: 'All' };
 
 /** What the search box suggests, one at a time - the things people type most. */
@@ -75,6 +81,8 @@ export function HomeScreen({ active }: TabScreenProps) {
 
   const address = user?.addresses?.find((a) => a.isDefault) ?? user?.addresses?.[0];
   const firstName = (user?.name ?? '').split(' ')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? 'Up late' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   // Never two tabs with the same label, whatever the data says.
   const tabs = useMemo(() => {
@@ -126,7 +134,7 @@ export function HomeScreen({ active }: TabScreenProps) {
           style={styles.heroTitle}
         >
           <Txt variant="labelSm" style={styles.kicker}>
-            {firstName ? `Hi ${firstName}, delivery in` : 'Delivery in'}
+            {firstName ? `${greeting}, ${firstName}! Delivery in` : `${greeting}! Delivery in`}
           </Txt>
           <View style={styles.timeRow}>
             <Icon name="flash" size={ms(24)} color={c.priceMark} />
@@ -170,6 +178,18 @@ export function HomeScreen({ active }: TabScreenProps) {
         </Txt>
         <Icon name="chevron-down" size={ms(15)} color={c.onHeader} />
       </Pressable>
+
+      {/* The three promises we keep, small enough not to push products down. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trustRow}>
+        {TRUST.map((item) => (
+          <View key={item.label} style={styles.trustChip}>
+            <Icon name={item.icon} size={ms(13)} color={c.priceMark} />
+            <Txt variant="caption" tone="onHeader" weight="700">
+              {item.label}
+            </Txt>
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 
@@ -388,8 +408,20 @@ const styles = themed(({ c }) => ({
   },
   tabArtOn: { backgroundColor: 'rgba(255,255,255,0.95)' },
   tabLine: { height: ms(3), width: '70%', borderTopLeftRadius: ms(3), borderTopRightRadius: ms(3), marginTop: ms(4) },
-  tabLineOn: { backgroundColor: '#FFFFFF' },
+  tabLineOn: { backgroundColor: c.priceMark },
 
+  trustRow: { gap: space.sm, marginTop: space.md, paddingRight: gutter },
+  trustChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(5),
+    paddingHorizontal: ms(10),
+    paddingVertical: ms(5),
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(255, 210, 63, 0.16)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 210, 63, 0.55)',
+  },
   sectionWrap: { marginBottom: space.sm },
 
   loading: { padding: gutter, gap: space.md, backgroundColor: c.surface },

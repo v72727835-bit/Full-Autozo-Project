@@ -13,7 +13,7 @@ import { Platform } from 'react-native';
  *
  * For a production build, point this to your https:// server.
  */
-const API_URL_OVERRIDE: string | null = 'https://bingoor-backend.onrender.com/api/v1';
+const API_URL_OVERRIDE: string | null = 'https://app-api.autozo.org/api/v1';
 
 const defaultUrl =
   Platform.OS === 'android' ? 'http://10.0.2.2:5000/api/v1' : 'http://localhost:5000/api/v1';

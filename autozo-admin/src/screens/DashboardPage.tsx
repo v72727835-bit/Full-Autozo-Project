@@ -143,8 +143,8 @@ export default function DashboardPage() {
               <ComposedChart data={chartData} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gOrders" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ff2e88" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#ff2e88" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#2fbf6a" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#2fbf6a" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,.06)" vertical={false} />
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                   type="monotone"
                   name="Orders"
                   dataKey="orders"
-                  stroke="#ff2e88"
+                  stroke="#2fbf6a"
                   strokeWidth={2.4}
                   fill="url(#gOrders)"
                   dot={false}

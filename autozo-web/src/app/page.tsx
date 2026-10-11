@@ -8,6 +8,7 @@ import { DeliverySlots } from '../components/DeliverySlots';
 import { BannerCarousel } from '../components/BannerCarousel';
 import { CategoryCircle, CategoryTile } from '../components/CategoryTile';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { HomeWelcome } from '../components/HomeWelcome';
 import { Icon } from '../components/Icon';
 import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { Alert, Button, SectionHead } from '../components/ui';
@@ -21,7 +22,7 @@ export default function HomePage() {
       <div className="page" style={{ paddingTop: 28, maxWidth: 560 }}>
         <Alert tone="bad">{error}</Alert>
         <p className="body-sm" style={{ marginBottom: 16 }}>
-          The server runs on a free plan, so the first request can take a little longer to wake up.
+          We couldn&apos;t reach the shop just now. Check your internet and give it another go.
         </p>
         <Button onClick={reload} icon="repeat">
           Try again
@@ -42,6 +43,7 @@ export default function HomePage() {
           </Alert>
         </div>
       )}
+      <HomeWelcome home={home} />
       <DeliverySlots />
       {home.sections.map((section) => (
         // Per-section, so one malformed block can't blank the storefront.

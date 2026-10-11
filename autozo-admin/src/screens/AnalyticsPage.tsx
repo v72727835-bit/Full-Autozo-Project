@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
                 <YAxis yAxisId="l" tick={{ fill: '#667089', fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="r" orientation="right" tick={{ fill: '#667089', fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTip />} />
-                <Bar yAxisId="l" name="Revenue" dataKey="revenue" fill="#ff2e88" radius={[6, 6, 0, 0]} maxBarSize={34} />
+                <Bar yAxisId="l" name="Revenue" dataKey="revenue" fill="#2fbf6a" radius={[6, 6, 0, 0]} maxBarSize={34} />
                 <Line yAxisId="r" name="Orders" type="monotone" dataKey="orders" stroke="#3bc9f5" strokeWidth={2.4} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
                 />
                 <YAxis tick={{ fill: '#667089', fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(255,255,255,.04)' }} />
-                <Bar name="Products" dataKey="count" fill="#ff6fae" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                <Bar name="Products" dataKey="count" fill="#ffc93c" radius={[6, 6, 0, 0]} maxBarSize={38} />
               </BarChart>
             </ResponsiveContainer>
           </div>

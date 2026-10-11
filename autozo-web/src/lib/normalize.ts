@@ -196,8 +196,8 @@ export function banner(raw: RawBanner): Banner {
     cta: raw.cta || undefined,
     art: artSrc(raw.icon),
     image: raw.image || undefined,
-    from: raw.from || '#B8005F',
-    to: raw.to || '#6E0A4C',
+    from: raw.from || '#0E8A3E',
+    to: raw.to || '#0F5C32',
     slug: raw.slug || undefined,
     categoryName: raw.categoryName || undefined,
   };
