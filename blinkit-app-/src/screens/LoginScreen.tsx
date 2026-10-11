@@ -158,7 +158,7 @@ export function LoginScreen() {
 
         <View style={styles.footer}>
           <Txt variant="body" tone="muted">
-            New to Bingoor?{' '}
+            New to Autozo?{' '}
           </Txt>
           <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={8} accessibilityRole="button">
             <Txt variant="label" tone="brand">

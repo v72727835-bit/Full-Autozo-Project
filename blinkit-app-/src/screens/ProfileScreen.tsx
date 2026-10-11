@@ -37,7 +37,7 @@ export function ProfileScreen(_props: TabScreenProps) {
   const toast = useToast();
 
   const confirmSignOut = () =>
-    Alert.alert('Sign out of Bingoor?', 'Your cart and saved items stay on your account.', [
+    Alert.alert('Sign out of Autozo?', 'Your cart and saved items stay on your account.', [
       { text: 'Stay signed in', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
     ]);
@@ -118,7 +118,7 @@ export function ProfileScreen(_props: TabScreenProps) {
             </View>
             <View style={styles.identity}>
               <Txt variant="h2" tone="onBrand" numberOfLines={2}>
-                {user?.name ?? 'Bingoor customer'}
+                {user?.name ?? 'Autozo customer'}
               </Txt>
               <Txt variant="bodySm" style={styles.identityMeta} numberOfLines={1}>
                 +91 {user?.phone}
@@ -168,7 +168,7 @@ export function ProfileScreen(_props: TabScreenProps) {
         <View style={styles.footer}>
           <LogoMark size={30} style={styles.footerMark} />
           <Txt variant="caption" tone="faint" center>
-            Bingoor {'·'} version 1.0.0
+            Autozo {'·'} version 1.0.0
           </Txt>
           <Txt variant="caption" tone="faint" center style={styles.footerNote}>
             Made for neighbourhood shops.

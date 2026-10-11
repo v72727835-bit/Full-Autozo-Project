@@ -408,7 +408,7 @@ export function ProductDetailScreen() {
                     </View>
                     <View style={styles.flex}>
                       <Txt variant="label" numberOfLines={1}>
-                        {r.user?.name ?? 'Bingoor customer'}
+                        {r.user?.name ?? 'Autozo customer'}
                       </Txt>
                       <View style={styles.reviewMeta}>
                         <Stars value={r.rating} size={12} />
