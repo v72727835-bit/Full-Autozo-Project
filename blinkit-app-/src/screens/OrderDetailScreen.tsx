@@ -498,18 +498,32 @@ function LiveTracking({ order }: { order: Order }) {
     );
   }
   const away = home ? distanceKm(at, home) : null;
+  // A scooter in town averages about 20 km/h, plus a minute to find the door.
+  const minutes = away === null ? null : Math.max(1, Math.round((away / 20) * 60) + 1);
+  const headline =
+    away === null
+      ? 'On the way to you'
+      : away < 0.1
+        ? 'Rider is at your door'
+        : `Arriving in about ${minutes} min`;
+  const distance = away === null || away < 0.1 ? '' : away < 1 ? `${Math.round(away * 1000)} m away` : `${away.toFixed(1)} km away`;
+  // With a home pin, open the whole route from the rider to the door; otherwise just the rider.
+  const mapUrl = home
+    ? `https://www.google.com/maps/dir/?api=1&origin=${at.lat},${at.lng}&destination=${home.lat},${home.lng}&travelmode=driving`
+    : `https://www.google.com/maps?q=${at.lat},${at.lng}`;
   return (
     <View style={styles.track}>
-      <Txt variant="label" tone="brand" style={styles.trackText}>
-        {away === null ? 'On the way to you' : away < 0.15 ? 'Rider is at your door' : `Rider is ${away.toFixed(1)} km away`}
-      </Txt>
-      <Button
-        label="Track on map"
-        icon="navigate-outline"
-        variant="secondary"
-        size="sm"
-        onPress={() => void Linking.openURL(`https://www.google.com/maps?q=${at.lat},${at.lng}`)}
-      />
+      <View style={styles.trackText}>
+        <Txt variant="label" tone="brand">
+          {headline}
+        </Txt>
+        {distance ? (
+          <Txt variant="bodySm" tone="muted">
+            {order.rider?.name ? `${order.rider.name} is ${distance}` : `Rider is ${distance}`}
+          </Txt>
+        ) : null}
+      </View>
+      <Button label="Track on map" icon="navigate-outline" variant="secondary" size="sm" onPress={() => void Linking.openURL(mapUrl)} />
     </View>
   );
 }
