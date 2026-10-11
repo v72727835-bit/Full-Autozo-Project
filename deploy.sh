@@ -16,12 +16,20 @@
 
 set -euo pipefail
 
+ME="$(id -un)"
 ROOT="$HOME/bingoor-project"
 VENV="$HOME/nodevenv/bingoor-project"
 NODE_VER=20
 LOG_DIR="$HOME/deploy-logs"
 mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/deploy-$(date +%Y%m%d-%H%M%S).log"
+
+# The account's process limit counts threads, and MongoDB plus the three live
+# apps already use most of it. Build-time Node gets a small libuv pool (and
+# next.config.ts limits the build to one CPU worker) so npm and next build
+# fit in what is left.
+export UV_THREADPOOL_SIZE=2
+BUILD_NODE_OPTIONS="--max-old-space-size=3072"
 
 say() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[1;31mDeploy stopped: %s\033[0m\nFull log: %s\n' "$*" "$LOG"; exit 1; }
@@ -37,9 +45,26 @@ plain_node() {
   fail "Node.js ${NODE_VER} not found on PATH"
 }
 
+threads() { ps -u "$ME" -L --no-headers 2>/dev/null | wc -l; }
+
+# Frees the threads a running site holds while it is being rebuilt. The site
+# is down for those minutes; restart_app brings it back.
+stop_app() {
+  local app="$1"
+  if command -v cloudlinux-selector >/dev/null 2>&1 &&
+    cloudlinux-selector stop --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1; then
+    :
+  else
+    pkill -u "$ME" -f "lsnode:$ROOT/$app/" 2>/dev/null || true
+  fi
+  sleep 2
+  echo "   paused $app while it rebuilds (threads in use: $(threads))"
+}
+
 restart_app() {
   local app="$1"
   if command -v cloudlinux-selector >/dev/null 2>&1 &&
+    { cloudlinux-selector start --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1 || true; } &&
     cloudlinux-selector restart --json --interpreter nodejs --app-root "bingoor-project/$app" >>"$LOG" 2>&1; then
     echo "   restarted $app"
   else
@@ -61,7 +86,7 @@ build_next() {
   run npm ci --include=dev --no-audit --no-fund
 
   rm -rf .next
-  run env AUTOZO_LOW_RESOURCE=1 NODE_OPTIONS=--max-old-space-size=3072 npx next build --webpack
+  run env AUTOZO_LOW_RESOURCE=1 NODE_OPTIONS="$BUILD_NODE_OPTIONS" npx next build --webpack
   [ -f .next/BUILD_ID ] || fail "$app build finished without .next/BUILD_ID"
 
   # Hand the exact build-time packages to the cPanel app.
@@ -73,6 +98,7 @@ build_next() {
 }
 
 echo "Autozo deploy started $(date). Log: $LOG"
+echo "Threads in use right now: $(threads)"
 
 say "Pulling latest code"
 cd "$ROOT"
@@ -95,6 +121,8 @@ cd "$ROOT/autozo-backend"
 echo "   backend built"
 
 plain_node
+stop_app autozo-web
+stop_app autozo-admin
 build_next autozo-web
 build_next autozo-admin
 
