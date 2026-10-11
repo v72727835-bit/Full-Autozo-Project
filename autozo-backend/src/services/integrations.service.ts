@@ -10,6 +10,24 @@ export interface LiveIntegrations {
   razorpayKeyId?: string;
   razorpayKeySecret?: string;
   razorpayEnabled: boolean;
+  firebase: {
+    webConfig: Record<string, string | undefined>;
+    serviceAccount?: { project_id: string; client_email: string; private_key: string };
+    otpOnSignup: boolean;
+    otpOnLogin: boolean;
+    pushEnabled: boolean;
+  };
+}
+
+function parseServiceAccount(s?: string) {
+  const raw = safeOpen(s);
+  if (!raw) return undefined;
+  try {
+    const j = JSON.parse(raw);
+    return j.client_email && j.private_key && j.project_id ? { project_id: j.project_id, client_email: j.client_email, private_key: j.private_key } : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const TTL_MS = 15_000;
@@ -37,6 +55,13 @@ export async function getIntegrations(): Promise<LiveIntegrations> {
     razorpayKeyId: doc?.razorpay?.keyId || env.RAZORPAY_KEY_ID,
     razorpayKeySecret: safeOpen(doc?.razorpay?.keySecretEnc) || env.RAZORPAY_KEY_SECRET,
     razorpayEnabled: doc?.razorpay?.enabled ?? true,
+    firebase: {
+      webConfig: { ...(doc?.firebase?.webConfig ?? {}) },
+      serviceAccount: parseServiceAccount(doc?.firebase?.serviceAccountEnc),
+      otpOnSignup: !!doc?.firebase?.otpOnSignup,
+      otpOnLogin: !!doc?.firebase?.otpOnLogin,
+      pushEnabled: !!doc?.firebase?.pushEnabled,
+    },
   };
   cache = { at: Date.now(), value };
   return value;

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchMe, loginRequest, logoutRequest, registerRequest, RegisterInput, socialLoginRequest } from '../api/auth';
+import { unregisterPush } from '../firebase/push';
 import { setAccessToken, setSessionExpiredHandler } from '../api/client';
 import { setDeliveryPoint, syncPointFromAddresses } from '../store/deliveryPoint';
 import { tokenStore } from '../storage/tokens';
@@ -9,7 +10,7 @@ interface AuthContextValue {
   user: User | null;
   /** true while we check for a saved session at app start */
   initializing: boolean;
-  signIn: (identifier: string, password: string) => Promise<void>;
+  signIn: (identifier: string, password: string, firebaseIdToken?: string) => Promise<void>;
   signUp: (input: RegisterInput) => Promise<void>;
   /** Set right after sign-up so the customer sees the login details they just created. */
   welcome: { phone: string; password: string } | null;
@@ -55,8 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async (identifier: string, password: string) => {
-    const result = await loginRequest(identifier, password);
+  const signIn = useCallback(async (identifier: string, password: string, firebaseIdToken?: string) => {
+    const result = await loginRequest(identifier, password, firebaseIdToken);
     await tokenStore.save(result.accessToken, result.refreshToken);
     setAccessToken(result.accessToken);
     setUser(result.user);
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    await unregisterPush();
     try {
       await logoutRequest(await tokenStore.getRefresh());
     } catch {

@@ -94,3 +94,10 @@ export function getFieldErrors(err: unknown): Record<string, string> {
   }
   return out;
 }
+
+/** If the server asked for an OTP (HTTP 428), returns the phone number it wants verified ('' when it did not say). */
+export function otpRequiredPhone(err: unknown): string | null {
+  if (!axios.isAxiosError(err) || err.response?.status !== 428) return null;
+  const d = (err.response.data as { details?: { code?: string; phone?: string } } | undefined)?.details;
+  return d?.code === 'otp_required' ? d.phone ?? '' : null;
+}

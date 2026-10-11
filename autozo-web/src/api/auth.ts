@@ -1,19 +1,21 @@
 import { api, tokens } from '../lib/client';
+import { unregisterPush } from '../components/PushRegister';
 import { UserProfile } from '../lib/types';
 
-export const register = async (name: string, phone: string, password: string, email?: string) => {
-  const { data } = await api.post('/auth/register', { name, phone, password, email });
+export const register = async (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string) => {
+  const { data } = await api.post('/auth/register', { name, phone, password, email, firebaseIdToken });
   tokens.save(data.data.accessToken, data.data.refreshToken, data.data.user);
   return data.data.user as UserProfile;
 };
 
-export const login = async (identifier: string, password: string) => {
-  const { data } = await api.post('/auth/login', { identifier, password });
+export const login = async (identifier: string, password: string, firebaseIdToken?: string) => {
+  const { data } = await api.post('/auth/login', { identifier, password, firebaseIdToken });
   tokens.save(data.data.accessToken, data.data.refreshToken, data.data.user);
   return data.data.user as UserProfile;
 };
 
 export const logout = async () => {
+  await unregisterPush();
   try {
     await api.post('/auth/logout', { refreshToken: tokens.refresh });
   } catch {

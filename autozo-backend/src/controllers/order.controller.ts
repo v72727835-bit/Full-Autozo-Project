@@ -1,3 +1,4 @@
+import { notifyOrderPlaced, notifyOrderStatus } from '../services/orderNotify.service';
 import crypto from 'crypto';
 import { FilterQuery, Types } from 'mongoose';
 import { Cart, MAX_QTY_PER_ITEM } from '../models/Cart';
@@ -195,6 +196,7 @@ async function runPlaceOrder(
     }
 
     await Cart.updateOne({ user: userId }, { $set: { items: [] } });
+    if (!opts.quote) for (const o of orders) notifyOrderPlaced(o, !!opts.paid);
 
     return {
       checkoutId,
@@ -327,6 +329,7 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   }
 
   await restoreStock(order.items);
+  notifyOrderStatus(order, 'cancelled');
   ok(res, presentOrder(order.toObject()));
 });
 

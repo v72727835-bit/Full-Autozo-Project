@@ -3,6 +3,7 @@ import { IOrder, Order } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
+import { notifyOrderStatus, notifyRiderAssigned } from './orderNotify.service';
 import { ONLINE_WINDOW_MS } from './rider.service';
 
 /**
@@ -41,6 +42,7 @@ export async function moveOrderStatus(orderId: string, status: IOrder['status'],
   if (ending) {
     await Promise.all(updated.items.map((i) => Product.updateOne({ _id: i.product }, { $inc: { stock: i.quantity, soldCount: -i.quantity } })));
   }
+  notifyOrderStatus(updated, status);
   return updated;
 }
 
@@ -106,5 +108,6 @@ export async function assignRiderToOrder(orderId: string, riderId: string, by: s
     { new: true },
   );
   if (!updated) throw new ApiError(409, 'This order changed a moment ago. Refresh and try again.');
+  notifyRiderAssigned(updated, true);
   return updated;
 }

@@ -39,6 +39,8 @@ export interface IUser {
   /** The one rider (or few) who receives orders beyond the last distance band. */
   riderLongDistance?: boolean;
   /** Customers who signed in with Google / Facebook. */
+  /** The phone number was proven with a Firebase OTP. */
+  phoneVerified?: boolean;
   googleId?: string;
   facebookId?: string;
   /** Sellers: unique id shown on their dashboard and in the admin panel. */
@@ -130,6 +132,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     riderPausedAt: { type: Date, default: null },
     riderCancelCount: { type: Number, default: 0 },
     riderLongDistance: { type: Boolean, default: false },
+    phoneVerified: { type: Boolean, default: false },
     googleId: { type: String, unique: true, sparse: true },
     facebookId: { type: String, unique: true, sparse: true },
     sellerId: { type: String, unique: true, sparse: true },

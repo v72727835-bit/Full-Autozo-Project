@@ -13,8 +13,8 @@ export interface RegisterInput {
   password: string;
 }
 
-export async function riderLoginRequest(identifier: string, password: string): Promise<AuthResult> {
-  const { data } = await api.post<ApiEnvelope<AuthResult>>('/rider/auth/login', { identifier, password });
+export async function riderLoginRequest(identifier: string, password: string, firebaseIdToken?: string): Promise<AuthResult> {
+  const { data } = await api.post<ApiEnvelope<AuthResult>>('/rider/auth/login', { identifier, password, firebaseIdToken });
   return data.data;
 }
 export async function registerRequest(input: RegisterInput): Promise<AuthResult> {

@@ -2,7 +2,8 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getErrorMessage, getFieldErrors } from '../api/client';
+import { getErrorMessage, getFieldErrors, otpRequiredPhone } from '../api/client';
+import { OtpModal } from '../components/OtpModal';
 import { useAuth } from '../context/AuthContext';
 import type { AuthNav } from '../navigation/types';
 import { colors, gutter, ms, radius, space, themed } from '../theme';
@@ -29,6 +30,7 @@ export function SignupScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [needOtp, setNeedOtp] = useState(false);
 
   const strength = useMemo(() => passwordStrength(form.password), [form.password]);
 
@@ -59,7 +61,8 @@ export function SignupScreen() {
       });
     } catch (err) {
       const fields = getFieldErrors(err);
-      if (Object.keys(fields).length) setErrors(fields);
+      if (otpRequiredPhone(err) !== null) setNeedOtp(true);
+      else if (Object.keys(fields).length) setErrors(fields);
       else setFormError(getErrorMessage(err));
     } finally {
       setBusy(false);
@@ -186,6 +189,21 @@ export function SignupScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      {needOtp ? (
+        <OtpModal
+          phone={form.phone}
+          onClose={() => setNeedOtp(false)}
+          onVerified={async (token) => {
+            try {
+              await signUp({ name: form.name.trim(), phone: normalizePhone(form.phone), password: form.password, firebaseIdToken: token });
+              setNeedOtp(false);
+            } catch (err) {
+              setNeedOtp(false);
+              setFormError(getErrorMessage(err));
+            }
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
