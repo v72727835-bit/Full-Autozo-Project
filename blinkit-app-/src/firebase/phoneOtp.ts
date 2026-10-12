@@ -37,7 +37,13 @@ function message(e: unknown): string {
   if (code.includes('session-expired') || code.includes('code-expired')) return 'That code has expired. Please request a new one.';
   if (code.includes('quota-exceeded')) return 'We cannot send more OTPs right now. Please try again later.';
   if (code.includes('network')) return 'No internet connection. Please try again.';
-  return 'Could not send the OTP. Please try again.';
+  if (code.includes('app-not-authorized') || code.includes('missing-client-identifier') || code.includes('invalid-app-credential')) {
+    return 'This app build is not registered with Firebase yet (SHA fingerprints or google-services.json). Please contact support. [' + code + ']';
+  }
+  if (code.includes('operation-not-allowed')) return 'Phone sign-in is not switched on for this region or project. [' + code + ']';
+  // Show the technical code so a failing build can be diagnosed from a screenshot.
+  const detail = code || (e as { message?: string })?.message || 'unknown';
+  return 'Could not send the OTP. Please try again. [' + String(detail).slice(0, 90) + ']';
 }
 
 export interface OtpHandle {
