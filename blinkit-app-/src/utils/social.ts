@@ -7,10 +7,21 @@
  */
 type Opt = { default?: unknown } & Record<string, unknown>;
 
-function optional(name: string): Opt | null {
+// Metro bundles only `require` calls whose module name is a plain string, so each provider gets its own
+// try/catch (Metro treats a require inside try/catch as optional: a build without the library still bundles).
+function loadGoogle(): Opt | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require(name) as Opt;
+    return require('@react-native-google-signin/google-signin') as Opt;
+  } catch {
+    return null;
+  }
+}
+
+function loadFacebook(): Opt | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('react-native-fbsdk-next') as Opt;
   } catch {
     return null;
   }
@@ -19,7 +30,7 @@ function optional(name: string): Opt | null {
 export const NOT_IN_BUILD = 'This sign-in method is coming soon. Please continue with your phone number for now.';
 
 export async function googleAccessToken(webClientId: string): Promise<string> {
-  const lib = optional('@react-native-google-signin/google-signin') as {
+  const lib = loadGoogle() as {
     GoogleSignin?: {
       configure: (c: { webClientId: string; scopes?: string[] }) => void;
       hasPlayServices: () => Promise<boolean>;
@@ -35,7 +46,7 @@ export async function googleAccessToken(webClientId: string): Promise<string> {
 }
 
 export async function facebookAccessToken(): Promise<string> {
-  const lib = optional('react-native-fbsdk-next') as {
+  const lib = loadFacebook() as {
     LoginManager?: { logInWithPermissions: (p: string[]) => Promise<{ isCancelled: boolean }> };
     AccessToken?: { getCurrentAccessToken: () => Promise<{ accessToken: string } | null> };
   } | null;
