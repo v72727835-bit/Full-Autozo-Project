@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { createRider, fetchShops, fetchUsers, updateUser } from '../api/admin';
+import { createRider, deleteUser, fetchShops, fetchUsers, updateUser } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Tone, formatDate, timeAgo } from '../components/ui';
 import { AppUser, PageMeta, Shop } from '../types';
@@ -22,6 +22,7 @@ export default function UsersPage({ fixedRole, title = 'Users', subtitle }: { fi
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<AppUser | null>(null);
 
   useEffect(() => {
     setRole(fixedRole ?? '');
@@ -55,6 +56,21 @@ export default function UsersPage({ fixedRole, title = 'Users', subtitle }: { fi
     try {
       const updated = await updateUser(user._id, body);
       setUsers((list) => list.map((item) => item._id === user._id ? { ...item, ...updated } : item));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const remove = async (user: AppUser) => {
+    if (!confirm(`Delete ${user.name} (${user.phone}) for good? This cannot be undone.\n\nAn account that already has orders cannot be deleted; block it instead.`)) return;
+    setSavingId(user._id);
+    setError('');
+    try {
+      await deleteUser(user._id);
+      setUsers((list) => list.filter((item) => item._id !== user._id));
+      setMeta((m) => (m ? { ...m, total: Math.max(0, m.total - 1) } : m));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -101,7 +117,13 @@ export default function UsersPage({ fixedRole, title = 'Users', subtitle }: { fi
                     {fixedRole === 'rider' && <td><select value={typeof user.warehouse === 'string' ? user.warehouse : user.warehouse?._id ?? ''} disabled={savingId === user._id} onChange={(e) => patch(user, { warehouse: e.target.value || null })} style={{ width: 160, height: 31, fontSize: 12.5 }}><option value="">Unassigned</option>{warehouses.map((warehouse) => <option key={warehouse._id} value={warehouse._id}>{warehouse.name}</option>)}</select></td>}
                     <td className="cell-muted">{user.lastLoginAt ? timeAgo(user.lastLoginAt) : '—'}</td>
                     <td className="cell-muted">{formatDate(user.createdAt)}</td>
-                    <td><Button size="sm" variant={user.isActive ? 'danger' : 'secondary'} disabled={savingId === user._id} onClick={() => patch(user, { isActive: !user.isActive })}>{savingId === user._id ? '...' : user.isActive ? 'Block' : 'Unblock'}</Button></td>
+                    <td>
+                      <div className="row-flex" style={{ gap: 6 }}>
+                        <Button size="sm" variant="secondary" disabled={savingId === user._id} onClick={() => setEditing(user)}>Edit</Button>
+                        <Button size="sm" variant={user.isActive ? 'secondary' : 'primary'} disabled={savingId === user._id} onClick={() => patch(user, { isActive: !user.isActive })}>{savingId === user._id ? '...' : user.isActive ? 'Block' : 'Unblock'}</Button>
+                        <Button size="sm" variant="danger" disabled={savingId === user._id} onClick={() => remove(user)}>Delete</Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -111,8 +133,51 @@ export default function UsersPage({ fixedRole, title = 'Users', subtitle }: { fi
       </div>
 
       {meta && <Pagination page={meta.page} totalPages={meta.totalPages} onChange={setPage} />}
+      {editing && <EditUserModal user={editing} onClose={() => setEditing(null)} onSaved={(saved) => { setUsers((list) => list.map((item) => (item._id === saved._id ? { ...item, ...saved } : item))); setEditing(null); }} />}
       {showCreate && <CreateRiderModal warehouses={warehouses} onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); load(); }} />}
     </>
+  );
+}
+
+/** Change a person's name, phone or email, and optionally set a new password for them. */
+function EditUserModal({ user, onClose, onSaved }: { user: AppUser; onClose: () => void; onSaved: (u: AppUser) => void }) {
+  const [form, setForm] = useState({ name: user.name, phone: user.phone, email: user.email ?? '', password: '' });
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      const body: { name?: string; phone?: string; email?: string; password?: string } = {};
+      if (form.name.trim() !== user.name) body.name = form.name.trim();
+      if (form.phone.trim() !== user.phone) body.phone = form.phone.trim();
+      if (form.email.trim() !== (user.email ?? '')) body.email = form.email.trim();
+      if (form.password) body.password = form.password;
+      if (!Object.keys(body).length) return onClose();
+      onSaved(await updateUser(user._id, body));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title={`Edit ${user.name}`} onClose={onClose}>
+      <form onSubmit={submit}>
+        <ErrorBanner message={error} />
+        <Field label="Full name"><input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+        <Field label="Phone"><input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="10-digit mobile number" /></Field>
+        <Field label="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+        <Field label="New password (leave empty to keep the current one)">
+          <input type="password" minLength={6} autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 6 characters" />
+        </Field>
+        {form.password ? <div className="page-subtitle" style={{ marginBottom: 8 }}>They will be signed out of every device and must log in with the new password.</div> : null}
+        <div className="modal-actions"><Button type="button" variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save changes'}</Button></div>
+      </form>
+    </Modal>
   );
 }
 

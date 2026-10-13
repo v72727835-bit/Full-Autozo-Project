@@ -303,6 +303,11 @@ export const adminUserUpdateBody = z
     isActive: z.boolean(),
     role: z.enum(['customer', 'rider', 'shop', 'admin']),
     warehouse: objectId.nullable(),
+    name: z.string().trim().min(2).max(80),
+    phone,
+    email: z.string().trim().toLowerCase().email().or(z.literal('')),
+    /** A new password the admin sets for the person (they are signed out everywhere). */
+    password: z.string().min(6, 'Password must be at least 6 characters').max(72),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');

@@ -75,6 +75,7 @@ router.delete('/shops/:id', validate({ params: v.idParam }), admin.deleteShop);
 router.post('/riders', validate({ body: v.adminRiderBody }), admin.createRider);
 router.get('/users', validate({ query: v.adminUsersQuery }), admin.listUsersAdmin);
 router.patch('/users/:id', validate({ params: v.idParam, body: v.adminUserUpdateBody }), admin.updateUserAdmin);
+router.delete('/users/:id', validate({ params: v.idParam }), admin.deleteUserAdmin);
 
 router.get('/settings', extra.getSettings);
 router.patch('/settings', validate({ body: v.adminSettingsBody }), extra.updateSettings);
