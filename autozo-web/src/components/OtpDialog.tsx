@@ -53,9 +53,9 @@ export function OtpDialog({ phone, onVerified, onClose }: { phone: string; onVer
 
   useEffect(() => () => session.current?.cleanup(), []);
 
-  const verify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!session.current) return;
+  const verify = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!session.current || busy) return;
     setBusy(true);
     setError('');
     try {
@@ -68,6 +68,12 @@ export function OtpDialog({ phone, onVerified, onClose }: { phone: string; onVer
     }
   };
 
+  // Sign in as soon as the 6th digit is typed (or auto-filled from the SMS).
+  useEffect(() => {
+    if (code.length === 6 && !sending && !busy && !error) void verify();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code]);
+
   return (
     <div className={s.overlay} role="dialog" aria-modal="true" aria-labelledby="otp-title">
       <form className={s.dialog} onSubmit={verify}>
@@ -78,7 +84,7 @@ export function OtpDialog({ phone, onVerified, onClose }: { phone: string; onVer
           <Input
             className={s.code}
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            onChange={(e) => { setError(''); setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); }}
             inputMode="numeric"
             autoComplete="one-time-code"
             placeholder="••••••"

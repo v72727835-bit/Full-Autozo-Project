@@ -42,7 +42,7 @@ export function OtpModal({ phone, onVerified, onClose }: { phone: string; onVeri
   }, [wait]);
 
   const verify = async () => {
-    if (!handle.current) return;
+    if (!handle.current || busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -55,6 +55,12 @@ export function OtpModal({ phone, onVerified, onClose }: { phone: string; onVeri
   };
 
   const idle = sending || wait > 0;
+  // Sign in as soon as the 6th digit is typed (or auto-filled from the SMS).
+  useEffect(() => {
+    if (code.length === 6 && !sending && !busy && !error) void verify();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code]);
+
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -64,7 +70,7 @@ export function OtpModal({ phone, onVerified, onClose }: { phone: string; onVeri
             {sending ? 'Sending a code' : 'We sent a 6-digit code'} to +91 {phone.replace(/\D/g, '').slice(-10)}.
           </Text>
           {error ? <ErrorBanner message={error} /> : null}
-          <TextField label="Enter the code" placeholder="••••••" value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" maxLength={6} />
+          <TextField label="Enter the code" placeholder="••••••" value={code} onChangeText={(t) => { setError(null); setCode(t.replace(/\D/g, '').slice(0, 6)); }} keyboardType="number-pad" maxLength={6} />
           <Button title="Verify" onPress={verify} loading={busy} disabled={sending || code.length !== 6} />
           <View style={styles.row}>
             <Pressable disabled={idle} onPress={() => void send()} hitSlop={10}>
