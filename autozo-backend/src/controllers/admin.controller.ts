@@ -2,7 +2,9 @@ import { assignRiderToOrder, freeRidersForOrder, moveOrderStatus } from '../serv
 import { FilterQuery, Types } from 'mongoose';
 import { Banner, IBanner } from '../models/Banner';
 import { riderFilter } from './adminExtra.controller';
+import { Cart } from '../models/Cart';
 import { Category, ICategory } from '../models/Category';
+import { DeviceToken } from '../models/DeviceToken';
 import { Coupon, ICoupon } from '../models/Coupon';
 import { IOrder, Order } from '../models/Order';
 import { IProduct, Product } from '../models/Product';
@@ -495,16 +497,54 @@ export const createRider = asyncHandler(async (req, res) => {
 });
 
 export const updateUserAdmin = asyncHandler(async (req, res) => {
-  const update = req.body as Partial<IUser>;
+  const { password, email, ...update } = req.body as Partial<IUser> & { password?: string; email?: string };
   if (update.warehouse) {
     const warehouse = await Shop.findById(update.warehouse).select('_id').lean();
     if (!warehouse) throw new ApiError(400, 'Warehouse not found');
   }
-  const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select(
-    'name phone email role warehouse isActive',
-  ).populate('warehouse', 'name');
+  const user = await User.findById(req.params.id).select('+password');
   if (!user) throw new ApiError(404, 'User not found');
-  ok(res, user);
+
+  // A phone number or email can belong to one account only.
+  if (update.phone && update.phone !== user.phone) {
+    if (await User.exists({ phone: update.phone, _id: { $ne: user._id } })) throw new ApiError(409, 'That phone number is already used by another account');
+  }
+  if (email && email !== user.email) {
+    if (await User.exists({ email, _id: { $ne: user._id } })) throw new ApiError(409, 'That email is already used by another account');
+  }
+  if (req.user!.id === String(user._id) && (update.isActive === false || (update.role && update.role !== user.role))) {
+    throw new ApiError(400, 'You cannot block or change the role of your own account');
+  }
+
+  Object.assign(user, update);
+  if (email !== undefined) user.email = email || undefined;
+  if (password) {
+    user.password = password; // hashed by the model on save
+    user.refreshTokens = []; // signs the person out of every device
+  }
+  await user.save();
+
+  const saved = await User.findById(user._id).select('name phone email role warehouse isActive lastLoginAt createdAt').populate('warehouse', 'name');
+  ok(res, saved);
+});
+
+/**
+ * Deletes an account for good. An account that already has orders cannot be deleted
+ * (the orders would lose their customer or rider): block it instead.
+ */
+export const deleteUserAdmin = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select('name role');
+  if (!user) throw new ApiError(404, 'User not found');
+  if (req.user!.id === String(user._id)) throw new ApiError(400, 'You cannot delete your own account');
+  if (user.role === 'admin' && (await User.countDocuments({ role: 'admin' })) <= 1) throw new ApiError(400, 'The last admin account cannot be deleted');
+
+  const orders = await Order.countDocuments({ $or: [{ user: user._id }, { rider: user._id }] });
+  if (orders > 0) {
+    throw new ApiError(409, `${user.name} has ${orders} order${orders === 1 ? '' : 's'} on record, so the account cannot be deleted. Block it instead.`);
+  }
+  await Promise.all([Cart.deleteMany({ user: user._id }), DeviceToken.deleteMany({ user: user._id })]);
+  await User.deleteOne({ _id: user._id });
+  ok(res, { deleted: true });
 });
 /* ============ Banners ============ */
 

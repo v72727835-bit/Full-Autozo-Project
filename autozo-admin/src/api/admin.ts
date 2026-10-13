@@ -106,8 +106,14 @@ export const createRider = async (body: { name: string; phone: string; email?: s
 export const fetchUsers = (params: { page?: number; limit?: number; role?: string; q?: string }) =>
   paged<AppUser>('/admin/users', params);
 
-export const updateUser = async (id: string, body: { isActive?: boolean; role?: string; warehouse?: string | null }): Promise<AppUser> =>
-  (await api.patch(`/admin/users/${id}`, body)).data.data;
+export const updateUser = async (
+  id: string,
+  body: { isActive?: boolean; role?: string; warehouse?: string | null; name?: string; phone?: string; email?: string; password?: string },
+): Promise<AppUser> => (await api.patch(`/admin/users/${id}`, body)).data.data;
+
+export const deleteUser = async (id: string): Promise<void> => {
+  await api.delete(`/admin/users/${id}`);
+};
 
 /* ---------- banners ---------- */
 export type MediaInput = Omit<import('../types').MediaItem, '_id' | 'videoType' | 'embedUrl'>;
