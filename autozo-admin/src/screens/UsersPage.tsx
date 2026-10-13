@@ -172,7 +172,10 @@ function EditUserModal({ user, onClose, onSaved }: { user: AppUser; onClose: () 
         <Field label="Phone"><input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="10-digit mobile number" /></Field>
         <Field label="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
         <Field label="New password (leave empty to keep the current one)">
-          <input type="password" minLength={6} autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 6 characters" />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input type="text" minLength={6} autoComplete="off" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 6 characters" />
+            <button type="button" className="btn" onClick={() => setForm({ ...form, password: Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('') })}>Generate</button>
+          </div>
         </Field>
         {form.password ? <div className="page-subtitle" style={{ marginBottom: 8 }}>They will be signed out of every device and must log in with the new password.</div> : null}
         <div className="modal-actions"><Button type="button" variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save changes'}</Button></div>
