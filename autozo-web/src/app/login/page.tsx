@@ -116,6 +116,11 @@ function LoginInner() {
         <Button type="submit" size="lg" full loading={loading}>
           Login
         </Button>
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <Link href="/forgot-password" style={{ color: 'var(--brand-text)', fontWeight: 700 }}>
+            Forgot password?
+          </Link>
+        </div>
       </form>
       ) : null}
       {otpPhone ? (

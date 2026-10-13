@@ -17,6 +17,7 @@ import { ProductListScreen } from '../screens/ProductListScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ShopDetailScreen } from '../screens/ShopDetailScreen';
 import { SignupScreen } from '../screens/SignupScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { SupportScreen } from '../screens/SupportScreen';
 import { WishlistScreen } from '../screens/WishlistScreen';
@@ -60,6 +61,7 @@ function AuthFlow() {
       <AuthStack.Screen name="Onboarding" component={OnboardingScreen} />
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Signup" component={SignupScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </AuthStack.Navigator>
   );
 }

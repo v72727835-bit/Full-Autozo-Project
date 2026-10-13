@@ -41,6 +41,12 @@ export const loginBody = z.object({
   firebaseIdToken: z.string().min(20).max(4000).optional(),
 });
 
+export const resetPasswordBody = z.object({
+  phone,
+  newPassword: password,
+  firebaseIdToken: z.string().min(20).max(4000),
+});
+
 export const deviceBody = z.object({
   token: z.string().min(20).max(4000),
   platform: z.enum(['web', 'android', 'ios']).default('android'),

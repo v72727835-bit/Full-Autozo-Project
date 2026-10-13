@@ -34,3 +34,8 @@ export const socialLogin = async (provider: 'google' | 'facebook', accessToken: 
   tokens.save(data.data.accessToken, data.data.refreshToken, data.data.user);
   return data.data.user as UserProfile;
 };
+
+/** Forgot password: the verified phone OTP token lets the customer set a new password. */
+export const resetPassword = async (phone: string, newPassword: string, firebaseIdToken: string) => {
+  await api.post('/auth/reset-password', { phone, newPassword, firebaseIdToken });
+};

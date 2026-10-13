@@ -154,6 +154,11 @@ export function LoginScreen() {
           />
 
           <Button label="Sign in" onPress={submit} loading={busy} size="lg" style={styles.submit} />
+          <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8} accessibilityRole="button" style={styles.forgot}>
+            <Txt variant="label" tone="brand">
+              Forgot password?
+            </Txt>
+          </Pressable>
 
             </View>
           ) : null}
@@ -199,6 +204,7 @@ const styles = themed(({ c }) => ({
   subtitle: { marginBottom: space.xxl },
   banner: { marginBottom: space.lg },
   submit: { marginTop: space.sm },
+  forgot: { alignSelf: 'center', marginTop: space.lg },
   methods: { gap: space.sm, marginBottom: space.xl },
   footer: {
     flexDirection: 'row',

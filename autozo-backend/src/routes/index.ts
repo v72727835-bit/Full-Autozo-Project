@@ -34,6 +34,7 @@ const authLimiter = rateLimit({
 /* ============ Auth ============ */
 router.post('/auth/register', authLimiter, validate({ body: v.registerBody }), auth.register);
 router.post('/auth/login', authLimiter, validate({ body: v.loginBody }), auth.login);
+router.post('/auth/reset-password', authLimiter, validate({ body: v.resetPasswordBody }), auth.resetPassword);
 router.post('/auth/google', authLimiter, validate({ body: v.socialLoginBody }), auth.googleLogin);
 router.post('/auth/facebook', authLimiter, validate({ body: v.socialLoginBody }), auth.facebookLogin);
 router.post('/rider/auth/login', authLimiter, validate({ body: v.loginBody }), auth.riderLogin);

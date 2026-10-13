@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { getIntegrations } from '../services/integrations.service';
-import { requireOtp } from '../services/firebase.service';
+import { localPhone, requireOtp, verifyPhoneToken } from '../services/firebase.service';
 import { User, UserDoc } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -77,6 +77,22 @@ export const riderLogin = asyncHandler(async (req, res) => {
   const tokens = await issueTokens(user);
   ok(res, { user, ...tokens });
 });
+/** Forgot password: a phone OTP proves the number is theirs, then they pick a new password. Customers and riders only. */
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { phone, newPassword, firebaseIdToken } = req.body as { phone: string; newPassword: string; firebaseIdToken: string };
+  const verified = localPhone(await verifyPhoneToken(firebaseIdToken));
+  if (verified !== localPhone(phone)) throw new ApiError(400, 'The OTP was verified for a different phone number.');
+
+  const user = await User.findOne({ phone: verified, role: { $in: ['customer', 'rider'] } }).select('+password');
+  if (!user) throw new ApiError(404, 'No account found with this phone number.');
+  if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
+  user.password = newPassword;
+  user.phoneVerified = true;
+  user.refreshTokens = []; // sign out every device
+  await user.save();
+  ok(res, { message: 'Password changed. You can log in now.' });
+});
+
 export const refresh = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body as { refreshToken: string };
 
