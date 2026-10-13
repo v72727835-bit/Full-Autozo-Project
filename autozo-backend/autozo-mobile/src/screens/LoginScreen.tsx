@@ -11,7 +11,7 @@ import { AuthStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
-export default function LoginScreen(_props: Props) {
+export default function LoginScreen({ navigation }: Props) {
   const { signInRider } = useAuth();
   const passwordRef = useRef<TextInputRef>(null);
   const [identifier, setIdentifier] = useState('');
@@ -42,6 +42,7 @@ export default function LoginScreen(_props: Props) {
     <TextField label="Rider mobile number or email" icon="person-outline" placeholder="9876543210" value={identifier} onChangeText={setIdentifier} error={errors.identifier} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} autoComplete="username" />
     <TextField label="Password" icon="lock-closed-outline" placeholder="Your rider password" value={password} onChangeText={setPassword} error={errors.password} secure inputRef={passwordRef} returnKeyType="done" onSubmitEditing={onSubmit} autoComplete="password" />
     <Button title="Sign in as rider" onPress={onSubmit} loading={submitting} style={{ marginTop: 4 }} />
+    <Button title="Forgot password?" variant="outline" onPress={() => navigation.navigate('ForgotPassword')} style={{ marginTop: 8 }} />
     {otpPhone ? (
       <OtpModal
         phone={otpPhone}
