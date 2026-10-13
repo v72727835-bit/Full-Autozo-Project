@@ -398,7 +398,9 @@ export const adminSettingsBody = z
     sixDay: z.object({ days: z.coerce.number().int().min(1).max(60), categories: z.array(objectId).max(100) }).partial(),
     cod: z.object({ disabledCategories: z.array(objectId).max(100), message: z.string().trim().max(300) }).partial(),
     riderCodLimit: z.coerce.number().min(0).max(1_000_000),
-    appLinks: z.object({ android: z.string().trim().max(500), ios: z.string().trim().max(500) }).partial(),
+    appLinks: z
+      .object({ android: z.string().trim().max(500), ios: z.string().trim().max(500), rider: z.string().trim().max(500), warehouse: z.string().trim().max(500) })
+      .partial(),
     imageMaxKb: z.coerce.number().int().min(20).max(5000),
     supportPhone: z.string().trim().max(20),
     deliverySlots: z

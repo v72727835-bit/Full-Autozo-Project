@@ -28,7 +28,7 @@ export interface ISettings {
   };
   /** A rider is paused automatically once this much COD cash is unsettled. */
   riderCodLimit: number;
-  appLinks: { android?: string; ios?: string };
+  appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   /** Largest product photo (KB) the image tips recommend. */
   imageMaxKb: number;
   /** Shown in the cart header so a customer can call for help. */
@@ -78,7 +78,7 @@ const settingsSchema = new Schema<ISettings>(
       },
     },
     riderCodLimit: { type: Number, default: 2000, min: 0 },
-    appLinks: { android: String, ios: String },
+    appLinks: { android: String, ios: String, rider: String, warehouse: String },
     imageMaxKb: { type: Number, default: 200 },
     supportPhone: { type: String, trim: true },
     deliverySlots: {
