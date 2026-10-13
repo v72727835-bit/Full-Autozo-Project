@@ -270,7 +270,7 @@ export interface Settings {
   sixDay: { days: number; categories: (CategoryRef | string)[] };
   cod: { disabledCategories: (CategoryRef | string)[]; message: string };
   riderCodLimit: number;
-  appLinks: { android?: string; ios?: string };
+  appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   imageMaxKb: number;
   supportPhone?: string;
   deliverySlots: { key: 'instant' | 'twoHour' | 'nextDay'; label: string; enabled: boolean }[];

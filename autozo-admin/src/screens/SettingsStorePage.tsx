@@ -394,11 +394,13 @@ function RiderCard({ settings, onSave }: { settings: Settings; onSave: (patch: R
 function AppLinksCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
   const [android, setAndroid] = useState(settings.appLinks?.android ?? '');
   const [ios, setIos] = useState(settings.appLinks?.ios ?? '');
+  const [rider, setRider] = useState(settings.appLinks?.rider ?? '');
+  const [warehouse, setWarehouse] = useState(settings.appLinks?.warehouse ?? '');
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
     setSaving(true);
-    await onSave({ appLinks: { android, ios } });
+    await onSave({ appLinks: { android, ios, rider, warehouse } });
     setSaving(false);
   };
 
@@ -406,10 +408,16 @@ function AppLinksCard({ settings, onSave }: { settings: Settings; onSave: (patch
     <div className="card card-pad" style={{ marginBottom: 18 }}>
       <h2 className="card-title">App download links</h2>
       <div className="page-subtitle" style={{ marginBottom: 14 }}>
-        Shown in the website footer. Point Android at your APK or Play Store listing.
+        Shown in the website footer. Point each app at its APK or Play Store listing.
       </div>
       <Field label="Android (APK or Play Store)">
         <input value={android} onChange={(e) => setAndroid(e.target.value)} placeholder="https://…/autozo.apk" />
+      </Field>
+      <Field label="Rider app (APK or Play Store)">
+        <input value={rider} onChange={(e) => setRider(e.target.value)} placeholder="https://…/autozo-rider.apk" />
+      </Field>
+      <Field label="Warehouse app (APK or Play Store)">
+        <input value={warehouse} onChange={(e) => setWarehouse(e.target.value)} placeholder="https://…/autozo-warehouse.apk" />
       </Field>
       <Field label="iOS (App Store)">
         <input value={ios} onChange={(e) => setIos(e.target.value)} placeholder="https://apps.apple.com/…" />
