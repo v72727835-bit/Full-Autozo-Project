@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { logoutRequest, sellerLogin, sellerMe } from '../api/seller';
+import { unregisterPush } from '../firebase/push';
 import { setAccessToken, setSessionExpiredHandler } from '../api/client';
 import { tokenStore } from '../storage/tokens';
 import { Me } from '../types';
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMe(await sellerMe());
   }, []);
   const signOut = useCallback(async () => {
+    await unregisterPush();
     try { await logoutRequest(await tokenStore.getRefresh()); } catch { /* server unreachable */ }
     await tokenStore.clear();
     setAccessToken(null);
