@@ -25,8 +25,8 @@ export const login = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body as { identifier: string; password: string };
 
   const query = identifier.includes('@')
-    ? { email: identifier.toLowerCase() }
-    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '') };
+    ? { email: identifier.toLowerCase(), role: 'admin' }
+    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, ''), role: 'admin' };
 
   const user = await User.findOne(query).select('+password');
   if (!user || !(await user.comparePassword(password))) {
@@ -505,12 +505,12 @@ export const updateUserAdmin = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select('+password');
   if (!user) throw new ApiError(404, 'User not found');
 
-  // A phone number or email can belong to one account only.
+  // A phone number or email can belong to one account of each kind (customer, rider, warehouse...).
   if (update.phone && update.phone !== user.phone) {
-    if (await User.exists({ phone: update.phone, _id: { $ne: user._id } })) throw new ApiError(409, 'That phone number is already used by another account');
+    if (await User.exists({ phone: update.phone, role: update.role ?? user.role, _id: { $ne: user._id } })) throw new ApiError(409, 'That phone number is already used by another account');
   }
   if (email && email !== user.email) {
-    if (await User.exists({ email, _id: { $ne: user._id } })) throw new ApiError(409, 'That email is already used by another account');
+    if (await User.exists({ email, role: update.role ?? user.role, _id: { $ne: user._id } })) throw new ApiError(409, 'That email is already used by another account');
   }
   if (req.user!.id === String(user._id) && (update.isActive === false || (update.role && update.role !== user.role))) {
     throw new ApiError(400, 'You cannot block or change the role of your own account');

@@ -37,5 +37,5 @@ export async function fetchRiderMe(): Promise<User> {
 }
 /** Forgot password: the verified phone OTP token lets the rider set a new password. */
 export async function resetPasswordRequest(phone: string, newPassword: string, firebaseIdToken: string): Promise<void> {
-  await api.post('/auth/reset-password', { phone, newPassword, firebaseIdToken });
+  await api.post('/auth/reset-password', { phone, newPassword, firebaseIdToken, role: 'rider' });
 }

@@ -20,7 +20,7 @@ async function main() {
 
   await connectDB();
 
-  const existing = await User.findOne({ $or: [{ phone }, { email: email.toLowerCase() }] });
+  const existing = await User.findOne({ role: 'admin', $or: [{ phone }, { email: email.toLowerCase() }] });
   if (existing) {
     existing.name = name;
     existing.phone = phone;
