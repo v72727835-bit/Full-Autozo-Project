@@ -50,7 +50,7 @@ export const resetPasswordBody = z.object({
 export const deviceBody = z.object({
   token: z.string().min(20).max(4000),
   platform: z.enum(['web', 'android', 'ios']).default('android'),
-  app: z.enum(['customer', 'rider', 'web']).default('customer'),
+  app: z.enum(['customer', 'rider', 'warehouse', 'web']).default('customer'),
 });
 export const deviceDeleteBody = z.object({ token: z.string().min(20).max(4000) });
 
