@@ -21,8 +21,8 @@ const escapeRegex = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export const sellerLogin = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body as { identifier: string; password: string };
   const query = identifier.includes('@')
-    ? { email: identifier.toLowerCase() }
-    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '') };
+    ? { email: identifier.toLowerCase(), role: 'seller' }
+    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, ''), role: 'seller' };
   const user = await User.findOne(query).select('+password');
   if (!user || !(await user.comparePassword(password))) throw new ApiError(401, 'Invalid phone/email or password');
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
@@ -224,7 +224,7 @@ export const adminCreateSeller = asyncHandler(async (req, res) => {
   const { name, phone, email, password, warehouses } = req.body as { name: string; phone: string; email?: string; password: string; warehouses: string[] };
   const found = await Shop.countDocuments({ _id: { $in: warehouses } });
   if (found !== new Set(warehouses).size) throw new ApiError(400, 'Warehouse not found');
-  const clash = await User.findOne({ $or: [{ phone }, ...(email ? [{ email }] : [])] }).select('phone');
+  const clash = await User.findOne({ role: 'seller', $or: [{ phone }, ...(email ? [{ email }] : [])] }).select('phone');
   if (clash) throw new ApiError(409, 'That phone or email is already registered');
   const user = await User.create({ name, phone, email, password, role: 'seller', sellerWarehouses: warehouses });
   created(res, { _id: user._id, name: user.name, phone: user.phone, email: user.email });
@@ -288,7 +288,7 @@ export const createMyRider = asyncHandler(async (req, res) => {
   const wh = warehouse ?? (mine.length === 1 ? mine[0] : undefined);
   if (!wh) throw new ApiError(400, 'Choose the warehouse for this rider.');
   if (!mine.includes(wh)) throw new ApiError(403, 'That warehouse is not yours.');
-  if (await User.exists({ phone })) throw new ApiError(409, 'This phone number already has an account. A rider needs a number that is not used anywhere else on Autozo.');
+  if (await User.exists({ phone, role: 'rider' })) throw new ApiError(409, 'A rider with this phone number already exists.');
   const rider = await User.create({ name, phone, password, role: 'rider', warehouse: wh, isActive: true });
   created(res, { _id: rider._id, name: rider.name, phone: rider.phone });
 });
@@ -306,7 +306,7 @@ export const adminSetWarehouseLogin = asyncHandler(async (req, res) => {
   const shop = await Shop.findById(req.params.id).select('name').lean();
   if (!shop) throw new ApiError(404, 'Warehouse not found');
   const existing = await User.findOne({ role: 'seller', sellerWarehouses: shop._id }).select('+password');
-  const clash = await User.findOne({ phone, ...(existing ? { _id: { $ne: existing._id } } : {}) }).select('_id').lean();
+  const clash = await User.findOne({ phone, role: 'seller', ...(existing ? { _id: { $ne: existing._id } } : {}) }).select('_id').lean();
   if (clash) throw new ApiError(409, 'That phone is already used by another account');
   if (!existing) {
     if (!password) throw new ApiError(400, 'Set a password for the new login');
@@ -329,7 +329,7 @@ export const registerWarehouse = asyncHandler(async (req, res) => {
     name: string; phone: string; email?: string; password: string; shopName: string;
     line1: string; city: string; state: string; pincode: string; location: { lat: number; lng: number }; gst?: string; note?: string;
   };
-  const clash = await User.findOne({ $or: [{ phone: b.phone }, ...(b.email ? [{ email: b.email }] : [])] }).select('_id').lean();
+  const clash = await User.findOne({ role: 'seller', $or: [{ phone: b.phone }, ...(b.email ? [{ email: b.email }] : [])] }).select('_id').lean();
   if (clash) throw new ApiError(409, 'That phone or email is already registered');
   const user = await User.create({
     name: b.name, phone: b.phone, email: b.email, password: b.password, role: 'seller', sellerStatus: 'pending',

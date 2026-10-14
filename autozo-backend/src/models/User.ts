@@ -107,8 +107,8 @@ const addressSchema = new Schema<IAddress>({
 const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
-    phone: { type: String, required: true, unique: true, trim: true },
-    email: { type: String, lowercase: true, trim: true, unique: true, sparse: true },
+    phone: { type: String, required: true, trim: true },
+    email: { type: String, lowercase: true, trim: true },
     password: { type: String, required: true, select: false },
     role: {
       type: String,
@@ -187,6 +187,10 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     },
   },
 );
+
+// One phone number / email may be used once per kind of account: the same person can be a customer, a rider and a warehouse owner.
+userSchema.index({ phone: 1, role: 1 }, { unique: true });
+userSchema.index({ email: 1, role: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string' } } });
 
 userSchema.pre('save', async function (next) {
   if (this.isModified('password')) {

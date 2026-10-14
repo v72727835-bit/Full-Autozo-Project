@@ -13,7 +13,7 @@ async function main() {
   const warehouse = await Shop.findOne({ isActive: true }).sort({ createdAt: 1 }).select('_id name').lean();
   if (!warehouse) throw new Error('No active warehouse/shop found. Create a warehouse first.');
 
-  const existing = await User.findOne({ $or: [{ phone }, { email: email.toLowerCase() }] });
+  const existing = await User.findOne({ role: 'rider', $or: [{ phone }, { email: email.toLowerCase() }] });
   if (existing) {
     existing.name = name;
     existing.phone = phone;

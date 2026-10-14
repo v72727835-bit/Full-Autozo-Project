@@ -45,6 +45,7 @@ export const resetPasswordBody = z.object({
   phone,
   newPassword: password,
   firebaseIdToken: z.string().min(20).max(4000),
+  role: z.enum(['customer', 'rider']).default('customer'),
 });
 
 export const deviceBody = z.object({

@@ -15,7 +15,7 @@ export const getMe = asyncHandler(async (req, res) => {
 
 export const updateMe = asyncHandler(async (req, res) => {
   const { email } = req.body as { email?: string };
-  if (email && (await User.exists({ email, _id: { $ne: req.user!.id } }))) {
+  if (email && (await User.exists({ email, role: req.user!.role, _id: { $ne: req.user!.id } }))) {
     throw new ApiError(409, 'Email already registered');
   }
   const user = await User.findByIdAndUpdate(req.user!.id, { $set: req.body }, { new: true, runValidators: true });

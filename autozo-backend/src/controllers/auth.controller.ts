@@ -33,7 +33,7 @@ async function otpOnLogin(user: UserDoc, firebaseIdToken?: string) {
 export const register = asyncHandler(async (req, res) => {
   const { name, phone, email, password, firebaseIdToken } = req.body;
 
-  const clash = await User.findOne({ $or: [{ phone }, ...(email ? [{ email }] : [])] }).select('phone email');
+  const clash = await User.findOne({ role: 'customer', $or: [{ phone }, ...(email ? [{ email }] : [])] }).select('phone email');
   if (clash) {
     throw new ApiError(409, clash.phone === phone ? 'Phone number already registered' : 'Email already registered');
   }
@@ -48,8 +48,8 @@ export const login = asyncHandler(async (req, res) => {
   const { identifier, password, firebaseIdToken } = req.body as { identifier: string; password: string; firebaseIdToken?: string };
 
   const query = identifier.includes('@')
-    ? { email: identifier.toLowerCase() }
-    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '') };
+    ? { email: identifier.toLowerCase(), role: 'customer' }
+    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, ''), role: 'customer' };
 
   const user = await User.findOne(query).select('+password');
   if (!user || !(await user.comparePassword(password))) {
@@ -66,8 +66,8 @@ export const login = asyncHandler(async (req, res) => {
 export const riderLogin = asyncHandler(async (req, res) => {
   const { identifier, password, firebaseIdToken } = req.body as { identifier: string; password: string; firebaseIdToken?: string };
   const query = identifier.includes('@')
-    ? { email: identifier.toLowerCase() }
-    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '') };
+    ? { email: identifier.toLowerCase(), role: 'rider' }
+    : { phone: identifier.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, ''), role: 'rider' };
   const user = await User.findOne(query).select('+password');
   if (!user || !(await user.comparePassword(password))) throw new ApiError(401, 'Invalid phone/email or password');
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
@@ -79,11 +79,11 @@ export const riderLogin = asyncHandler(async (req, res) => {
 });
 /** Forgot password: a phone OTP proves the number is theirs, then they pick a new password. Customers and riders only. */
 export const resetPassword = asyncHandler(async (req, res) => {
-  const { phone, newPassword, firebaseIdToken } = req.body as { phone: string; newPassword: string; firebaseIdToken: string };
+  const { phone, newPassword, firebaseIdToken, role } = req.body as { phone: string; newPassword: string; firebaseIdToken: string; role: 'customer' | 'rider' };
   const verified = localPhone(await verifyPhoneToken(firebaseIdToken));
   if (verified !== localPhone(phone)) throw new ApiError(400, 'The OTP was verified for a different phone number.');
 
-  const user = await User.findOne({ phone: verified, role: { $in: ['customer', 'rider'] } }).select('+password');
+  const user = await User.findOne({ phone: verified, role }).select('+password');
   if (!user) throw new ApiError(404, 'No account found with this phone number.');
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
   user.password = newPassword;
@@ -157,7 +157,7 @@ async function getJson<T>(url: string): Promise<T> {
 /** Signs in (or signs up) the customer behind a verified social profile. */
 async function signInWithSocial(p: SocialProfile) {
   const key = p.provider === 'google' ? 'googleId' : 'facebookId';
-  let user = (await User.findOne({ [key]: p.id })) ?? (p.email ? await User.findOne({ email: p.email.toLowerCase() }) : null);
+  let user = (await User.findOne({ [key]: p.id, role: 'customer' })) ?? (p.email ? await User.findOne({ email: p.email.toLowerCase(), role: 'customer' }) : null);
   if (user && user.role !== 'customer') throw new ApiError(403, 'This login is for customers only.');
   if (user && !user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
   if (!user) {
