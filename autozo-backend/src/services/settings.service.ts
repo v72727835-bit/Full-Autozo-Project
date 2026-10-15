@@ -91,8 +91,9 @@ export function productRules(
   const aisleCod = !cache || !id ? true : !cache.codOff.has(id);
   return {
     deliveryDays: cache && id && cache.sixDay.has(id) ? cache.settings.sixDay.days : null,
-    // The product's own choice and the aisle rule both have to allow cash.
-    codAvailable: aisleCod && mode !== 'online',
+    // A product set to "COD only" is sold for cash even in an aisle where cash is off by default;
+    // otherwise the aisle rule and the product's own choice both have to allow cash.
+    codAvailable: mode === 'cod' ? true : aisleCod && mode !== 'online',
     onlineAvailable: mode !== 'cod',
     paymentMode: mode,
   };
