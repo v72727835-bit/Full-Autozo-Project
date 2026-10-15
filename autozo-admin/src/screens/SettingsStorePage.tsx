@@ -532,10 +532,18 @@ const SOCIALS: { key: 'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 
 
 function SocialCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
   const [links, setLinks] = useState<Record<string, string>>(() => Object.fromEntries(SOCIALS.map((s) => [s.key, settings.socialLinks?.[s.key] ?? ''])));
+  const [other, setOther] = useState<{ label: string; url: string }[]>(settings.socialOther ?? []);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const submit = async () => {
+    setError('');
+    const clean = other.map((o) => ({ label: o.label.trim(), url: o.url.trim() })).filter((o) => o.label || o.url);
+    if (clean.some((o) => !o.label || !/^https?:\/\//i.test(o.url))) {
+      setError('Each extra link needs a name and a full link starting with https://');
+      return;
+    }
     setSaving(true);
-    await onSave({ socialLinks: links });
+    await onSave({ socialLinks: links, socialOther: clean });
     setSaving(false);
   };
   return (
@@ -549,6 +557,17 @@ function SocialCard({ settings, onSave }: { settings: Settings; onSave: (patch: 
           <input value={links[s.key]} onChange={(e) => setLinks({ ...links, [s.key]: e.target.value })} placeholder={s.hint} />
         </Field>
       ))}
+      <h3 className="card-title" style={{ marginTop: 18 }}>Other links</h3>
+      <div className="page-subtitle" style={{ marginBottom: 10 }}>Any other page (Snapchat, Pinterest, blog, Google review...). Give it a short name and the full link.</div>
+      {other.map((o, i) => (
+        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <input style={{ flex: '0 0 32%' }} value={o.label} maxLength={30} placeholder="Name, e.g. Pinterest" onChange={(e) => setOther(other.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
+          <input style={{ flex: 1 }} value={o.url} placeholder="https://…" onChange={(e) => setOther(other.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} />
+          <Button type="button" size="sm" variant="ghost" onClick={() => setOther(other.filter((_, j) => j !== i))}>Remove</Button>
+        </div>
+      ))}
+      {other.length < 12 ? <Button type="button" size="sm" variant="secondary" onClick={() => setOther([...other, { label: '', url: '' }])}>+ Add another link</Button> : null}
+      {error ? <div style={{ color: 'var(--danger, #ef4444)', fontSize: 13, marginTop: 8 }}>{error}</div> : null}
       <div className="modal-actions">
         <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save social links'}</Button>
       </div>

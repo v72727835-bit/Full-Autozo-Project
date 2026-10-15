@@ -427,6 +427,8 @@ export interface PublicSettings {
   /** Social media pages the admin filled in (full https links only). */
   socialLinks?: Partial<Record<'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 'telegram' | 'linkedin', string>>;
   company?: { name?: string; logo?: string; tagline?: string };
+  /** Extra pages the admin added: a name and a full link. */
+  socialOther?: { label: string; url: string }[];
   sixDayDays: number;
   codMessage?: string;
   supportPhone?: string;
