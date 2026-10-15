@@ -146,6 +146,8 @@ async function runPlaceOrder(
         mrp: l.product.mrp,
         quantity: l.quantity,
         lineTotal: round2(l.product.price * l.quantity),
+        ...(l.product.hsn ? { hsn: l.product.hsn } : {}),
+        ...(l.product.gstRate !== undefined && l.product.gstRate !== null ? { gstRate: l.product.gstRate } : {}),
         ...(l.product.seller ? { seller: l.product.seller } : {}),
       }));
       const sellerIds = [...new Set(items.filter((i) => i.seller).map((i) => String(i.seller)))];

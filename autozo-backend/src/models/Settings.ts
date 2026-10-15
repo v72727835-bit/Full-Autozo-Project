@@ -34,6 +34,8 @@ export interface ISettings {
     name?: string; tagline?: string; address?: string; phone?: string; email?: string; website?: string; gstin?: string; fssai?: string;
     logo?: string; signature?: string; seal?: string; signatoryName?: string; signatoryTitle?: string; declaration?: string; footerNote?: string;
   };
+  /** GST rules for the bills. */
+  gst: { defaultRate: number; deliveryRate: number; homeState: string };
   /** Social media pages shown in the website footer and on every bill. */
   socialLinks: { facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; x?: string; telegram?: string; linkedin?: string };
   /** Largest product photo (KB) the image tips recommend. */
@@ -91,6 +93,11 @@ const settingsSchema = new Schema<ISettings>(
       email: { type: String, trim: true }, website: { type: String, trim: true }, gstin: { type: String, trim: true }, fssai: { type: String, trim: true },
       logo: String, signature: String, seal: String, signatoryName: { type: String, trim: true }, signatoryTitle: { type: String, trim: true },
       declaration: { type: String, trim: true }, footerNote: { type: String, trim: true },
+    },
+    gst: {
+      defaultRate: { type: Number, default: 0, min: 0, max: 28 },
+      deliveryRate: { type: Number, default: 18, min: 0, max: 28 },
+      homeState: { type: String, default: 'Uttar Pradesh', trim: true },
     },
     socialLinks: { facebook: String, instagram: String, youtube: String, whatsapp: String, x: String, telegram: String, linkedin: String },
     imageMaxKb: { type: Number, default: 200 },

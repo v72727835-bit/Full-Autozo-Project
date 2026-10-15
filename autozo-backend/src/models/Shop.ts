@@ -18,6 +18,8 @@ export interface IShop {
   deliveryRadiusKm: number;
   minOrderAmount: number;
   deliveryFee: number;
+  /** The warehouse's own GSTIN, printed on its bills (falls back to the company GSTIN). */
+  gstin?: string;
 }
 
 const shopSchema = new Schema<IShop>(
@@ -46,6 +48,7 @@ const shopSchema = new Schema<IShop>(
     deliveryRadiusKm: { type: Number, default: 10 },
     minOrderAmount: { type: Number, default: 0 },
     deliveryFee: { type: Number, default: 30 },
+    gstin: { type: String, trim: true, uppercase: true },
   },
   { timestamps: true },
 );

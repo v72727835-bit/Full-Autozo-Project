@@ -44,6 +44,7 @@ export interface Shop {
   _id: string;
   name: string;
   slug: string;
+  gstin?: string;
   description?: string;
   phone?: string;
   address: { line1?: string; city?: string; state?: string; pincode?: string };
@@ -69,6 +70,8 @@ export interface StandardCategory {
 
 export interface Product {
   _id: string;
+  hsn?: string;
+  gstRate?: number | null;
   standardCategories?: string[];
   name: string;
   slug: string;
@@ -278,6 +281,7 @@ export interface Settings {
   riderCodLimit: number;
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   company?: CompanyDetails;
+  gst?: { defaultRate: number; deliveryRate: number; homeState: string };
   socialLinks?: SocialLinks;
   imageMaxKb: number;
   supportPhone?: string;

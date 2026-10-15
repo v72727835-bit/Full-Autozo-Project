@@ -16,6 +16,7 @@ type FormState = {
   lat: string;
   lng: string;
   deliveryFee: string;
+  gstin: string;
   minOrderAmount: string;
   deliveryRadiusKm: string;
   isOpen: boolean;
@@ -33,6 +34,7 @@ const EMPTY: FormState = {
   lat: '24.70',
   lng: '83.07',
   deliveryFee: '30',
+  gstin: '',
   minOrderAmount: '0',
   deliveryRadiusKm: '10',
   isOpen: true,
@@ -206,6 +208,7 @@ function ShopForm({ shop, onClose, onSaved }: { shop: Shop | null; onClose: () =
           lat: String(shop.location.coordinates[1]),
           lng: String(shop.location.coordinates[0]),
           deliveryFee: String(shop.deliveryFee),
+          gstin: shop.gstin ?? '',
           minOrderAmount: String(shop.minOrderAmount),
           deliveryRadiusKm: String(shop.deliveryRadiusKm),
           isOpen: shop.isOpen,
@@ -230,6 +233,7 @@ function ShopForm({ shop, onClose, onSaved }: { shop: Shop | null; onClose: () =
         address: { line1: form.line1, city: form.city, state: form.state, pincode: form.pincode },
         location: { lat: Number(form.lat), lng: Number(form.lng) },
         deliveryFee: Number(form.deliveryFee) || 0,
+        gstin: form.gstin.trim().toUpperCase(),
         minOrderAmount: Number(form.minOrderAmount) || 0,
         deliveryRadiusKm: Number(form.deliveryRadiusKm) || 10,
         isOpen: form.isOpen,
@@ -298,6 +302,9 @@ function ShopForm({ shop, onClose, onSaved }: { shop: Shop | null; onClose: () =
         <div className="field-row">
           <Field label="Delivery fee (₹)">
             <input type="number" value={form.deliveryFee} onChange={(e) => set('deliveryFee', e.target.value)} />
+          </Field>
+          <Field label="GSTIN of this warehouse (printed on its bills)">
+            <input value={form.gstin} onChange={(e) => set('gstin', e.target.value.toUpperCase())} maxLength={15} placeholder="09ABCDE1234F1Z5" />
           </Field>
           <Field label="Minimum order (₹)">
             <input type="number" value={form.minOrderAmount} onChange={(e) => set('minOrderAmount', e.target.value)} />

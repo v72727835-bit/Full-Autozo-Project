@@ -197,7 +197,7 @@ export const stats = asyncHandler(async (req, res) => {
 /* ============ Products ============ */
 
 const ADMIN_PRODUCT_FIELDS =
-  'name slug brand images icon price mrp unit stock attributes foodType tags isActive rating ratingCount soldCount nameHi points sortCode ratingLabel variantGroup variantLabel seller shop category createdAt';
+  'name slug brand images icon price mrp unit stock attributes foodType hsn gstRate tags isActive rating ratingCount soldCount nameHi points sortCode ratingLabel variantGroup variantLabel seller shop category createdAt';
 
 export const listProductsAdmin = asyncHandler(async (req, res) => {
   const { q, category, shop, isActive, page, limit } = req.query as unknown as {

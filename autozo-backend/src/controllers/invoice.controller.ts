@@ -6,6 +6,8 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { ok } from '../utils/response';
 import { invoiceToken, invoiceTokenValid, renderInvoiceHtml } from '../services/invoice.service';
 import { User } from '../models/User';
+import { Product } from '../models/Product';
+import { computeGst, resolveState } from '../services/gst';
 
 const origin = (req: Request) => `${req.get('x-forwarded-proto')?.split(',')[0]?.trim() || req.protocol}://${req.get('host')}`;
 
@@ -42,19 +44,44 @@ export const renderInvoice = asyncHandler(async (req, res) => {
   const { t, exp, format, print } = req.query as { t?: string; exp?: string; format?: string; print?: string };
   if (!t || !invoiceTokenValid(id, Number(exp), t)) throw new ApiError(401, 'This bill link has expired. Open the bill again from the app or panel.');
 
-  const order = await Order.findById(id).populate('shop', 'name phone address').lean();
+  const order = await Order.findById(id).populate('shop', 'name phone address gstin').lean();
   if (!order) throw new ApiError(404, 'Order not found');
   const settings = await Settings.findOne({ key: 'global' }).lean();
   const kind = format === 'pos' ? 'pos' : 'a4';
   const site = (settings?.company?.website && /^https?:\/\//i.test(settings.company.website) ? settings.company.website : 'https://autozo.org').replace(/\/$/, '');
 
+  // Orders made before GST was set up: take the HSN / rate from the product as it is now.
+  const missing = order.items.filter((i) => i.gstRate === undefined || i.gstRate === null || !i.hsn).map((i) => i.product);
+  const live = missing.length ? await Product.find({ _id: { $in: missing } }).select('hsn gstRate').lean() : [];
+  const liveById = new Map(live.map((p) => [String(p._id), p]));
+  const items = order.items.map((i) => {
+    const p = liveById.get(String(i.product));
+    return { ...i, hsn: i.hsn || p?.hsn || '', gstRate: i.gstRate ?? p?.gstRate ?? undefined };
+  });
+
+  const shop = typeof order.shop === 'object' ? (order.shop as unknown as { name?: string; phone?: string; gstin?: string; address?: { line1?: string; city?: string; state?: string; pincode?: string } }) : null;
+  const company = settings?.company ?? {};
+  const gstin = (shop?.gstin || company.gstin || '').toUpperCase();
+  // Where the goods come from: the GSTIN's state, else the warehouse address, else the company's home state.
+  const from = resolveState(gstin) ?? resolveState(shop?.address?.state) ?? resolveState(settings?.gst?.homeState) ?? resolveState('Uttar Pradesh')!;
+  const to = resolveState(order.address.state);
+  const interState = !!to && to.code !== from.code;
+  const gst = computeGst({
+    items, discount: order.discount ?? 0, deliveryFee: order.deliveryFee ?? 0, handlingFee: order.handlingFee ?? 0, orderTotal: order.total,
+    defaultRate: settings?.gst?.defaultRate ?? 0, serviceRate: settings?.gst?.deliveryRate ?? 18, interState,
+  });
+  const shopAddress = shop?.address ? [shop.address.line1, shop.address.city, shop.address.state, shop.address.pincode].filter(Boolean).join(', ') : '';
+
   const html = renderInvoiceHtml(
     {
       order: order as never,
-      shop: typeof order.shop === 'object' ? (order.shop as never) : null,
-      company: settings?.company ?? {},
+      shop: shop as never,
+      company,
       social: (settings?.socialLinks ?? {}) as Record<string, string | undefined>,
       siteUrl: site,
+      gst,
+      supplier: { name: shop?.name || company.name || 'Autozo', address: shopAddress || company.address || '', gstin, phone: shop?.phone || company.phone, stateText: `${from.name} (${from.code})` },
+      placeOfSupply: to ? `${to.name} (${to.code})` : order.address.state || from.name,
     },
     kind,
     `format=${kind === 'pos' ? 'a4' : 'pos'}&exp=${exp}&t=${t}`,

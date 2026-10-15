@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { env } from '../config/env';
 import { code128Svg, qrSvg } from './barcode';
+import type { GstResult } from './gst';
 
 /* ---------- short-lived signed links, so a bill opens in any browser or app without a login ---------- */
 
@@ -76,6 +77,10 @@ export interface InvoiceData {
   company: InvoiceCompany;
   social: Record<string, string | undefined>;
   siteUrl: string;
+  gst: GstResult;
+  /** Who supplies the goods: the warehouse (with its own GSTIN) or, failing that, the company. */
+  supplier: { name: string; address: string; gstin: string; phone?: string; stateText: string };
+  placeOfSupply: string;
 }
 
 const DEFAULT_DECLARATION = 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.';
@@ -114,75 +119,90 @@ const BASE_CSS = `
 
 /* ---------- A4 tax invoice ---------- */
 
+function taxHead(g: GstResult) {
+  return g.interState ? ['IGST'] : ['CGST', 'SGST'];
+}
+const pct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2)}%`;
+
 function a4(d: InvoiceData): string {
-  const { order: o, company: c } = d;
+  const { order: o, company: c, gst: g } = d;
   const name = c.name || 'Autozo';
   const logo = safeUrl(c.logo);
   const sign = safeUrl(c.signature);
   const seal = safeUrl(c.seal);
-  const shopAddr = d.shop?.address ? [d.shop.address.line1, d.shop.address.city, d.shop.address.state, d.shop.address.pincode].filter(Boolean).join(', ') : '';
-  const saved = o.items.reduce((s, i) => s + Math.max(0, (i.mrp - i.price) * i.quantity), 0);
-  const rows = o.items
-    .map(
-      (i, n) => `<tr><td class="c">${n + 1}</td><td>${esc(i.name)}${i.unit ? `<div class="mut">${esc(i.unit)}</div>` : ''}</td><td class="c">${i.quantity}</td><td class="r">${inr(i.mrp)}</td><td class="r">${inr(i.price)}</td><td class="r b">${inr(i.lineTotal)}</td></tr>`,
-    )
+  const hasTax = g.tax > 0;
+  const heads = taxHead(g);
+  const saved = o.items.reduce((s, i) => s + Math.max(0, (i.mrp - i.price) * i.quantity), 0) + Math.max(0, o.discount);
+  const rows = g.lines
+    .map((l, n) => {
+      const taxCells = g.interState
+        ? `<td class="r">${l.rate ? pct(l.rate) : '0%'}<div class="mut">${inr(l.igst)}</div></td>`
+        : `<td class="r">${l.rate ? pct(l.rate / 2) : '0%'}<div class="mut">${inr(l.cgst)}</div></td><td class="r">${l.rate ? pct(l.rate / 2) : '0%'}<div class="mut">${inr(l.sgst)}</div></td>`;
+      return `<tr><td class="c">${n + 1}</td><td>${esc(l.name)}${l.unit ? `<div class="mut">${esc(l.unit)}</div>` : ''}${l.discount > 0 ? `<div class="mut">Discount - ${inr(l.discount)}</div>` : ''}</td><td class="c">${esc(l.hsn || '-')}</td><td class="c">${l.isService ? '1' : l.quantity}</td><td class="r">${l.isService ? '-' : inr(l.price)}</td><td class="r">${inr(l.taxable)}</td>${taxCells}<td class="r b">${inr(l.total)}</td></tr>`;
+    })
     .join('');
-  const totals = [
-    ['Items total', inr(o.subtotal)],
-    ['Delivery charge', o.deliveryFee > 0 ? inr(o.deliveryFee) : 'FREE'],
-    ...(o.handlingFee ? [['Handling fee', inr(o.handlingFee)]] : []),
-    ...(o.discount > 0 ? [['Discount', `- ${inr(o.discount)}`]] : []),
+  const sumRows = g.summary
+    .map((s) => `<tr><td class="c">${esc(s.hsn)}</td><td class="r">${inr(s.taxable)}</td>${g.interState ? `<td class="r">${pct(s.rate)}</td><td class="r">${inr(s.igst)}</td>` : `<td class="r">${pct(s.rate / 2)}</td><td class="r">${inr(s.cgst)}</td><td class="r">${pct(s.rate / 2)}</td><td class="r">${inr(s.sgst)}</td>`}<td class="r b">${inr(s.tax)}</td></tr>`)
+    .join('');
+  const totalRows = [
+    ['Total taxable value', inr(g.taxable)],
+    ...(g.interState ? [['IGST', inr(g.igst)]] : [['CGST', inr(g.cgst)], ['SGST', inr(g.sgst)]]),
+    ...(Math.abs(g.roundOff) >= 0.01 ? [['Round off', `${g.roundOff < 0 ? '- ' : ''}${inr(Math.abs(g.roundOff))}`]] : []),
   ]
     .map(([k, v]) => `<div class="tr"><span>${k}</span><span>${v}</span></div>`)
     .join('');
   const pay = o.paymentMethod === 'cod' ? 'Cash on delivery' : `Online (${o.paymentStatus})`;
   const orderUrl = `${d.siteUrl}/orders/${String(o._id)}`;
+  const sup = d.supplier;
+  const title = c.gstin || sup.gstin ? 'TAX INVOICE' : 'INVOICE';
 
   return `<style>${BASE_CSS}
-@page{size:A4;margin:10mm}
-.sheet{width:210mm;min-height:297mm;margin:16px auto;background:#fff;padding:12mm 12mm 10mm;box-shadow:0 6px 30px rgba(0,0,0,.18);position:relative}
+@page{size:A4;margin:8mm}
+.sheet{width:210mm;min-height:297mm;margin:16px auto;background:#fff;padding:10mm 10mm 8mm;box-shadow:0 6px 30px rgba(0,0,0,.18);position:relative}
 .head{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid #16a34a;padding-bottom:10px}
 .brand{display:flex;gap:12px;align-items:center}.brand img{height:62px;max-width:150px;object-fit:contain}
-.brand h1{margin:0;font-size:22px;color:#0f172a}.brand p{margin:2px 0;font-size:11.5px;color:#4b5563;line-height:1.35}
-.title{text-align:right}.title h2{margin:0;font-size:24px;letter-spacing:2px;color:#16a34a}.title p{margin:3px 0;font-size:12px}
-.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
-.box{border:1px solid #e5e7eb;border-radius:8px;padding:9px 11px;font-size:12px;line-height:1.5;background:#fafafa}
-.box h4{margin:0 0 4px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#16a34a}
-table{width:100%;border-collapse:collapse;font-size:12px}th{background:#0f172a;color:#fff;padding:7px 8px;text-align:left;font-size:11px}
-td{padding:7px 8px;border-bottom:1px solid #e5e7eb;vertical-align:top}.c{text-align:center}.r{text-align:right}.b{font-weight:700}.mut{color:#6b7280;font-size:10.5px}
-.foot{display:grid;grid-template-columns:1fr 250px;gap:18px;margin-top:12px}
-.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-bottom:1px dashed #e5e7eb}
-.grand{display:flex;justify-content:space-between;background:#16a34a;color:#fff;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:16px;font-weight:800}
-.words{font-size:11.5px;margin-top:8px}.save{margin-top:6px;font-size:12px;color:#15803d;font-weight:700}
+.brand h1{margin:0;font-size:21px;color:#0f172a}.brand p{margin:2px 0;font-size:11px;color:#4b5563;line-height:1.35}
+.title{text-align:right}.title h2{margin:0;font-size:23px;letter-spacing:2px;color:#16a34a}.title p{margin:3px 0;font-size:11.5px}
+.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}
+.box{border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;font-size:11.5px;line-height:1.5;background:#fafafa}
+.box h4{margin:0 0 4px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#16a34a}
+table{width:100%;border-collapse:collapse;font-size:10.5px}th{background:#0f172a;color:#fff;padding:6px 5px;text-align:left;font-size:9.5px}
+td{padding:6px 5px;border-bottom:1px solid #e5e7eb;vertical-align:top}.c{text-align:center}.r{text-align:right}.b{font-weight:700}.mut{color:#6b7280;font-size:9.5px}
+.sum{margin-top:10px;width:62%}.sum th{background:#334155}
+.foot{display:grid;grid-template-columns:1fr 250px;gap:18px;margin-top:10px}
+.tr{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px dashed #e5e7eb}
+.grand{display:flex;justify-content:space-between;background:#16a34a;color:#fff;border-radius:8px;padding:9px 12px;margin-top:8px;font-size:16px;font-weight:800}
+.words{font-size:11px;margin-top:8px}.save{margin-top:6px;font-size:11.5px;color:#15803d;font-weight:700}
 .codes{display:flex;gap:14px;align-items:center}.codes .bc{flex:1;text-align:center}
-.decl{margin-top:14px;border:1px dashed #9ca3af;border-radius:8px;padding:9px 11px;font-size:11px;color:#374151;line-height:1.5}
-.sigrow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:18px;position:relative;min-height:120px}
+.decl{margin-top:12px;border:1px dashed #9ca3af;border-radius:8px;padding:8px 10px;font-size:10.5px;color:#374151;line-height:1.5}
+.sigrow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;position:relative;min-height:118px}
 .sigbox{text-align:center;width:230px;position:relative}.sigbox img.sig{height:56px;max-width:200px;object-fit:contain}
-.sigline{border-top:1px solid #111827;margin-top:4px;padding-top:4px;font-size:11.5px}
+.sigline{border-top:1px solid #111827;margin-top:4px;padding-top:4px;font-size:11px}
 .seal{width:112px;height:112px;object-fit:contain;right:255px;bottom:2px}
-.note{margin-top:10px;text-align:center;font-size:11px;color:#4b5563}.thanks{margin-top:10px;text-align:center;font-weight:700;font-size:13px;color:#16a34a}
+.note{margin-top:8px;text-align:center;font-size:10.5px;color:#4b5563}.thanks{margin-top:8px;text-align:center;font-weight:700;font-size:12.5px;color:#16a34a}
 @media print{body{background:#fff}.bar{display:none}.sheet{margin:0;box-shadow:none;width:auto;min-height:0;padding:0}}
-@media (max-width:820px){.sheet{width:auto;margin:0;padding:12px}.meta{grid-template-columns:1fr}.foot{grid-template-columns:1fr}.head{flex-direction:column}.title{text-align:left}.seal{right:40px}}
+@media (max-width:820px){.sheet{width:auto;margin:0;padding:10px;overflow-x:auto}.meta{grid-template-columns:1fr}.foot{grid-template-columns:1fr}.head{flex-direction:column}.title{text-align:left}.sum{width:100%}.seal{right:40px}table{min-width:640px}}
 </style>
 <div class="bar"><button onclick="window.print()">Print / Save as PDF</button><a class="alt" href="?{ALT}">POS (thermal) bill</a></div>
 <div class="sheet">
  <div class="head">
   <div class="brand">${logo ? `<img src="${esc(logo)}" alt="${esc(name)}">` : ''}<div><h1>${esc(name)}</h1>${c.tagline ? `<p><b>${esc(c.tagline)}</b></p>` : ''}${c.address ? `<p>${esc(c.address)}</p>` : ''}<p>${[c.phone ? `Ph: ${esc(c.phone)}` : '', c.email ? esc(c.email) : '', c.website ? esc(c.website) : ''].filter(Boolean).join(' &nbsp;|&nbsp; ')}</p>${c.gstin || c.fssai ? `<p>${[c.gstin ? `<b>GSTIN:</b> ${esc(c.gstin)}` : '', c.fssai ? `<b>FSSAI:</b> ${esc(c.fssai)}` : ''].filter(Boolean).join(' &nbsp;|&nbsp; ')}</p>` : ''}</div></div>
-  <div class="title"><h2>${c.gstin ? 'TAX INVOICE' : 'INVOICE'}</h2><p><b>Invoice no:</b> ${esc(o.orderNumber)}</p><p><b>Date:</b> ${esc(dateText(o.createdAt))}</p><p><b>Payment:</b> ${esc(pay)}</p></div>
+  <div class="title"><h2>${title}</h2><p><b>Invoice no:</b> ${esc(o.orderNumber)}</p><p><b>Date:</b> ${esc(dateText(o.createdAt))}</p><p><b>Payment:</b> ${esc(pay)}</p><p><b>Reverse charge:</b> No</p></div>
  </div>
  <div class="meta">
-  <div class="box"><h4>Bill to</h4><b>${esc(o.address.name)}</b><br>${esc(o.address.phone)}</div>
-  <div class="box"><h4>Delivery address</h4>${addressLines(o.address)}</div>
-  <div class="box"><h4>Sold by</h4><b>${esc(d.shop?.name || name)}</b>${shopAddr ? `<br>${esc(shopAddr)}` : ''}${d.shop?.phone ? `<br>${esc(d.shop.phone)}` : ''}</div>
+  <div class="box"><h4>Bill to</h4><b>${esc(o.address.name)}</b><br>${esc(o.address.phone)}<br>${addressLines(o.address)}</div>
+  <div class="box"><h4>Supplier (sold by)</h4><b>${esc(sup.name)}</b><br>${esc(sup.address)}${sup.phone ? `<br>${esc(sup.phone)}` : ''}${sup.gstin ? `<br><b>GSTIN:</b> ${esc(sup.gstin)}` : ''}${sup.stateText ? `<br>State: ${esc(sup.stateText)}` : ''}</div>
+  <div class="box"><h4>Place of supply</h4><b>${esc(d.placeOfSupply)}</b><br>${g.interState ? 'Inter-state supply (IGST)' : 'Intra-state supply (CGST + SGST)'}${o.note ? `<br><span class="mut">Note: ${esc(o.note)}</span>` : ''}</div>
  </div>
- <table><thead><tr><th class="c" style="width:34px">#</th><th>Item</th><th class="c" style="width:48px">Qty</th><th class="r" style="width:80px">MRP</th><th class="r" style="width:80px">Rate</th><th class="r" style="width:92px">Amount</th></tr></thead><tbody>${rows}</tbody></table>
+ <table><thead><tr><th class="c" style="width:26px">#</th><th>Description of goods / services</th><th class="c" style="width:52px">HSN/SAC</th><th class="c" style="width:34px">Qty</th><th class="r" style="width:58px">Rate (incl. GST)</th><th class="r" style="width:64px">Taxable value</th>${heads.map((h) => `<th class="r" style="width:62px">${h}</th>`).join('')}<th class="r" style="width:70px">Amount</th></tr></thead><tbody>${rows}</tbody></table>
+ ${hasTax ? `<table class="sum"><thead><tr><th class="c">HSN/SAC</th><th class="r">Taxable value</th>${g.interState ? '<th class="r">IGST rate</th><th class="r">IGST amt</th>' : '<th class="r">CGST rate</th><th class="r">CGST amt</th><th class="r">SGST rate</th><th class="r">SGST amt</th>'}<th class="r">Total tax</th></tr></thead><tbody>${sumRows}<tr><td class="b c">Total</td><td class="r b">${inr(g.taxable)}</td>${g.interState ? `<td></td><td class="r b">${inr(g.igst)}</td>` : `<td></td><td class="r b">${inr(g.cgst)}</td><td></td><td class="r b">${inr(g.sgst)}</td>`}<td class="r b">${inr(g.tax)}</td></tr></tbody></table>` : ''}
  <div class="foot">
   <div>
-   <div class="codes"><div class="bc">${code128Svg(o.orderNumber, { height: 46 })}</div><div>${qrSvg(orderUrl, 84)}<div class="mut" style="text-align:center">Scan for order</div></div></div>
+   <div class="codes"><div class="bc">${code128Svg(o.orderNumber, { height: 44 })}</div><div>${qrSvg(orderUrl, 80)}<div class="mut" style="text-align:center">Scan for order</div></div></div>
    <div class="words"><b>Amount in words:</b> ${esc(amountInWords(o.total))}</div>
-   ${o.note ? `<div class="words"><b>Note:</b> ${esc(o.note)}</div>` : ''}
+   ${hasTax ? `<div class="words"><b>Tax amount in words:</b> ${esc(amountInWords(g.tax))}</div>` : ''}
   </div>
-  <div>${totals}<div class="grand"><span>Grand total</span><span>${inr(o.total)}</span></div>${saved > 0 ? `<div class="save">You saved ${inr(saved)} on this order</div>` : ''}</div>
+  <div>${totalRows}<div class="grand"><span>Grand total</span><span>${inr(o.total)}</span></div>${saved > 0 ? `<div class="save">You saved ${inr(saved)} on this order</div>` : ''}</div>
  </div>
  <div class="decl"><b>Declaration:</b> ${esc(c.declaration || DEFAULT_DECLARATION)}</div>
  <div class="sigrow">
@@ -203,10 +223,17 @@ function pos(d: InvoiceData): string {
   const logo = safeUrl(c.logo);
   const sign = safeUrl(c.signature);
   const seal = safeUrl(c.seal);
-  const items = o.items
-    .map((i) => `<div class="it"><div class="nm">${esc(i.name)}${i.unit ? ` <span class="m">(${esc(i.unit)})</span>` : ''}</div><div class="ln"><span>${i.quantity} × ${inr(i.price)}</span><span>${inr(i.lineTotal)}</span></div></div>`)
-    .join('');
   const line = (k: string, v: string, bold = false) => `<div class="ln${bold ? ' bd' : ''}"><span>${k}</span><span>${v}</span></div>`;
+  const g = d.gst;
+  const items = g.lines
+    .map((l) => `<div class="it"><div class="nm">${esc(l.name)}${l.unit ? ` <span class="m">(${esc(l.unit)})</span>` : ''}</div><div class="ln"><span>${l.isService ? '' : `${l.quantity} × ${inr(l.price)} `}<span class="m">${l.hsn ? `HSN ${esc(l.hsn)} · ` : ''}GST ${pct(l.rate)}</span></span><span>${inr(l.total)}</span></div></div>`)
+    .join('');
+  const taxLines = g.tax > 0
+    ? `${line('Taxable value', inr(g.taxable))}${g.interState ? line('IGST', inr(g.igst)) : `${line('CGST', inr(g.cgst))}${line('SGST', inr(g.sgst))}`}${Math.abs(g.roundOff) >= 0.01 ? line('Round off', `${g.roundOff < 0 ? '- ' : ''}${inr(Math.abs(g.roundOff))}`) : ''}`
+    : '';
+  const sumRows = g.tax > 0
+    ? `<div class="hr"></div><div class="m"><b>GST summary</b></div>${g.summary.map((s) => `<div class="ln m"><span>${esc(s.hsn)} @ ${pct(s.rate)}</span><span>${inr(s.taxable)} + ${inr(s.tax)}</span></div>`).join('')}`
+    : '';
   const pay = o.paymentMethod === 'cod' ? 'Cash on delivery' : `Online (${o.paymentStatus})`;
   return `<style>${BASE_CSS}
 @page{size:80mm auto;margin:3mm}
@@ -222,19 +249,21 @@ function pos(d: InvoiceData): string {
 </style>
 <div class="bar"><button onclick="window.print()">Print bill</button><a class="alt" href="?{ALT}">A4 invoice</a></div>
 <div class="rc">
- <div class="ctr">${logo ? `<img class="logo" src="${esc(logo)}" alt="${esc(name)}">` : ''}<h1>${esc(name)}</h1>${c.tagline ? `<div class="m">${esc(c.tagline)}</div>` : ''}${c.address ? `<div class="m">${esc(c.address)}</div>` : ''}${c.phone ? `<div class="m">Ph: ${esc(c.phone)}</div>` : ''}${c.gstin ? `<div class="m">GSTIN: ${esc(c.gstin)}</div>` : ''}${c.fssai ? `<div class="m">FSSAI: ${esc(c.fssai)}</div>` : ''}</div>
+ <div class="ctr">${logo ? `<img class="logo" src="${esc(logo)}" alt="${esc(name)}">` : ''}<h1>${esc(name)}</h1>${c.tagline ? `<div class="m">${esc(c.tagline)}</div>` : ''}${c.address ? `<div class="m">${esc(c.address)}</div>` : ''}${c.phone ? `<div class="m">Ph: ${esc(c.phone)}</div>` : ''}${(d.supplier.gstin || c.gstin) ? `<div class="m">GSTIN: ${esc(d.supplier.gstin || c.gstin || '')}</div>` : ''}${c.fssai ? `<div class="m">FSSAI: ${esc(c.fssai)}</div>` : ''}</div>
  <div class="hr"></div>
+ ${(c.gstin || d.supplier.gstin) ? '<div class="ctr"><b>TAX INVOICE</b></div>' : ''}
  ${line('Bill no', `<b>${esc(o.orderNumber)}</b>`)}${line('Date', esc(dateText(o.createdAt)))}${line('Payment', esc(pay))}
- ${d.shop?.name ? line('Store', esc(d.shop.name)) : ''}
+ ${d.shop?.name ? line('Store', esc(d.shop.name)) : ''}${line('Supply', esc(d.placeOfSupply))}
  <div class="hr"></div>
  <div><b>${esc(o.address.name)}</b> · ${esc(o.address.phone)}<div class="m">${[o.address.line1, o.address.line2, o.address.city, o.address.pincode].filter(Boolean).map(esc).join(', ')}</div></div>
  <div class="hr"></div>
  ${items}
  <div class="hr"></div>
- ${line('Items total', inr(o.subtotal))}${line('Delivery', o.deliveryFee > 0 ? inr(o.deliveryFee) : 'FREE')}${o.handlingFee ? line('Handling', inr(o.handlingFee)) : ''}${o.discount > 0 ? line('Discount', `- ${inr(o.discount)}`) : ''}
+ ${o.discount > 0 ? line('Discount (already deducted)', `- ${inr(o.discount)}`) : ''}${taxLines}
  <div class="hr"></div>
  ${line('TOTAL', inr(o.total), true)}
  <div class="m" style="margin-top:3px">${esc(amountInWords(o.total))}</div>
+ ${sumRows}
  <div class="hr"></div>
  <div class="ctr">${code128Svg(o.orderNumber, { height: 38, module: 1.3 })}<div style="margin-top:4px">${qrSvg(`${d.siteUrl}/orders/${String(o._id)}`, 70)}</div></div>
  <div class="signrow"><div class="m">For ${esc(name)}${sign ? `<br><img class="sig" src="${esc(sign)}" alt="Signature">` : ''}<br><b>${esc(c.signatoryName || 'Authorised Signatory')}</b></div>${seal ? `<img class="seal" src="${esc(seal)}" alt="Company seal">` : ''}</div>

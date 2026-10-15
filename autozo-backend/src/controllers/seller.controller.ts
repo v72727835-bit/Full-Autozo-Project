@@ -439,7 +439,7 @@ export const warehouseDashboard = asyncHandler(async (req, res) => {
 });
 
 export const listMyShops = asyncHandler(async (req, res) => {
-  ok(res, await Shop.find({ _id: { $in: await myWarehouses(req.user!.id) } }).select('name description phone logo banner address location isOpen isActive deliveryRadiusKm minOrderAmount deliveryFee').lean());
+  ok(res, await Shop.find({ _id: { $in: await myWarehouses(req.user!.id) } }).select('name description phone logo banner address location isOpen isActive deliveryRadiusKm minOrderAmount deliveryFee gstin').lean());
 });
 
 export const updateMyShop = asyncHandler(async (req, res) => {

@@ -72,6 +72,7 @@ export default function SettingsStorePage() {
       <CodCard settings={settings} subCategories={subCategories} onSave={save} />
       <RiderCard settings={settings} onSave={save} />
       <CompanyCard settings={settings} onSave={save} />
+      <GstCard settings={settings} onSave={save} />
       <SocialCard settings={settings} onSave={save} />
       <AppLinksCard settings={settings} onSave={save} />
     </>
@@ -550,6 +551,52 @@ function SocialCard({ settings, onSave }: { settings: Settings; onSave: (patch: 
       ))}
       <div className="modal-actions">
         <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save social links'}</Button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------- GST ----------------------------------- */
+
+const STATES = ['Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'];
+
+function GstCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
+  const g = settings.gst ?? { defaultRate: 0, deliveryRate: 18, homeState: 'Uttar Pradesh' };
+  const [defaultRate, setDefaultRate] = useState(String(g.defaultRate));
+  const [deliveryRate, setDeliveryRate] = useState(String(g.deliveryRate));
+  const [homeState, setHomeState] = useState(g.homeState);
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    setSaving(true);
+    await onSave({ gst: { defaultRate: Number(defaultRate) || 0, deliveryRate: Number(deliveryRate) || 0, homeState } });
+    setSaving(false);
+  };
+  return (
+    <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <h2 className="card-title">GST on bills</h2>
+      <div className="page-subtitle" style={{ marginBottom: 14 }}>
+        Prices already include GST, so the bill takes the tax out of the price. Each product has its own HSN code and GST rate (set in Products).
+        Same state as the customer = CGST + SGST, another state = IGST. Please confirm the rates with your CA.
+      </div>
+      <div className="grid grid-2">
+        <Field label="Default GST rate for products with no rate (%)">
+          <select value={defaultRate} onChange={(e) => setDefaultRate(e.target.value)}>
+            {['0', '5', '12', '18', '28'].map((r) => <option key={r} value={r}>{r}%</option>)}
+          </select>
+        </Field>
+        <Field label="GST on delivery and handling charges (%)">
+          <select value={deliveryRate} onChange={(e) => setDeliveryRate(e.target.value)}>
+            {['0', '5', '12', '18', '28'].map((r) => <option key={r} value={r}>{r}%</option>)}
+          </select>
+        </Field>
+        <Field label="Your home state (used when a warehouse has no GSTIN)">
+          <select value={homeState} onChange={(e) => setHomeState(e.target.value)}>
+            {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Field>
+      </div>
+      <div className="modal-actions">
+        <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save GST settings'}</Button>
       </div>
     </div>
   );

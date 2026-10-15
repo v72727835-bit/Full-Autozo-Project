@@ -379,6 +379,7 @@ export const sellerDashboard = async (): Promise<WarehouseDashboard> => (await a
 export interface WarehouseShop {
   _id: string;
   name: string;
+  gstin?: string;
   description?: string;
   phone?: string;
   logo?: string;

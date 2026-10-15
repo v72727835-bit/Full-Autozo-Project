@@ -170,6 +170,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
     name: product?.name ?? '', nameHi: product?.nameHi ?? '', brand: product?.brand ?? '', description: product?.description ?? '',
     price: product ? String(product.price) : '', mrp: product ? String(product.mrp) : '', unit: product?.unit ?? '1 pc', stock: product ? String(product.stock) : '0',
     foodType: (product?.foodType ?? '') as '' | 'veg' | 'nonveg',
+    hsn: product?.hsn ?? '', gstRate: product?.gstRate === undefined || product?.gstRate === null ? '' : String(product.gstRate),
     attributes: (product?.attributes ?? []).join(', '), tags: (product?.tags ?? []).join(', '),
     variantGroup: product?.variantGroup ?? '', variantLabel: product?.variantLabel ?? '',
   });
@@ -215,6 +216,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
       category: child,
       name: f.name, nameHi: f.nameHi, brand: f.brand, description: f.description,
       price, mrp, unit: f.unit, stock: Number(f.stock) || 0, foodType: f.foodType,
+      hsn: f.hsn.trim(), gstRate: f.gstRate === '' ? null : Number(f.gstRate),
       attributes: csv(f.attributes), tags: csv(f.tags), images, video: video.trim(),
       ...(f.variantGroup ? { variantGroup: f.variantGroup } : {}),
       ...(f.variantLabel ? { variantLabel: f.variantLabel } : {}),
@@ -273,6 +275,21 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
           <Field label={`MRP ₹${off ? ` (${off}% off)` : ''}`}><input type="number" min={0} step="0.01" value={f.mrp} onChange={(e) => set('mrp', e.target.value)} /></Field>
           <Field label="Unit (500 g, 1 kg…)"><input value={f.unit} onChange={(e) => set('unit', e.target.value)} required /></Field>
           <Field label="Stock"><input type="number" min={0} value={f.stock} onChange={(e) => set('stock', e.target.value)} /></Field>
+        </div>
+        <div className="field-row">
+          <Field label="HSN code (for the GST bill)"><input value={f.hsn} onChange={(e) => set('hsn', e.target.value.replace(/[^0-9]/g, '').slice(0, 8))} placeholder="e.g. 1101" inputMode="numeric" /></Field>
+          <Field label="GST rate (already in the price)">
+            <select value={f.gstRate} onChange={(e) => set('gstRate', e.target.value)}>
+              <option value="">Default rate</option>
+              <option value="0">0% (exempt / nil)</option>
+              <option value="0.25">0.25%</option>
+              <option value="3">3%</option>
+              <option value="5">5%</option>
+              <option value="12">12%</option>
+              <option value="18">18%</option>
+              <option value="28">28%</option>
+            </select>
+          </Field>
         </div>
         <div className="field-row">
           <Field label="Food type">

@@ -202,6 +202,9 @@ export const adminLoginBody = z.object({
   password: z.string().min(1),
 });
 
+/** A GST rate (%), or null to go back to the shop-wide default. */
+const gstRateField = z.preprocess((v) => (v === '' ? undefined : v), z.union([z.null(), z.coerce.number().min(0).max(28)]).optional());
+
 const geoPoint = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
 
 export const adminProductBody = z.object({
@@ -220,6 +223,8 @@ export const adminProductBody = z.object({
   attributes: z.array(z.string().trim().max(40)).max(10).default([]),
   foodType: z.enum(['veg', 'nonveg', '']).default(''),
   tags: z.array(z.string().trim().max(40)).max(10).default([]),
+  hsn: z.string().trim().max(10).optional().or(z.literal('')),
+  gstRate: gstRateField,
   isActive: z.boolean().default(true),
   ratingLabel: z.string().trim().max(20).optional(),
   variantGroup: z.string().trim().max(60).optional(),
@@ -284,6 +289,7 @@ export const adminShopBody = z.object({
   deliveryRadiusKm: z.number().min(1).max(100).default(10),
   minOrderAmount: z.number().min(0).default(0),
   deliveryFee: z.number().min(0).default(30),
+  gstin: z.string().trim().toUpperCase().max(15).optional().or(z.literal('')),
 });
 export const adminShopUpdateBody = adminShopBody.partial();
 
@@ -413,6 +419,7 @@ export const adminSettingsBody = z
     appLinks: z
       .object({ android: z.string().trim().max(500), ios: z.string().trim().max(500), rider: z.string().trim().max(500), warehouse: z.string().trim().max(500) })
       .partial(),
+    gst: z.object({ defaultRate: z.coerce.number().min(0).max(28), deliveryRate: z.coerce.number().min(0).max(28), homeState: z.string().trim().max(60) }).partial(),
     company: z
       .object({
         name: z.string().trim().max(80), tagline: z.string().trim().max(120), address: z.string().trim().max(300), phone: z.string().trim().max(30),
@@ -534,6 +541,8 @@ export const sellerProductBody = z.object({
   tags: z.array(z.string().trim().max(40)).max(15).default([]),
   variantGroup: z.string().trim().max(60).optional(),
   variantLabel: z.string().trim().max(30).optional(),
+  hsn: z.string().trim().max(10).optional().or(z.literal('')),
+  gstRate: gstRateField,
 });
 export const sellerProductUpdateBody = z
   .object({
@@ -554,6 +563,8 @@ export const sellerProductUpdateBody = z
     tags: z.array(z.string().trim().max(40)).max(15),
     variantGroup: z.string().trim().max(60),
     variantLabel: z.string().trim().max(30),
+    hsn: z.string().trim().max(10),
+    gstRate: gstRateField,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
@@ -662,6 +673,7 @@ export const sellerShopBody = z
     deliveryRadiusKm: z.number().min(0).max(100),
     minOrderAmount: z.number().min(0).max(100000),
     deliveryFee: z.number().min(0).max(5000),
+    gstin: z.string().trim().toUpperCase().max(15),
     address: z.object({ line1: z.string().trim().max(200), city: z.string().trim().max(60), state: z.string().trim().max(60), pincode: z.string().trim().max(10) }).partial(),
     location: z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
   })

@@ -19,6 +19,8 @@ type FormState = {
   unit: string;
   stock: string;
   foodType: '' | 'veg' | 'nonveg';
+  hsn: string;
+  gstRate: string;
   attributes: string;
   mainImage: string;
   video: string;
@@ -44,6 +46,8 @@ const EMPTY_FORM: FormState = {
   unit: '1 pc',
   stock: '0',
   foodType: '',
+  hsn: '',
+  gstRate: '',
   attributes: '',
   mainImage: '',
   video: '',
@@ -387,6 +391,8 @@ function ProductForm({
           unit: product.unit,
           stock: String(product.stock),
           foodType: product.foodType,
+          hsn: product.hsn ?? '',
+          gstRate: product.gstRate === undefined || product.gstRate === null ? '' : String(product.gstRate),
           attributes: product.attributes.join(', '),
           mainImage: product.images[0] ?? '',
           video: product.video ?? '',
@@ -461,6 +467,8 @@ function ProductForm({
         unit: form.unit,
         stock: Number(form.stock) || 0,
         foodType: form.foodType,
+        hsn: form.hsn.trim(),
+        gstRate: form.gstRate === '' ? null : Number(form.gstRate),
         attributes: form.attributes
           .split(',')
           .map((s) => s.trim())
@@ -550,6 +558,24 @@ function ProductForm({
           </Field>
           <Field label="Stock">
             <input type="number" min="0" value={form.stock} onChange={(e) => set('stock', e.target.value)} />
+          </Field>
+        </div>
+
+        <div className="field-row">
+          <Field label="HSN code (for the GST bill)">
+            <input value={form.hsn} onChange={(e) => set('hsn', e.target.value.replace(/[^0-9]/g, '').slice(0, 8))} placeholder="e.g. 1101" inputMode="numeric" />
+          </Field>
+          <Field label="GST rate (already in the price)">
+            <select value={form.gstRate} onChange={(e) => set('gstRate', e.target.value)}>
+              <option value="">Default rate</option>
+              <option value="0">0% (exempt / nil)</option>
+              <option value="0.25">0.25%</option>
+              <option value="3">3%</option>
+              <option value="5">5%</option>
+              <option value="12">12%</option>
+              <option value="18">18%</option>
+              <option value="28">28%</option>
+            </select>
           </Field>
         </div>
 
