@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
 import { getDeliveryPoint, POINT_EVENT } from '../lib/deliveryPoint';
+import { OPEN_LOCATION_EVENT } from './LocationGate';
 import { Icon } from './Icon';
 import { shortDelivery } from '../lib/deliveryText';
 import { LanguageMenu } from './LanguageMenu';
@@ -27,9 +28,9 @@ export function Header() {
   const pathname = usePathname();
 
   // Shows the city of the pinned default address once we know it.
-  const [place, setPlace] = useState('Robertsganj, Sonbhadra');
+  const [place, setPlace] = useState('Choose location');
   useEffect(() => {
-    const sync = () => setPlace(getDeliveryPoint()?.label || 'Robertsganj, Sonbhadra');
+    const sync = () => setPlace(getDeliveryPoint()?.label || 'Choose location');
     sync();
     window.addEventListener(POINT_EVENT, sync);
     return () => window.removeEventListener(POINT_EVENT, sync);
@@ -54,19 +55,28 @@ export function Header() {
             </span>
           </Link>
 
-          <div className={s.place}>
+          <button
+            type="button"
+            className={s.place}
+            onClick={() => window.dispatchEvent(new Event(OPEN_LOCATION_EVENT))}
+            aria-label="Change delivery location"
+            style={{ background: 'none', borderTop: 0, borderRight: 0, borderBottom: 0, color: 'inherit', font: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+          >
             <Icon name="pin" size={17} />
             <span className={s.placeText}>
               <span className={s.placeLabel}>Delivering to</span>
               <span className={s.placeName}>{place}</span>
             </span>
-          </div>
+          </button>
 
           <div className={s.searchWide}>
             <SearchBar />
           </div>
 
           <nav className={s.tools} aria-label="Account">
+            <button className={s.tool} onClick={() => window.dispatchEvent(new Event(OPEN_LOCATION_EVENT))} aria-label="Change delivery location">
+              <Icon name="pin" size={19} />
+            </button>
             <NoticeBell />
             <LanguageMenu />
             <button

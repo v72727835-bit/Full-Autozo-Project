@@ -106,6 +106,8 @@ export interface ProductSummary {
   deliveryDays?: number | null;
   /** False in aisles where the admin switched cash on delivery off. */
   codAvailable?: boolean;
+  /** False when the product can only be paid for in cash. */
+  onlineAvailable?: boolean;
   discountPercent: number;
   inStock: boolean;
   shop?: { _id: string; name: string; slug: string; isOpen: boolean };
@@ -284,6 +286,8 @@ export interface CartItem {
   stock: number;
   deliveryDays?: number | null;
   codAvailable?: boolean;
+  /** False when the product can only be paid for in cash. */
+  onlineAvailable?: boolean;
   issue: CartIssue;
 }
 

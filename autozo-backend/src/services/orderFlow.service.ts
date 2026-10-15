@@ -79,7 +79,7 @@ export async function ridersForOrder(orderId: string) {
   const shop = order.shop as unknown as { _id: Types.ObjectId; name: string; deliveryRadiusKm?: number };
   const since = new Date(Date.now() - ONLINE_WINDOW_MS);
   const [riders, busy] = await Promise.all([
-    User.find({ role: 'rider', isActive: true, warehouse: shop._id }).select('name phone riderLongDistance riderPaused lastSeenAt').sort({ name: 1 }).lean(),
+    User.find({ role: 'rider', isActive: true, $or: [{ warehouse: shop._id }, { warehouses: shop._id }] }).select('name phone riderLongDistance riderPaused lastSeenAt').sort({ name: 1 }).lean(),
     Order.distinct('rider', { status: 'out_for_delivery', rider: { $exists: true } }),
   ]);
   const busyIds = new Set(busy.map(String));

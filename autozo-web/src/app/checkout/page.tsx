@@ -73,6 +73,15 @@ function CheckoutInner() {
     setEmail((cur) => cur || (user as { email?: string } | null)?.email || '');
   }, [user]);
 
+  // Pick the payment method the cart allows: a cash-only item needs COD, an online-only item needs online payment.
+  useEffect(() => {
+    const items = (cart?.groups ?? []).flatMap((g) => g.items);
+    const noCod = items.some((i) => i.codAvailable === false);
+    const noOnline = items.some((i) => i.onlineAvailable === false);
+    if (noCod && !noOnline && settings?.onlinePaymentOn) setPay('online');
+    else if (noOnline && !noCod) setPay('cod');
+  }, [cart, settings?.onlinePaymentOn]);
+
   const load = useCallback(async () => {
     const data = await fetchAddresses();
     setList(data);
@@ -108,6 +117,11 @@ function CheckoutInner() {
   const codBlocked = cart.groups
     .flatMap((g) => g.items)
     .filter((i) => i.codAvailable === false)
+    .map((i) => i.name);
+  // Items the shop sells for cash only.
+  const onlineBlocked = cart.groups
+    .flatMap((g) => g.items)
+    .filter((i) => i.onlineAvailable === false)
     .map((i) => i.name);
   const farAway = quote?.longDistance === true;
   const subtotalShort = quote ? !quote.meetsMinOrder : false;
@@ -168,6 +182,7 @@ function CheckoutInner() {
   }
   if (pay === 'cod' && farAway) blockers.push('Cash on delivery is not available for this far address. Choose Pay online or use a nearer address.');
   if (pay === 'cod' && codBlocked.length > 0) blockers.push(`Cash on delivery is not available for: ${codBlocked.join(', ')}.`);
+  if (pay === 'online' && onlineBlocked.length > 0) blockers.push(`Online payment is not available for: ${onlineBlocked.join(', ')}. Choose Cash on Delivery.`);
 
   return (
     <div className="page rise" style={{ paddingTop: 22 }}>
@@ -272,10 +287,17 @@ function CheckoutInner() {
                 </Alert>
               </div>
             ) : null}
+            {onlineBlocked.length > 0 ? (
+              <div style={{ marginBottom: 14 }}>
+                <Alert tone="bad" icon="wallet">
+                  Online payment is not available for some items in this order ({onlineBlocked.join(', ')}). Please pay by Cash on Delivery.
+                </Alert>
+              </div>
+            ) : null}
             <div className={s.pays}>
               {PAYMENTS.map((o) => (
-                <label key={o.value} className={s.pay} data-on={pay === o.value}>
-                  <input type="radio" name="pay" checked={pay === o.value} onChange={() => setPay(o.value)} />
+                <label key={o.value} className={s.pay} data-on={pay === o.value} style={(o.value === 'online' && onlineBlocked.length > 0) || (o.value === 'cod' && codBlocked.length > 0) ? { opacity: 0.5 } : undefined}>
+                  <input type="radio" name="pay" checked={pay === o.value} disabled={(o.value === 'online' && onlineBlocked.length > 0) || (o.value === 'cod' && codBlocked.length > 0)} onChange={() => setPay(o.value)} />
                   <span className={s.payIcon}>
                     <Icon name={o.icon} size={19} />
                   </span>

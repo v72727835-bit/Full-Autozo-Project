@@ -47,6 +47,7 @@ router.post('/auth/change-password', ...customerOnly, validate({ body: v.changeP
 
 /* ============ Public catalog (no login needed) ============ */
 router.get('/home', catalogCache, validate({ query: v.homeQuery }), catalog.home);
+router.get('/coverage', catalogCache, validate({ query: v.coverageQuery }), catalog.coverage);
 router.get('/categories', catalogCache, validate({ query: v.categoriesQuery }), catalog.listCategories);
 router.get('/categories/tree', catalogCache, catalog.categoryTree);
 router.get('/categories/:idOrSlug', catalogCache, validate({ params: v.idOrSlugParam }), catalog.getCategory);

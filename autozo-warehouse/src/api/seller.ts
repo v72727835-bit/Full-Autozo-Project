@@ -37,7 +37,7 @@ export async function uploadImages(files: { uri: string; name: string; type: str
 }
 
 export const sellerRiders = async (): Promise<WhRider[]> => (await api.get('/seller/riders')).data.data;
-export const createRider = async (body: { name: string; phone: string; password: string; warehouse?: string }): Promise<void> => { await api.post('/seller/riders', body); };
+export const createRider = async (body: { name: string; phone: string; password: string; warehouses?: string[] }): Promise<void> => { await api.post('/seller/riders', body); };
 export const sellerCustomers = (p: { page?: number; limit?: number; q?: string }) => paged<Customer>('/seller/customers', p);
 export const sellerShops = async (): Promise<Shop[]> => (await api.get('/seller/shops')).data.data;
 export const updateShop = async (id: string, body: Record<string, unknown>): Promise<Shop> => (await api.patch(`/seller/shops/${id}`, body)).data.data;

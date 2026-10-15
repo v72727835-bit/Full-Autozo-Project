@@ -105,6 +105,8 @@ export const homeQuery = geoQuery.refine((v) => (v.lat === undefined) === (v.lng
   message: 'Send both lat and lng, or neither',
 });
 
+export const coverageQuery = z.object({ lat: z.coerce.number().min(-90).max(90), lng: z.coerce.number().min(-180).max(180) });
+
 export const categoriesQuery = z.object({
   parent: objectId.optional(),
   level: z.coerce.number().int().min(1).max(3).optional(),
@@ -205,6 +207,8 @@ export const adminLoginBody = z.object({
 /** A GST rate (%), or null to go back to the shop-wide default. */
 const gstRateField = z.preprocess((v) => (v === '' ? undefined : v), z.union([z.null(), z.coerce.number().min(0).max(28)]).optional());
 
+const paymentModeField = z.enum(['both', 'cod', 'online']);
+
 const geoPoint = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
 
 export const adminProductBody = z.object({
@@ -225,6 +229,7 @@ export const adminProductBody = z.object({
   tags: z.array(z.string().trim().max(40)).max(10).default([]),
   hsn: z.string().trim().max(10).optional().or(z.literal('')),
   gstRate: gstRateField,
+  paymentMode: paymentModeField.default('both'),
   isActive: z.boolean().default(true),
   ratingLabel: z.string().trim().max(20).optional(),
   variantGroup: z.string().trim().max(60).optional(),
@@ -316,6 +321,7 @@ export const adminUserUpdateBody = z
     isActive: z.boolean(),
     role: z.enum(['customer', 'rider', 'shop', 'admin']),
     warehouse: objectId.nullable(),
+    warehouses: z.array(objectId).min(1, 'Choose at least one warehouse').max(30),
     name: z.string().trim().min(2).max(80),
     phone,
     email: z.string().trim().toLowerCase().email().or(z.literal('')),
@@ -325,13 +331,17 @@ export const adminUserUpdateBody = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 
-export const adminRiderBody = z.object({
-  name: z.string().trim().min(2).max(80),
-  phone,
-  email: z.string().trim().toLowerCase().email().optional().or(z.literal('').transform(() => undefined)),
-  password: password,
-  warehouse: objectId,
-});
+export const adminRiderBody = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    phone,
+    email: z.string().trim().toLowerCase().email().optional().or(z.literal('').transform(() => undefined)),
+    password: password,
+    /** One or more warehouses the rider delivers for (`warehouse` still works for old clients). */
+    warehouses: z.array(objectId).min(1, 'Choose at least one warehouse').max(30).optional(),
+    warehouse: objectId.optional(),
+  })
+  .refine((v) => (v.warehouses?.length ?? 0) > 0 || !!v.warehouse, { message: 'Choose at least one warehouse', path: ['warehouses'] });
 
 /* ---------- admin: banners ---------- */
 
@@ -544,6 +554,7 @@ export const sellerProductBody = z.object({
   variantLabel: z.string().trim().max(30).optional(),
   hsn: z.string().trim().max(10).optional().or(z.literal('')),
   gstRate: gstRateField,
+  paymentMode: paymentModeField.default('both'),
 });
 export const sellerProductUpdateBody = z
   .object({
@@ -566,6 +577,7 @@ export const sellerProductUpdateBody = z
     variantLabel: z.string().trim().max(30),
     hsn: z.string().trim().max(10),
     gstRate: gstRateField,
+    paymentMode: paymentModeField,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
@@ -600,6 +612,7 @@ export const sellerRiderBody = z.object({
   phone,
   password: password,
   warehouse: objectId.optional(),
+  warehouses: z.array(objectId).min(1).max(30).optional(),
 });
 
 export const standardCategoryBody = z.object({

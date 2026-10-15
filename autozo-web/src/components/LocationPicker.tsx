@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { matchState } from '../lib/india';
 import { Icon } from './Icon';
 import { Button } from './ui';
 import s from './LocationPicker.module.css';
@@ -13,6 +14,10 @@ export interface PickedPlace {
   state?: string;
   pincode?: string;
   line?: string;
+  /** House number and road, for the first address line. */
+  line1?: string;
+  /** Neighbourhood / locality, for the second address line. */
+  area?: string;
 }
 
 interface Hit {
@@ -31,11 +36,15 @@ export async function reverse(lat: number, lng: number): Promise<Partial<PickedP
     });
     const j = (await r.json()) as { address?: Record<string, string>; display_name?: string };
     const a = j.address ?? {};
+    const street = a.road || a.pedestrian || a.footway || a.residential || '';
+    const line1 = [a.house_number, street].filter(Boolean).join(', ');
     return {
-      city: a.city || a.town || a.village || a.county || a.state_district,
-      state: a.state,
+      city: a.city || a.town || a.village || a.municipality || a.county || a.state_district,
+      state: matchState(a.state) || a.state,
       pincode: a.postcode?.replace(/\D/g, '').slice(0, 6),
       line: j.display_name,
+      line1: line1 || a.amenity || a.building || undefined,
+      area: a.suburb || a.neighbourhood || a.city_district || a.hamlet || undefined,
     };
   } catch {
     return {};

@@ -22,7 +22,9 @@ export interface IUser {
   email?: string;
   password: string;
   role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller';
+  /** Riders: the first warehouse (kept for old data). `warehouses` is the full list they deliver for. */
   warehouse?: Types.ObjectId;
+  warehouses?: Types.ObjectId[];
   avatar?: string;
   isActive: boolean;
   addresses: Types.DocumentArray<IAddress>;
@@ -118,6 +120,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     },
     avatar: String,
     warehouse: { type: Schema.Types.ObjectId, ref: 'Shop', index: true },
+    warehouses: { type: [{ type: Schema.Types.ObjectId, ref: 'Shop' }], default: undefined, index: true },
     isActive: { type: Boolean, default: true },
     addresses: [addressSchema],
     wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
@@ -204,3 +207,9 @@ userSchema.methods.comparePassword = function (candidate: string) {
 };
 
 export const User = model<IUser, UserModel>('User', userSchema);
+
+/** Every warehouse a rider delivers for: the new list, or the single old field. */
+export function riderWarehouseIds(u: { warehouse?: Types.ObjectId | null; warehouses?: Types.ObjectId[] | null }): Types.ObjectId[] {
+  if (u.warehouses?.length) return u.warehouses;
+  return u.warehouse ? [u.warehouse] : [];
+}

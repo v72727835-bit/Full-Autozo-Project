@@ -3,19 +3,13 @@
 import React, { useState } from 'react';
 import { AddressInput } from '../api/account';
 import { Address } from '../lib/types';
+import { INDIA_STATES, matchState } from '../lib/india';
 import { Icon, IconName } from './Icon';
 import { LocationPicker, PickedPlace, reverse } from './LocationPicker';
 import { Alert, Button, Field, Input } from './ui';
 import s from './AddressForm.module.css';
 
-/** Every state and union territory of India; Rajasthan comes first as the default. */
-export const INDIA_STATES = [
-  'Rajasthan', 'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh',
-  'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh',
-  'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra',
-  'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Sikkim', 'Tamil Nadu', 'Telangana',
-  'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-];
+export { INDIA_STATES };
 
 const LABELS: { value: Address['label']; text: string; icon: IconName }[] = [
   { value: 'home', text: 'Home', icon: 'home' },
@@ -40,7 +34,7 @@ export function AddressForm({
     line2: initial?.line2 ?? '',
     landmark: initial?.landmark ?? '',
     city: initial?.city ?? '',
-    state: initial?.state || 'Rajasthan',
+    state: initial?.state ?? '',
     pincode: initial?.pincode ?? '',
     location: initial?.location,
     isDefault: initial?.isDefault ?? false,
@@ -57,8 +51,12 @@ export function AddressForm({
     setF((cur) => ({
       ...cur,
       location: { lat: p.lat, lng: p.lng },
-      city: cur.city || p.city || '',
-      pincode: cur.pincode || p.pincode || '',
+      // City, state and PIN come from the pin, so they follow it; the house and street are only filled when empty.
+      city: p.city || cur.city,
+      state: matchState(p.state) || cur.state,
+      pincode: p.pincode || cur.pincode,
+      line1: cur.line1 || p.line1 || '',
+      line2: cur.line2 || p.area || '',
     }));
 
   // What happened on the last tap of "Use my current location", shown right beside the buttons.
@@ -82,11 +80,16 @@ export function AddressForm({
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         set('location', { lat, lng });
-        setGeoMsg({ tone: 'ok', text: 'Location saved. Filling your city and PIN code…' });
-        // Fill what the form is still missing from the map; the state stays as the customer set it.
+        setGeoMsg({ tone: 'ok', text: 'Location saved. Filling in your address…' });
         const place = await reverse(lat, lng);
-        setF((cur) => ({ ...cur, city: cur.city || place.city || '', pincode: cur.pincode || place.pincode || '' }));
-        setGeoMsg({ tone: 'ok', text: `Location saved (accurate to about ${Math.round(pos.coords.accuracy)} m). Check the city and PIN code, then save the address.` });
+        picked({ lat, lng, ...place });
+        const filled = place.city || place.pincode || place.state;
+        setGeoMsg({
+          tone: 'ok',
+          text: filled
+            ? `Address filled from your location (accurate to about ${Math.round(pos.coords.accuracy)} m). Please check it, add your flat / house number and save.`
+            : 'Your pin is saved, but we could not read the address. Please type the city, state and PIN code.',
+        });
         setLocating(false);
       },
       (err) => {
@@ -184,6 +187,7 @@ export function AddressForm({
         </Field>
         <Field label="State" required>
           <select className="input" value={f.state} onChange={(e) => set('state', e.target.value)} required autoComplete="address-level1">
+            <option value="">Select state</option>
             {!INDIA_STATES.includes(f.state) && f.state ? <option value={f.state}>{f.state}</option> : null}
             {INDIA_STATES.map((st) => (
               <option key={st} value={st}>
@@ -210,9 +214,6 @@ export function AddressForm({
       <div className={s.geo}>
         <Button variant="outline" size="sm" icon="pin" onClick={locate} loading={locating}>
           Use my current location
-        </Button>
-        <Button variant="primary" size="sm" onClick={locate} loading={locating}>
-          Enable
         </Button>
         <Button variant="ghost" size="sm" icon="plus" onClick={() => setManual((v) => !v)}>
           {manual ? 'Hide map' : 'Add new address manually'}

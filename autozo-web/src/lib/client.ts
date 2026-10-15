@@ -125,6 +125,7 @@ function explainProblem(p: Problem): string {
   if (reason === 'unavailable') return `${item} is no longer available - remove it from your cart`;
   if (reason === 'points_short') return 'Please add 1 product from the list below your cart to continue';
   if (reason === 'cod_unavailable') return `Cash on delivery is not available for ${item} - choose Pay online or remove it`;
+  if (reason === 'online_unavailable') return `Online payment is not available for ${item} - choose Cash on Delivery or remove it`;
   if (reason === 'cod_long_distance') return `${shop} is far from your address, so cash on delivery is not available - choose Pay online`;
   const min = /^min_order_(\d+(?:\.\d+)?)$/.exec(reason);
   if (min) return `${shop} needs a minimum order of ₹${min[1]}`;

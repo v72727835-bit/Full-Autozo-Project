@@ -170,7 +170,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
     name: product?.name ?? '', nameHi: product?.nameHi ?? '', brand: product?.brand ?? '', description: product?.description ?? '',
     price: product ? String(product.price) : '', mrp: product ? String(product.mrp) : '', unit: product?.unit ?? '1 pc', stock: product ? String(product.stock) : '0',
     foodType: (product?.foodType ?? '') as '' | 'veg' | 'nonveg',
-    hsn: product?.hsn ?? '', gstRate: product?.gstRate === undefined || product?.gstRate === null ? '' : String(product.gstRate),
+    paymentMode: product?.paymentMode ?? 'both', hsn: product?.hsn ?? '', gstRate: product?.gstRate === undefined || product?.gstRate === null ? '' : String(product.gstRate),
     attributes: (product?.attributes ?? []).join(', '), tags: (product?.tags ?? []).join(', '),
     variantGroup: product?.variantGroup ?? '', variantLabel: product?.variantLabel ?? '',
   });
@@ -216,7 +216,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
       category: child,
       name: f.name, nameHi: f.nameHi, brand: f.brand, description: f.description,
       price, mrp, unit: f.unit, stock: Number(f.stock) || 0, foodType: f.foodType,
-      hsn: f.hsn.trim(), gstRate: f.gstRate === '' ? null : Number(f.gstRate),
+      paymentMode: f.paymentMode, hsn: f.hsn.trim(), gstRate: f.gstRate === '' ? null : Number(f.gstRate),
       attributes: csv(f.attributes), tags: csv(f.tags), images, video: video.trim(),
       ...(f.variantGroup ? { variantGroup: f.variantGroup } : {}),
       ...(f.variantLabel ? { variantLabel: f.variantLabel } : {}),
@@ -276,6 +276,14 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
           <Field label="Unit (500 g, 1 kg…)"><input value={f.unit} onChange={(e) => set('unit', e.target.value)} required /></Field>
           <Field label="Stock"><input type="number" min={0} value={f.stock} onChange={(e) => set('stock', e.target.value)} /></Field>
         </div>
+        <Field label="How can customers pay for this product?">
+          <select value={f.paymentMode} onChange={(e) => set('paymentMode', e.target.value)}>
+            <option value="both">Cash on delivery + online payment</option>
+            <option value="cod">Cash on delivery only</option>
+            <option value="online">Online payment only</option>
+          </select>
+        </Field>
+
         <div className="field-row">
           <Field label="HSN code (for the GST bill)"><input value={f.hsn} onChange={(e) => set('hsn', e.target.value.replace(/[^0-9]/g, '').slice(0, 8))} placeholder="e.g. 1101" inputMode="numeric" /></Field>
           <Field label="GST rate (already in the price)">

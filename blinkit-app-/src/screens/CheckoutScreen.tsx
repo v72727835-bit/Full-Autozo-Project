@@ -36,6 +36,7 @@ function describeProblem(p: CheckoutProblem): string {
   if (p.reason === 'unavailable') return `${where} is no longer available.`;
   if (p.reason === 'points_short') return 'Add 1 product from the list below your cart to continue.';
   if (p.reason === 'cod_unavailable') return `${where}: cash on delivery is not available. Choose Pay online or remove it.`;
+  if (p.reason === 'online_unavailable') return `${where}: online payment is not available. Choose Cash on delivery or remove it.`;
   if (p.reason === 'cod_long_distance') return `${p.shop ?? 'A shop'} is far from your address, so cash on delivery is not available. Choose Pay online.`;
   if (p.reason.startsWith('min_order_')) {
     return `${p.shop ?? 'A shop'} needs a minimum order of ${currency(Number(p.reason.replace('min_order_', '')) || 0)}.`;
@@ -62,6 +63,19 @@ export function CheckoutScreen() {
     .flatMap((g) => g.items)
     .filter((i) => i.codAvailable === false)
     .map((i) => i.name);
+  // Items the shop sells for cash only.
+  const onlineBlocked = cart.groups
+    .flatMap((g) => g.items)
+    .filter((i) => i.onlineAvailable === false)
+    .map((i) => i.name);
+  // Pick the method the cart allows.
+  useEffect(() => {
+    const items = cart.groups.flatMap((g) => g.items);
+    const noCod = items.some((i) => i.codAvailable === false);
+    const noOnline = items.some((i) => i.onlineAvailable === false);
+    if (noCod && !noOnline && settings?.onlinePaymentOn) setPayment('online');
+    else if (noOnline && !noCod) setPayment('cod');
+  }, [cart, settings?.onlinePaymentOn]);
   const [note, setNote] = useState('');
   const [placing, setPlacing] = useState(false);
   const [awaiting, setAwaiting] = useState(false);
@@ -326,9 +340,13 @@ export function CheckoutScreen() {
             />
           ) : null}
 
+          {onlineBlocked.length > 0 ? (
+            <Banner tone="warning" message={`Online payment is not available for some items in this order (${onlineBlocked.join(', ')}). Please pay by cash on delivery.`} style={styles.codBanner} />
+          ) : null}
+
           <PaymentOption
             selected={payment === 'cod'}
-            onPress={() => setPayment('cod')}
+            onPress={() => { if (codBlocked.length === 0) setPayment('cod'); }}
             icon="cash-outline"
             title="Cash on delivery"
             subtitle="Pay the delivery partner when your order arrives"
@@ -336,7 +354,7 @@ export function CheckoutScreen() {
           {settings?.onlinePaymentOn ? (
             <PaymentOption
               selected={payment === 'online'}
-              onPress={() => setPayment('online')}
+              onPress={() => { if (onlineBlocked.length === 0) setPayment('online'); }}
               icon="card-outline"
               title="Pay online"
               subtitle="Debit or credit card, UPI, netbanking and wallets"

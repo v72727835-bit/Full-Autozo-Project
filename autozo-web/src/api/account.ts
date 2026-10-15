@@ -1,5 +1,5 @@
 import { api } from '../lib/client';
-import { setDeliveryPoint } from '../lib/deliveryPoint';
+import { getDeliveryPoint, setDeliveryPoint } from '../lib/deliveryPoint';
 import * as n from '../lib/normalize';
 import { Address, Product, RawProduct, UserProfile } from '../lib/types';
 
@@ -15,12 +15,14 @@ export const updateMe = async (body: { name?: string; email?: string; avatar?: s
   return { ...raw, id: raw._id ?? raw.id };
 };
 
-export const fetchAddresses = async (): Promise<Address[]> => {
+/** `remember: false` just reads the list, without choosing a delivery area from it. */
+export const fetchAddresses = async (remember = true): Promise<Address[]> => {
   const { data } = await api.get('/me/addresses');
   const list = (data.data as Record<string, unknown>[]).map(n.address);
   // Keep the catalogue scoped to wherever the default address is pinned.
   const home = list.find((a) => a.isDefault && a.location) ?? list.find((a) => a.location);
-  if (home?.location) setDeliveryPoint({ ...home.location, label: home.city });
+  // Only when the visitor has not chosen a delivery area yet - never override their choice.
+  if (remember && home?.location && !getDeliveryPoint()) setDeliveryPoint({ ...home.location, label: home.city });
   return list;
 };
 

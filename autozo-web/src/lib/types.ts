@@ -37,6 +37,8 @@ export interface RawProduct {
   ratingLabel?: string;
   deliveryDays?: number | null;
   codAvailable?: boolean;
+  /** False when the product can only be paid for in cash. */
+  onlineAvailable?: boolean;
   variants?: RawVariant[];
   slug: string;
   discountPercent?: number;
@@ -161,6 +163,8 @@ export interface Product {
   deliveryDays?: number | null;
   /** False in aisles where cash on delivery is switched off. */
   codAvailable?: boolean;
+  /** False when the product can only be paid for in cash. */
+  onlineAvailable?: boolean;
   /** Other sizes of the same item. */
   variants?: ProductVariant[];
   foodType?: 'veg' | 'nonveg';
@@ -301,6 +305,8 @@ export interface CartItem {
   deliveryDays?: number | null;
   /** False in aisles where cash on delivery is switched off. */
   codAvailable?: boolean;
+  /** False when the product can only be paid for in cash. */
+  onlineAvailable?: boolean;
   issue?: string | null;
 }
 

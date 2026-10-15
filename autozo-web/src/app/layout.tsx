@@ -14,6 +14,7 @@ import { ToastProvider } from '../context/ToastContext';
 import { BottomNav } from '../components/BottomNav';
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
+import { LocationGate } from '../components/LocationGate';
 import { OrderProgressToast } from '../components/OrderProgressToast';
 import { PushRegister } from '../components/PushRegister';
 import { PwaRegister } from '../components/PwaRegister';
@@ -84,6 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                  <WishlistProvider>
                   <ToastProvider>
                     <Header />
+                    <LocationGate />
                     <main id="main" style={{ minHeight: '60vh' }}>
                       {children}
                     </main>

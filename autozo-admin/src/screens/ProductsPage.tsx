@@ -21,6 +21,7 @@ type FormState = {
   foodType: '' | 'veg' | 'nonveg';
   hsn: string;
   gstRate: string;
+  paymentMode: string;
   attributes: string;
   mainImage: string;
   video: string;
@@ -48,6 +49,7 @@ const EMPTY_FORM: FormState = {
   foodType: '',
   hsn: '',
   gstRate: '',
+  paymentMode: 'both',
   attributes: '',
   mainImage: '',
   video: '',
@@ -392,6 +394,7 @@ function ProductForm({
           stock: String(product.stock),
           foodType: product.foodType,
           hsn: product.hsn ?? '',
+          paymentMode: product.paymentMode ?? 'both',
           gstRate: product.gstRate === undefined || product.gstRate === null ? '' : String(product.gstRate),
           attributes: product.attributes.join(', '),
           mainImage: product.images[0] ?? '',
@@ -469,6 +472,7 @@ function ProductForm({
         foodType: form.foodType,
         hsn: form.hsn.trim(),
         gstRate: form.gstRate === '' ? null : Number(form.gstRate),
+        paymentMode: form.paymentMode as 'both' | 'cod' | 'online',
         attributes: form.attributes
           .split(',')
           .map((s) => s.trim())
@@ -560,6 +564,14 @@ function ProductForm({
             <input type="number" min="0" value={form.stock} onChange={(e) => set('stock', e.target.value)} />
           </Field>
         </div>
+
+        <Field label="How can customers pay for this product?">
+          <select value={form.paymentMode} onChange={(e) => set('paymentMode', e.target.value)}>
+            <option value="both">Cash on delivery + online payment</option>
+            <option value="cod">Cash on delivery only</option>
+            <option value="online">Online payment only</option>
+          </select>
+        </Field>
 
         <div className="field-row">
           <Field label="HSN code (for the GST bill)">

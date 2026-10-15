@@ -275,7 +275,7 @@ export const listMyRiders = asyncHandler(async (req, res) => {
   const warehouses = await myWarehouses(req.user!.id);
   const since = new Date(Date.now() - ONLINE_WINDOW_MS);
   const [riders, busy] = await Promise.all([
-    User.find({ role: 'rider', warehouse: { $in: warehouses } }).select('name phone isActive lastSeenAt riderPaused riderCancelCount warehouse').populate('warehouse', 'name').sort({ name: 1 }).lean(),
+    User.find({ role: 'rider', $or: [{ warehouse: { $in: warehouses } }, { warehouses: { $in: warehouses } }] }).select('name phone isActive lastSeenAt riderPaused riderCancelCount warehouse warehouses').populate('warehouse', 'name').populate('warehouses', 'name').sort({ name: 1 }).lean(),
     Order.distinct('rider', { status: 'out_for_delivery', rider: { $exists: true } }),
   ]);
   const busyIds = new Set(busy.map(String));
@@ -283,13 +283,13 @@ export const listMyRiders = asyncHandler(async (req, res) => {
 });
 
 export const createMyRider = asyncHandler(async (req, res) => {
-  const { name, phone, password, warehouse } = req.body as { name: string; phone: string; password: string; warehouse?: string };
+  const { name, phone, password, warehouse, warehouses } = req.body as { name: string; phone: string; password: string; warehouse?: string; warehouses?: string[] };
   const mine = (await myWarehouses(req.user!.id)).map(String);
-  const wh = warehouse ?? (mine.length === 1 ? mine[0] : undefined);
-  if (!wh) throw new ApiError(400, 'Choose the warehouse for this rider.');
-  if (!mine.includes(wh)) throw new ApiError(403, 'That warehouse is not yours.');
+  const chosen = [...new Set(warehouses?.length ? warehouses : warehouse ? [warehouse] : mine.length === 1 ? mine : [])];
+  if (!chosen.length) throw new ApiError(400, 'Choose the warehouse for this rider.');
+  if (chosen.some((w) => !mine.includes(w))) throw new ApiError(403, 'That warehouse is not yours.');
   if (await User.exists({ phone, role: 'rider' })) throw new ApiError(409, 'A rider with this phone number already exists.');
-  const rider = await User.create({ name, phone, password, role: 'rider', warehouse: wh, isActive: true });
+  const rider = await User.create({ name, phone, password, role: 'rider', warehouse: chosen[0], warehouses: chosen, isActive: true });
   created(res, { _id: rider._id, name: rider.name, phone: rider.phone });
 });
 
