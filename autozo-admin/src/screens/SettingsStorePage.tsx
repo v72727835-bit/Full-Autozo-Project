@@ -71,6 +71,8 @@ export default function SettingsStorePage() {
       <DeliveryCard settings={settings} subCategories={subCategories} onSave={save} />
       <CodCard settings={settings} subCategories={subCategories} onSave={save} />
       <RiderCard settings={settings} onSave={save} />
+      <CompanyCard settings={settings} onSave={save} />
+      <SocialCard settings={settings} onSave={save} />
       <AppLinksCard settings={settings} onSave={save} />
     </>
   );
@@ -426,6 +428,128 @@ function AppLinksCard({ settings, onSave }: { settings: Settings; onSave: (patch
         <Button onClick={submit} disabled={saving}>
           {saving ? 'Saving…' : 'Save links'}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------- company and bill ---------------------------- */
+
+function ImageField({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (url: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setBusy(true);
+    setErr('');
+    try {
+      const [url] = await uploadImages([file]);
+      onChange(url);
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Could not upload the image.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Field label={label}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ width: 96, height: 64, border: '1px dashed var(--border, #475569)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', overflow: 'hidden' }}>
+          {value ? <img src={value} alt={label} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <span style={{ color: '#94a3b8', fontSize: 11 }}>No image</span>}
+        </div>
+        <div>
+          <input ref={ref} type="file" accept="image/*" hidden onChange={pick} />
+          <Button type="button" size="sm" variant="secondary" onClick={() => ref.current?.click()} disabled={busy}>{busy ? 'Uploading…' : value ? 'Change' : 'Upload'}</Button>
+          {value ? <Button type="button" size="sm" variant="ghost" onClick={() => onChange('')}>Remove</Button> : null}
+          <div className="page-subtitle" style={{ marginTop: 4 }}>{hint}</div>
+          {err ? <div style={{ color: 'var(--danger, #ef4444)', fontSize: 12 }}>{err}</div> : null}
+        </div>
+      </div>
+    </Field>
+  );
+}
+
+function CompanyCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
+  const c = settings.company ?? {};
+  const [f, setF] = useState({
+    name: c.name ?? '', tagline: c.tagline ?? '', address: c.address ?? '', phone: c.phone ?? '', email: c.email ?? '', website: c.website ?? '',
+    gstin: c.gstin ?? '', fssai: c.fssai ?? '', logo: c.logo ?? '', signature: c.signature ?? '', seal: c.seal ?? '',
+    signatoryName: c.signatoryName ?? '', signatoryTitle: c.signatoryTitle ?? '', declaration: c.declaration ?? '', footerNote: c.footerNote ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  const submit = async () => {
+    setSaving(true);
+    await onSave({ company: f });
+    setSaving(false);
+  };
+  return (
+    <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <h2 className="card-title">Company and bill details</h2>
+      <div className="page-subtitle" style={{ marginBottom: 14 }}>
+        Printed on every invoice and POS bill: logo, signature, round seal / stamp, GSTIN and the declaration. Leave a field empty to hide it.
+      </div>
+      <div className="grid grid-2">
+        <ImageField label="Company logo" hint="PNG with a transparent background looks best." value={f.logo} onChange={(v) => set('logo', v)} />
+        <ImageField label="Round seal / stamp" hint="PNG with a transparent background." value={f.seal} onChange={(v) => set('seal', v)} />
+        <ImageField label="Signature" hint="Signature on a transparent or white background." value={f.signature} onChange={(v) => set('signature', v)} />
+        <div />
+        <Field label="Company name"><input value={f.name} onChange={(e) => set('name', e.target.value)} placeholder="Autozo Retail Pvt Ltd" /></Field>
+        <Field label="Tagline"><input value={f.tagline} onChange={(e) => set('tagline', e.target.value)} placeholder="Groceries in minutes" /></Field>
+        <Field label="Phone"><input value={f.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
+        <Field label="Email"><input value={f.email} onChange={(e) => set('email', e.target.value)} /></Field>
+        <Field label="Website"><input value={f.website} onChange={(e) => set('website', e.target.value)} placeholder="https://autozo.org" /></Field>
+        <Field label="GSTIN"><input value={f.gstin} onChange={(e) => set('gstin', e.target.value.toUpperCase())} placeholder="09ABCDE1234F1Z5" /></Field>
+        <Field label="FSSAI licence no."><input value={f.fssai} onChange={(e) => set('fssai', e.target.value)} /></Field>
+        <Field label="Authorised signatory name"><input value={f.signatoryName} onChange={(e) => set('signatoryName', e.target.value)} /></Field>
+        <Field label="Signatory title"><input value={f.signatoryTitle} onChange={(e) => set('signatoryTitle', e.target.value)} placeholder="Director" /></Field>
+      </div>
+      <Field label="Registered address"><textarea rows={2} value={f.address} onChange={(e) => set('address', e.target.value)} /></Field>
+      <Field label="Declaration (printed on the invoice)"><textarea rows={3} value={f.declaration} onChange={(e) => set('declaration', e.target.value)} placeholder="We declare that this invoice shows the actual price of the goods described…" /></Field>
+      <Field label="Footer note"><input value={f.footerNote} onChange={(e) => set('footerNote', e.target.value)} placeholder="This is a computer generated invoice." /></Field>
+      <div className="modal-actions">
+        <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save company details'}</Button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ social media ------------------------------ */
+
+const SOCIALS: { key: 'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 'telegram' | 'linkedin'; label: string; hint: string }[] = [
+  { key: 'facebook', label: 'Facebook', hint: 'https://facebook.com/yourpage' },
+  { key: 'instagram', label: 'Instagram', hint: 'https://instagram.com/yourname' },
+  { key: 'youtube', label: 'YouTube', hint: 'https://youtube.com/@yourchannel' },
+  { key: 'whatsapp', label: 'WhatsApp', hint: 'https://wa.me/919876543210' },
+  { key: 'x', label: 'X (Twitter)', hint: 'https://x.com/yourname' },
+  { key: 'telegram', label: 'Telegram', hint: 'https://t.me/yourchannel' },
+  { key: 'linkedin', label: 'LinkedIn', hint: 'https://linkedin.com/company/yourname' },
+];
+
+function SocialCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
+  const [links, setLinks] = useState<Record<string, string>>(() => Object.fromEntries(SOCIALS.map((s) => [s.key, settings.socialLinks?.[s.key] ?? ''])));
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    setSaving(true);
+    await onSave({ socialLinks: links });
+    setSaving(false);
+  };
+  return (
+    <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <h2 className="card-title">Social media</h2>
+      <div className="page-subtitle" style={{ marginBottom: 14 }}>
+        Shown in the website footer and printed on every bill. Paste the full link (starting with https://). Leave empty to hide that icon.
+      </div>
+      {SOCIALS.map((s) => (
+        <Field key={s.key} label={s.label}>
+          <input value={links[s.key]} onChange={(e) => setLinks({ ...links, [s.key]: e.target.value })} placeholder={s.hint} />
+        </Field>
+      ))}
+      <div className="modal-actions">
+        <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save social links'}</Button>
       </div>
     </div>
   );

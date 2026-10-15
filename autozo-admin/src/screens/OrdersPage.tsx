@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from '../navigation';
 import AssignRider from '../components/AssignRider';
-import { adminAssignRider, adminFreeRiders, fetchOrder, fetchOrders, fetchShops, updateOrderStatus } from '../api/admin';
+import { adminAssignRider, adminFreeRiders, adminInvoiceLink, fetchOrder, fetchOrders, fetchShops, updateOrderStatus } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { playChime } from '../lib/alerts';
+import { openBill } from '../lib/invoice';
 import { IconBolt, IconReceipt, IconVolume, IconVolumeOff } from '../components/icons';
 import {
   Badge,
@@ -405,6 +406,12 @@ function OrderDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
             Cancel order
           </Button>
         )}
+        <Button size="sm" variant="secondary" onClick={() => openBill(() => adminInvoiceLink(order._id), 'a4').catch((e) => setError(getErrorMessage(e)))}>
+          Invoice (A4)
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => openBill(() => adminInvoiceLink(order._id), 'pos').catch((e) => setError(getErrorMessage(e)))}>
+          POS bill
+        </Button>
       </div>
 
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16, fontSize: 13.5 }}>

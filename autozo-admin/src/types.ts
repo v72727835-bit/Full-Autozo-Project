@@ -259,6 +259,12 @@ export interface CategoryRef {
   level: 1 | 2 | 3;
 }
 
+export interface CompanyDetails {
+  name?: string; tagline?: string; address?: string; phone?: string; email?: string; website?: string; gstin?: string; fssai?: string;
+  logo?: string; signature?: string; seal?: string; signatoryName?: string; signatoryTitle?: string; declaration?: string; footerNote?: string;
+}
+export interface SocialLinks { facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; x?: string; telegram?: string; linkedin?: string }
+
 export interface Settings {
   festival: {
     enabled: boolean;
@@ -271,6 +277,8 @@ export interface Settings {
   cod: { disabledCategories: (CategoryRef | string)[]; message: string };
   riderCodLimit: number;
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
+  company?: CompanyDetails;
+  socialLinks?: SocialLinks;
   imageMaxKb: number;
   supportPhone?: string;
   deliverySlots: { key: 'instant' | 'twoHour' | 'nextDay'; label: string; enabled: boolean }[];

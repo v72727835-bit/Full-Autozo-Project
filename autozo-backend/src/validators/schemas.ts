@@ -413,6 +413,17 @@ export const adminSettingsBody = z
     appLinks: z
       .object({ android: z.string().trim().max(500), ios: z.string().trim().max(500), rider: z.string().trim().max(500), warehouse: z.string().trim().max(500) })
       .partial(),
+    company: z
+      .object({
+        name: z.string().trim().max(80), tagline: z.string().trim().max(120), address: z.string().trim().max(300), phone: z.string().trim().max(30),
+        email: z.string().trim().max(120), website: z.string().trim().max(200), gstin: z.string().trim().max(20), fssai: z.string().trim().max(20),
+        logo: z.string().trim().max(500), signature: z.string().trim().max(500), seal: z.string().trim().max(500),
+        signatoryName: z.string().trim().max(80), signatoryTitle: z.string().trim().max(80), declaration: z.string().trim().max(600), footerNote: z.string().trim().max(300),
+      })
+      .partial(),
+    socialLinks: z
+      .object({ facebook: z.string().trim().max(300), instagram: z.string().trim().max(300), youtube: z.string().trim().max(300), whatsapp: z.string().trim().max(300), x: z.string().trim().max(300), telegram: z.string().trim().max(300), linkedin: z.string().trim().max(300) })
+      .partial(),
     imageMaxKb: z.coerce.number().int().min(20).max(5000),
     supportPhone: z.string().trim().max(20),
     deliverySlots: z

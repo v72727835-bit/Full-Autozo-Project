@@ -29,6 +29,13 @@ export interface ISettings {
   /** A rider is paused automatically once this much COD cash is unsettled. */
   riderCodLimit: number;
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
+  /** Company details printed on every bill (logo, signature, seal, GSTIN, declaration...). */
+  company: {
+    name?: string; tagline?: string; address?: string; phone?: string; email?: string; website?: string; gstin?: string; fssai?: string;
+    logo?: string; signature?: string; seal?: string; signatoryName?: string; signatoryTitle?: string; declaration?: string; footerNote?: string;
+  };
+  /** Social media pages shown in the website footer and on every bill. */
+  socialLinks: { facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; x?: string; telegram?: string; linkedin?: string };
   /** Largest product photo (KB) the image tips recommend. */
   imageMaxKb: number;
   /** Shown in the cart header so a customer can call for help. */
@@ -79,6 +86,13 @@ const settingsSchema = new Schema<ISettings>(
     },
     riderCodLimit: { type: Number, default: 2000, min: 0 },
     appLinks: { android: String, ios: String, rider: String, warehouse: String },
+    company: {
+      name: { type: String, trim: true }, tagline: { type: String, trim: true }, address: { type: String, trim: true }, phone: { type: String, trim: true },
+      email: { type: String, trim: true }, website: { type: String, trim: true }, gstin: { type: String, trim: true }, fssai: { type: String, trim: true },
+      logo: String, signature: String, seal: String, signatoryName: { type: String, trim: true }, signatoryTitle: { type: String, trim: true },
+      declaration: { type: String, trim: true }, footerNote: { type: String, trim: true },
+    },
+    socialLinks: { facebook: String, instagram: String, youtube: String, whatsapp: String, x: String, telegram: String, linkedin: String },
     imageMaxKb: { type: Number, default: 200 },
     supportPhone: { type: String, trim: true },
     deliverySlots: {

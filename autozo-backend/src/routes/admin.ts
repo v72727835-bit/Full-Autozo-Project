@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import * as admin from '../controllers/admin.controller';
 import * as uploads from '../controllers/upload.controller';
 import * as extra from '../controllers/adminExtra.controller';
+import * as invoices from '../controllers/invoice.controller';
 import * as seller from '../controllers/seller.controller';
 import { adminOnly } from '../middleware/auth';
 import { uploadProductImages, uploadProductVideo } from '../middleware/upload';
@@ -61,6 +62,7 @@ router.delete('/banners/:id', validate({ params: v.idParam }), admin.deleteBanne
 
 router.get('/orders', validate({ query: v.adminOrdersQuery }), admin.listOrdersAdmin);
 router.get('/orders/:id', validate({ params: v.idParam }), admin.getOrderAdmin);
+router.post('/orders/:id/invoice-link', validate({ params: v.idParam }), invoices.adminInvoiceLink);
 router.get('/orders/:id/free-riders', validate({ params: v.idParam }), admin.freeRidersAdmin);
 router.post('/orders/:id/assign-rider', validate({ params: v.idParam, body: v.assignRiderBody }), admin.assignRiderAdmin);
 router.patch('/orders/:id/status', validate({ params: v.idParam, body: v.adminOrderStatusBody }), admin.updateOrderStatus);

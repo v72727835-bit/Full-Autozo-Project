@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Modal, ScrollView, Text, Vibration, View } from 'react-native';
+import { Alert, FlatList, Linking, Modal, ScrollView, Text, Vibration, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
-import { assignRider, orderRiders, sellerOrders, setOrderStatus } from '../api/seller';
+import { assignRider, invoiceLinks, orderRiders, sellerOrders, setOrderStatus } from '../api/seller';
 import { colors } from '../theme';
 import { Order, OrderRiders } from '../types';
 import { Btn, Card, Center, Chips, Empty, ErrorText, H, Pill, STATUS_LABEL, SearchBar, money, row, statusTone, when } from '../ui';
@@ -44,6 +44,14 @@ export default function OrdersScreen({ onChanged }: { onChanged: (newCount: numb
     return () => clearInterval(t);
   }, [load]);
 
+  const openBill = async (o: Order, kind: 'a4' | 'pos') => {
+    setError('');
+    try {
+      const links = await invoiceLinks(o._id);
+      await Linking.openURL(links[kind]);
+    } catch (e) { setError(getErrorMessage(e)); }
+  };
+
   const move = (o: Order, to: string) => {
     const go = async () => {
       setBusy(o._id); setError('');
@@ -74,6 +82,8 @@ export default function OrdersScreen({ onChanged }: { onChanged: (newCount: numb
           {o.status === 'placed' ? <Btn small tone="danger" title="Reject" disabled={busy === o._id} onPress={() => move(o, 'rejected')} /> : null}
           {canAssign && !o.rider ? <Btn small tone="outline" title="Assign rider" onPress={() => setAssign(o)} /> : null}
           {canAssign ? <Btn small tone="danger" title="Cancel" disabled={busy === o._id} onPress={() => move(o, 'cancelled')} /> : null}
+          <Btn small tone="outline" title="Invoice" onPress={() => openBill(o, 'a4')} />
+          <Btn small tone="outline" title="POS bill" onPress={() => openBill(o, 'pos')} />
           <Btn small tone="outline" title={expanded ? 'Hide details' : 'Details'} onPress={() => setOpen(expanded ? null : o._id)} />
         </View>
         {expanded ? (
