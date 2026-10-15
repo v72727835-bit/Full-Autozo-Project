@@ -283,6 +283,7 @@ export interface Settings {
   company?: CompanyDetails;
   gst?: { defaultRate: number; deliveryRate: number; homeState: string };
   socialLinks?: SocialLinks;
+  socialOther?: { label: string; url: string }[];
   imageMaxKb: number;
   supportPhone?: string;
   deliverySlots: { key: 'instant' | 'twoHour' | 'nextDay'; label: string; enabled: boolean }[];

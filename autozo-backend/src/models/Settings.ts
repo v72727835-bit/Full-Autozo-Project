@@ -34,6 +34,8 @@ export interface ISettings {
     name?: string; tagline?: string; address?: string; phone?: string; email?: string; website?: string; gstin?: string; fssai?: string;
     logo?: string; signature?: string; seal?: string; signatoryName?: string; signatoryTitle?: string; declaration?: string; footerNote?: string;
   };
+  /** Any other social / web pages the admin adds (name + link). */
+  socialOther: { label: string; url: string }[];
   /** GST rules for the bills. */
   gst: { defaultRate: number; deliveryRate: number; homeState: string };
   /** Social media pages shown in the website footer and on every bill. */
@@ -99,6 +101,7 @@ const settingsSchema = new Schema<ISettings>(
       deliveryRate: { type: Number, default: 18, min: 0, max: 28 },
       homeState: { type: String, default: 'Uttar Pradesh', trim: true },
     },
+    socialOther: { type: [{ label: { type: String, trim: true }, url: { type: String, trim: true }, _id: false }], default: [] },
     socialLinks: { facebook: String, instagram: String, youtube: String, whatsapp: String, x: String, telegram: String, linkedin: String },
     imageMaxKb: { type: Number, default: 200 },
     supportPhone: { type: String, trim: true },

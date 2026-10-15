@@ -31,7 +31,10 @@ export function Footer() {
   const { name, t } = useLanguage();
   const apps = settings?.appLinks ?? {};
   // Social pages are set in the admin panel; only the ones that were filled in show up.
-  const socials = SOCIALS.filter((x) => settings?.socialLinks?.[x.key]).map((x) => ({ ...x, url: settings!.socialLinks![x.key]! }));
+  const socials = [
+    ...SOCIALS.filter((x) => settings?.socialLinks?.[x.key]).map((x) => ({ ...x, url: settings!.socialLinks![x.key]! })),
+    ...(settings?.socialOther ?? []).map((x) => ({ key: `o-${x.label}`, label: x.label, short: x.label.slice(0, 2), url: x.url })),
+  ];
   const aisles = (home?.topTabs ?? []).slice(0, 14);
 
   return (

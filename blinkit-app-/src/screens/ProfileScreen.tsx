@@ -1,12 +1,13 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchCareUnread } from '../api/support';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { usePublicSettingsQuery } from '../store/catalogApi';
 import type { TabScreenProps } from '../navigation/TabsContext';
 import { useTabs } from '../navigation/TabsContext';
 import type { AppNav } from '../navigation/types';
@@ -165,6 +166,8 @@ export function ProfileScreen(_props: TabScreenProps) {
           </Txt>
         </Pressable>
 
+        <FollowUs />
+
         <View style={styles.footer}>
           <LogoMark size={30} style={styles.footerMark} />
           <Txt variant="caption" tone="faint" center>
@@ -175,6 +178,52 @@ export function ProfileScreen(_props: TabScreenProps) {
           </Txt>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+/** Social pages the super admin set up. Only the ones that were filled in show; each opens in the phone's browser or the app. */
+const SOCIAL_ICONS: Record<string, { label: string; icon: string }> = {
+  facebook: { label: 'Facebook', icon: 'logo-facebook' },
+  instagram: { label: 'Instagram', icon: 'logo-instagram' },
+  youtube: { label: 'YouTube', icon: 'logo-youtube' },
+  whatsapp: { label: 'WhatsApp', icon: 'logo-whatsapp' },
+  x: { label: 'X', icon: 'logo-twitter' },
+  telegram: { label: 'Telegram', icon: 'paper-plane-outline' },
+  linkedin: { label: 'LinkedIn', icon: 'logo-linkedin' },
+};
+function FollowUs() {
+  const { data } = usePublicSettingsQuery();
+  const toast = useToast();
+  const links: Record<string, string | undefined> = data?.socialLinks ?? {};
+  const items = [
+    ...Object.entries(SOCIAL_ICONS)
+      .filter(([k]) => !!links[k])
+      .map(([k, v]) => ({ key: k, label: v.label, icon: v.icon, url: links[k] as string })),
+    ...(data?.socialOther ?? []).map((o) => ({ key: `o-${o.label}`, label: o.label, icon: 'link-outline', url: o.url })),
+  ];
+  if (!items.length) return null;
+  return (
+    <View style={styles.follow}>
+      <Txt variant="overline" tone="muted" style={styles.appearanceTitle}>
+        Follow us
+      </Txt>
+      <View style={styles.followRow}>
+        {items.map((it) => (
+          <Pressable
+            key={it.key}
+            accessibilityRole="link"
+            accessibilityLabel={it.label}
+            onPress={() => Linking.openURL(it.url).catch(() => toast.show('Could not open this link'))}
+            style={({ pressed }) => [styles.followBtn, pressed && styles.rowPressed]}
+          >
+            <Ionicons name={it.icon as never} size={ms(20)} color={colors.brand} />
+            <Txt variant="caption" tone="muted" numberOfLines={1} style={styles.followLabel}>
+              {it.label}
+            </Txt>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -301,6 +350,18 @@ const styles = themed(({ c }) => ({
     boxShadow: glowShadow(c.glow, 4, 12),
   },
   root: { flex: 1, backgroundColor: c.surfaceSunken },
+  follow: { marginTop: space.lg, marginHorizontal: gutter },
+  followRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  followBtn: {
+    minWidth: ms(74),
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    borderRadius: radius.lg,
+    backgroundColor: c.surface,
+    alignItems: 'center',
+    gap: ms(3),
+  },
+  followLabel: { maxWidth: ms(90) },
   content: { paddingBottom: space.xxxl },
 
   header: {

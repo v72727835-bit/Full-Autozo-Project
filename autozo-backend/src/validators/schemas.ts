@@ -428,8 +428,9 @@ export const adminSettingsBody = z
         signatoryName: z.string().trim().max(80), signatoryTitle: z.string().trim().max(80), declaration: z.string().trim().max(600), footerNote: z.string().trim().max(300),
       })
       .partial(),
+    socialOther: z.array(z.object({ label: z.string().trim().min(1).max(30), url: z.string().trim().max(300).refine((u) => /^https?:\/\//i.test(u), 'Enter the full link, starting with https://') })).max(12),
     socialLinks: z
-      .object({ facebook: z.string().trim().max(300), instagram: z.string().trim().max(300), youtube: z.string().trim().max(300), whatsapp: z.string().trim().max(300), x: z.string().trim().max(300), telegram: z.string().trim().max(300), linkedin: z.string().trim().max(300) })
+      .object(Object.fromEntries(['facebook', 'instagram', 'youtube', 'whatsapp', 'x', 'telegram', 'linkedin'].map((k) => [k, z.string().trim().max(300).refine((u) => u === '' || /^https?:\/\//i.test(u), 'Enter the full link, starting with https://')])) as Record<'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 'telegram' | 'linkedin', z.ZodEffects<z.ZodString, string, string>>)
       .partial(),
     imageMaxKb: z.coerce.number().int().min(20).max(5000),
     supportPhone: z.string().trim().max(20),

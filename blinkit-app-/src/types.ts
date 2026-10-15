@@ -429,6 +429,9 @@ export interface ReviewPage {
 export interface PublicSettings {
   festival: { enabled: boolean; name: string; banner?: string | null };
   appLinks: { android?: string; ios?: string };
+  /** Social pages the admin filled in (full https links only), plus any extra ones with a name. */
+  socialLinks?: Partial<Record<'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 'telegram' | 'linkedin', string>>;
+  socialOther?: { label: string; url: string }[];
   sixDayDays: number;
   codMessage?: string;
   /** True once the admin saved Razorpay keys. */
