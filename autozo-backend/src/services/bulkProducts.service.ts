@@ -35,6 +35,8 @@ export const BULK_COLUMNS = [
   'warehouse',
   'points',
   'sortCode',
+  'hsn',
+  'gstRate',
 ] as const;
 
 const blank = (v: unknown) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim());
@@ -64,6 +66,8 @@ const rowSchema = z.object({
   warehouse: z.string().trim().optional(),
   points: z.coerce.number().int().min(0).max(50).optional(),
   sortCode: z.coerce.number().int().min(0).max(1_000_000).optional(),
+  hsn: z.string().trim().max(10).optional(),
+  gstRate: z.coerce.number({ invalid_type_error: 'gstRate must be a number like 5, 12 or 18' }).min(0).max(28).optional(),
 });
 
 export type RawRow = Record<string, unknown>;
@@ -114,6 +118,8 @@ const normaliseRow = (raw: RawRow): RawRow => ({
   warehouse: blank(raw.warehouse),
   points: blank(raw.points),
   sortCode: blank(raw.sortCode),
+  hsn: blank(raw.hsn),
+  gstRate: blank(raw.gstRate),
 });
 
 const problem = (e: z.ZodError) => e.issues.slice(0, 3).map((i) => i.message).join('; ');

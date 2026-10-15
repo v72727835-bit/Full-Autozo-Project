@@ -85,7 +85,9 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
     name: product?.name ?? '', nameHi: product?.nameHi ?? '', brand: product?.brand ?? '', description: product?.description ?? '',
     unit: product?.unit ?? '1 pc', price: product ? String(product.price) : '', mrp: product ? String(product.mrp) : '', stock: product ? String(product.stock) : '0',
     attributes: (product?.attributes ?? []).join(', '), tags: (product?.tags ?? []).join(', '), variantGroup: product?.variantGroup ?? '', variantLabel: product?.variantLabel ?? '',
+    hsn: product?.hsn ?? '',
   });
+  const [gstRate, setGstRate] = useState<string>(product?.gstRate === undefined || product?.gstRate === null ? '' : String(product.gstRate));
   const [foodType, setFoodType] = useState<'' | 'veg' | 'nonveg'>(product?.foodType ?? '');
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [category, setCategory] = useState<string>(product ? idOf(product.category) : '');
@@ -123,6 +125,7 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
       category, name: f.name.trim(), nameHi: f.nameHi.trim(), brand: f.brand.trim(), description: f.description.trim(), images,
       price, mrp: Number(f.mrp) || price, unit: f.unit.trim() || '1 pc', stock: Math.max(0, Math.floor(Number(f.stock) || 0)),
       foodType, attributes: list(f.attributes), tags: list(f.tags), variantGroup: f.variantGroup.trim(), variantLabel: f.variantLabel.trim(),
+      hsn: f.hsn.trim(), gstRate: gstRate === '' ? null : Number(gstRate),
     };
     setBusy(true);
     try {
@@ -168,6 +171,9 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
             <View style={{ flex: 1 }}><Input label="Unit (e.g. 500 g)" value={f.unit} onChangeText={(v) => set('unit', v)} /></View>
             <View style={{ flex: 1 }}><Input label="Stock" value={f.stock} onChangeText={(v) => set('stock', v)} keyboardType="numeric" /></View>
           </View>
+          <Input label="HSN code (for the GST bill)" value={f.hsn} onChangeText={(v) => set('hsn', v.replace(/\D/g, '').slice(0, 8))} keyboardType="numeric" placeholder="e.g. 1101" />
+          <Text style={{ fontSize: 13, fontWeight: '600' }}>GST rate (already in the price)</Text>
+          <Chips value={gstRate} options={[['', 'Default'], ['0', '0%'], ['5', '5%'], ['12', '12%'], ['18', '18%'], ['28', '28%']] as const} onChange={setGstRate} />
           <Text style={{ fontSize: 13, fontWeight: '600' }}>Food type</Text>
           <Chips value={foodType} options={[['', 'Not food'], ['veg', 'Veg'], ['nonveg', 'Non-veg']] as const} onChange={setFoodType} />
           <Input label="Description" value={f.description} onChangeText={(v) => set('description', v)} multiline />

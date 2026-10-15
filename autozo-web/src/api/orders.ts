@@ -52,3 +52,9 @@ export const cancelOrder = async (id: string): Promise<Order> => {
 export const reorder = async (id: string): Promise<void> => {
   await api.post(`/orders/${id}/reorder`);
 };
+
+/** A short-lived link that opens the invoice (A4) or the thermal bill in a new tab. */
+export const fetchInvoiceLinks = async (id: string): Promise<{ a4: string; pos: string }> => {
+  const { data } = await api.post(`/orders/${id}/invoice-link`);
+  return data.data;
+};

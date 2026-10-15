@@ -141,6 +141,7 @@ function ShopCard({ shop }: { shop: Shop }) {
   const [f, setF] = useState({
     name: shop.name, description: shop.description ?? '', phone: shop.phone ?? '', line1: shop.address?.line1 ?? '', city: shop.address?.city ?? '', state: shop.address?.state ?? '', pincode: shop.address?.pincode ?? '',
     deliveryRadiusKm: String(shop.deliveryRadiusKm), minOrderAmount: String(shop.minOrderAmount), deliveryFee: String(shop.deliveryFee),
+    gstin: shop.gstin ?? '',
   });
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
@@ -156,6 +157,7 @@ function ShopCard({ shop }: { shop: Shop }) {
       await updateShop(shop._id, {
         name: f.name.trim(), description: f.description.trim(), phone: f.phone.trim(), address: { line1: f.line1, city: f.city, state: f.state, pincode: f.pincode },
         deliveryRadiusKm: Number(f.deliveryRadiusKm) || 0, minOrderAmount: Number(f.minOrderAmount) || 0, deliveryFee: Number(f.deliveryFee) || 0,
+        gstin: f.gstin.trim().toUpperCase(),
       });
       setMsg('Saved.');
     } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
@@ -181,6 +183,7 @@ function ShopCard({ shop }: { shop: Shop }) {
       <Input label="Delivery radius (km)" value={f.deliveryRadiusKm} onChangeText={(v) => set('deliveryRadiusKm', v)} keyboardType="decimal-pad" />
       <Input label="Minimum order ₹" value={f.minOrderAmount} onChangeText={(v) => set('minOrderAmount', v)} keyboardType="numeric" />
       <Input label="Delivery fee ₹" value={f.deliveryFee} onChangeText={(v) => set('deliveryFee', v)} keyboardType="numeric" />
+      <Input label="GSTIN (printed on your bills)" value={f.gstin} onChangeText={(v) => set('gstin', v.toUpperCase().slice(0, 15))} placeholder="09ABCDE1234F1Z5" />
       <Btn title={busy ? 'Saving…' : 'Save store settings'} onPress={save} disabled={busy} />
     </Card>
   );

@@ -604,6 +604,9 @@ export const publicSettings = asyncHandler(async (_req, res) => {
   ok(res, {
     festival: { enabled: settings.festival?.enabled ?? false, name: settings.festival?.name || 'Festival', banner: settings.festival?.banner || null },
     appLinks: settings.appLinks ?? {},
+    // Only the pages the admin filled in, so an empty one never shows an icon.
+    socialLinks: Object.fromEntries(Object.entries(settings.socialLinks ?? {}).filter(([, v]) => typeof v === 'string' && /^https?:\/\//i.test(v))),
+    company: { name: settings.company?.name ?? '', logo: settings.company?.logo ?? '', tagline: settings.company?.tagline ?? '' },
     sixDayDays: settings.sixDay?.days ?? 6,
     codMessage: settings.cod?.message,
     supportPhone: settings.supportPhone ?? '',

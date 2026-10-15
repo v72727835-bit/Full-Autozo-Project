@@ -32,6 +32,9 @@ export interface IOrderItem {
   mrp: number;
   quantity: number;
   lineTotal: number;
+  /** Printed on the GST invoice; copied at order time so an old bill never changes. */
+  hsn?: string;
+  gstRate?: number | null;
   /** The seller who listed this product, if any. */
   seller?: Types.ObjectId;
 }
@@ -115,6 +118,8 @@ const orderSchema = new Schema<IOrder>(
           unit: String,
           price: { type: Number, required: true },
           mrp: { type: Number, required: true },
+          hsn: String,
+          gstRate: Number,
           quantity: { type: Number, required: true, min: 1 },
           lineTotal: { type: Number, required: true },
           seller: { type: Schema.Types.ObjectId, ref: 'User' },

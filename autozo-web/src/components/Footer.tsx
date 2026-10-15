@@ -15,11 +15,23 @@ import s from './Footer.module.css';
  * on top, the aisles, the company pages and the contact forms in columns, and
  * the app links at the end. The company pages are desktop-only, as asked.
  */
+const SOCIALS = [
+  { key: 'facebook', label: 'Facebook', short: 'f' },
+  { key: 'instagram', label: 'Instagram', short: 'ig' },
+  { key: 'youtube', label: 'YouTube', short: '▶' },
+  { key: 'whatsapp', label: 'WhatsApp', short: 'wa' },
+  { key: 'x', label: 'X (Twitter)', short: 'X' },
+  { key: 'telegram', label: 'Telegram', short: 'tg' },
+  { key: 'linkedin', label: 'LinkedIn', short: 'in' },
+] as const;
+
 export function Footer() {
   const settings = useSettings();
   const { home } = useCatalog();
   const { name, t } = useLanguage();
   const apps = settings?.appLinks ?? {};
+  // Social pages are set in the admin panel; only the ones that were filled in show up.
+  const socials = SOCIALS.filter((x) => settings?.socialLinks?.[x.key]).map((x) => ({ ...x, url: settings!.socialLinks![x.key]! }));
   const aisles = (home?.topTabs ?? []).slice(0, 14);
 
   return (
@@ -37,6 +49,15 @@ export function Footer() {
                 <Icon name="phone" size={15} />
                 {t('needHelp')} <b>{settings.supportPhone}</b>
               </a>
+            ) : null}
+            {socials.length ? (
+              <div className={s.social} aria-label="Follow us">
+                {socials.map((x) => (
+                  <a key={x.key} href={x.url} className={s.socBtn} target="_blank" rel="noopener noreferrer" aria-label={x.label} title={x.label}>
+                    {x.short}
+                  </a>
+                ))}
+              </div>
             ) : null}
           </div>
 

@@ -19,7 +19,7 @@ export interface Order {
 export interface Product {
   _id: string; name: string; nameHi?: string; brand?: string; description?: string; images: string[]; price: number; mrp: number;
   unit: string; stock: number; isActive: boolean; foodType: 'veg' | 'nonveg' | ''; attributes: string[]; tags: string[];
-  variantGroup?: string; variantLabel?: string; category: { _id: string; name: string } | string; shop: { _id: string; name: string } | string;
+  variantGroup?: string; variantLabel?: string; hsn?: string; gstRate?: number | null; category: { _id: string; name: string } | string; shop: { _id: string; name: string } | string;
 }
 export interface Category { _id: string; name: string; nameHi?: string; parent: string | null; level: 1 | 2 | 3 }
 export interface Dashboard {
@@ -34,7 +34,7 @@ export interface Dashboard {
   recent: { _id: string; orderNumber: string; status: string; total: number; createdAt: string; paymentMethod: string }[];
 }
 export interface Shop {
-  _id: string; name: string; description?: string; phone?: string; isOpen: boolean; deliveryRadiusKm: number; minOrderAmount: number; deliveryFee: number;
+  _id: string; name: string; gstin?: string; description?: string; phone?: string; isOpen: boolean; deliveryRadiusKm: number; minOrderAmount: number; deliveryFee: number;
   address: { line1?: string; city?: string; state?: string; pincode?: string };
 }
 export interface Customer { _id: string; name: string; phone: string; orders: number; spent: number; last: string }

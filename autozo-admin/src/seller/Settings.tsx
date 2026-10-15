@@ -31,7 +31,7 @@ function ShopCard({ shop }: { shop: WarehouseShop }) {
   const [f, setF] = useState({
     name: shop.name, description: shop.description ?? '', phone: shop.phone ?? '',
     line1: shop.address?.line1 ?? '', city: shop.address?.city ?? '', state: shop.address?.state ?? '', pincode: shop.address?.pincode ?? '',
-    deliveryRadiusKm: String(shop.deliveryRadiusKm), minOrderAmount: String(shop.minOrderAmount), deliveryFee: String(shop.deliveryFee),
+    deliveryRadiusKm: String(shop.deliveryRadiusKm), minOrderAmount: String(shop.minOrderAmount), deliveryFee: String(shop.deliveryFee), gstin: shop.gstin ?? '',
   });
   const [isOpen, setIsOpen] = useState(shop.isOpen);
   const [busy, setBusy] = useState(false);
@@ -57,7 +57,7 @@ function ShopCard({ shop }: { shop: WarehouseShop }) {
       await sellerUpdateShop(shop._id, {
         name: f.name, description: f.description, phone: f.phone,
         address: { line1: f.line1, city: f.city, state: f.state, pincode: f.pincode },
-        deliveryRadiusKm: Number(f.deliveryRadiusKm) || 0, minOrderAmount: Number(f.minOrderAmount) || 0, deliveryFee: Number(f.deliveryFee) || 0,
+        deliveryRadiusKm: Number(f.deliveryRadiusKm) || 0, minOrderAmount: Number(f.minOrderAmount) || 0, deliveryFee: Number(f.deliveryFee) || 0, gstin: f.gstin.trim().toUpperCase(),
       });
       setMsg('Saved.');
     } catch (err) {
@@ -90,6 +90,7 @@ function ShopCard({ shop }: { shop: WarehouseShop }) {
         <Field label="Delivery radius (km)"><input type="number" min={0} step="0.5" value={f.deliveryRadiusKm} onChange={(e) => set('deliveryRadiusKm', e.target.value)} /></Field>
         <Field label="Minimum order ₹"><input type="number" min={0} value={f.minOrderAmount} onChange={(e) => set('minOrderAmount', e.target.value)} /></Field>
         <Field label="Delivery fee ₹"><input type="number" min={0} value={f.deliveryFee} onChange={(e) => set('deliveryFee', e.target.value)} /></Field>
+        <Field label="GSTIN (printed on your bills)"><input value={f.gstin} maxLength={15} onChange={(e) => set('gstin', e.target.value.toUpperCase())} placeholder="09ABCDE1234F1Z5" /></Field>
       </div>
       <div className="modal-actions"><Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save settings'}</Button></div>
     </form>

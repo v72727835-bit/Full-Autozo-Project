@@ -23,6 +23,9 @@ export interface IProduct {
   /** Drives the green/brown veg marker; empty for non-food. */
   foodType: 'veg' | 'nonveg' | '';
   tags: string[];
+  /** GST: HSN code and the rate (%) the price already includes. Empty rate = the shop-wide default. */
+  hsn?: string;
+  gstRate?: number | null;
   isActive: boolean;
   rating: number;
   ratingCount: number;
@@ -63,6 +66,8 @@ const productSchema = new Schema<IProduct>(
     attributes: { type: [String], default: [] },
     foodType: { type: String, enum: ['veg', 'nonveg', ''], default: '' },
     tags: { type: [String], default: [] },
+    hsn: { type: String, trim: true },
+    gstRate: { type: Number, min: 0, max: 28 },
     isActive: { type: Boolean, default: true },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },

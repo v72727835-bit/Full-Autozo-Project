@@ -71,6 +71,11 @@ export const fetchOrder = async (id: string): Promise<Order> => (await api.get(`
 export const updateOrderStatus = async (id: string, status: OrderStatus, note?: string): Promise<Order> =>
   (await api.patch(`/admin/orders/${id}/status`, { status, note })).data.data;
 
+/* ---------- bills: a short-lived link opens the invoice / POS bill in a new tab ---------- */
+export interface InvoiceLinks { a4: string; pos: string; expiresAt: string }
+export const adminInvoiceLink = async (id: string): Promise<InvoiceLinks> => (await api.post(`/admin/orders/${id}/invoice-link`)).data.data;
+export const sellerInvoiceLink = async (id: string): Promise<InvoiceLinks> => (await api.post(`/seller/orders/${id}/invoice-link`)).data.data;
+
 /* ---------- shops ---------- */
 export const fetchShops = (params: { page?: number; limit?: number }) => paged<Shop>('/admin/shops', params);
 
@@ -374,6 +379,7 @@ export const sellerDashboard = async (): Promise<WarehouseDashboard> => (await a
 export interface WarehouseShop {
   _id: string;
   name: string;
+  gstin?: string;
   description?: string;
   phone?: string;
   logo?: string;

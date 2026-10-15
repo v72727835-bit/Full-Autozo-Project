@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
-import { cancelOrder, fetchOrder, reorder } from '../../../api/orders';
+import { cancelOrder, fetchInvoiceLinks, fetchOrder, reorder } from '../../../api/orders';
 import { getErrorMessage } from '../../../lib/client';
 import { FLOW, STATUS_BLURB, STATUS_LABEL, STATUS_TONE, isFinal } from '../../../lib/orderStatus';
 import { fitClass } from '../../../lib/art';
@@ -270,6 +270,28 @@ function OrderInner() {
                 Order again
               </Button>
             ) : null}
+            <Button
+              variant="outline"
+              full
+              icon="download"
+              loading={busy}
+              onClick={() => {
+                // Open the tab first so the pop-up blocker lets it through, then point it at the bill.
+                const tab = window.open('', '_blank');
+                act(async () => {
+                  try {
+                    const links = await fetchInvoiceLinks(o.id);
+                    if (tab) tab.location.href = links.a4;
+                    else window.location.href = links.a4;
+                  } catch (e) {
+                    tab?.close();
+                    throw e;
+                  }
+                });
+              }}
+            >
+              Download invoice
+            </Button>
             <Link href="/orders" className="btn btn-md btn-ghost btn-full">
               All orders
             </Link>

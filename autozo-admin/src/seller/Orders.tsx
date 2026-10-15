@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { sellerOrders, sellerSetOrderStatus } from '../api/admin';
+import { sellerInvoiceLink, sellerOrders, sellerSetOrderStatus } from '../api/admin';
+import { openBill } from '../lib/invoice';
 import AssignPanel from './AssignPanel';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Pagination, Tabs, money, formatDate } from '../components/ui';
@@ -119,6 +120,8 @@ export default function Orders({ onChanged }: { onChanged: () => void }) {
                 {['accepted', 'preparing', 'ready_for_pickup'].includes(o.status) && (
                   <Button size="sm" variant="ghost" disabled={busy === o._id} onClick={() => move(o._id, 'cancelled')}>Cancel</Button>
                 )}
+                <Button size="sm" variant="secondary" onClick={() => openBill(() => sellerInvoiceLink(o._id), 'a4').catch((e) => setError(getErrorMessage(e)))}>Invoice</Button>
+                <Button size="sm" variant="secondary" onClick={() => openBill(() => sellerInvoiceLink(o._id), 'pos').catch((e) => setError(getErrorMessage(e)))}>POS bill</Button>
                 <Button size="sm" variant="ghost" onClick={() => setOpen(expanded ? null : o._id)}>{expanded ? 'Hide details' : 'Details'}</Button>
                 {rider && <span className="cell-muted">Rider: {rider.name}{rider.phone ? ` · ${rider.phone}` : ''}</span>}
               </div>
