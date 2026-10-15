@@ -19,7 +19,7 @@ export interface Order {
 export interface Product {
   _id: string; name: string; nameHi?: string; brand?: string; description?: string; images: string[]; price: number; mrp: number;
   unit: string; stock: number; isActive: boolean; foodType: 'veg' | 'nonveg' | ''; attributes: string[]; tags: string[];
-  variantGroup?: string; variantLabel?: string; hsn?: string; gstRate?: number | null; category: { _id: string; name: string } | string; shop: { _id: string; name: string } | string;
+  variantGroup?: string; variantLabel?: string; hsn?: string; gstRate?: number | null; paymentMode?: 'both' | 'cod' | 'online'; category: { _id: string; name: string } | string; shop: { _id: string; name: string } | string;
 }
 export interface Category { _id: string; name: string; nameHi?: string; parent: string | null; level: 1 | 2 | 3 }
 export interface Dashboard {

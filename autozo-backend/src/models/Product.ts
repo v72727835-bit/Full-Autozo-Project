@@ -26,6 +26,8 @@ export interface IProduct {
   /** GST: HSN code and the rate (%) the price already includes. Empty rate = the shop-wide default. */
   hsn?: string;
   gstRate?: number | null;
+  /** How this product may be paid for: cash on delivery, online, or either. */
+  paymentMode?: 'both' | 'cod' | 'online';
   isActive: boolean;
   rating: number;
   ratingCount: number;
@@ -68,6 +70,7 @@ const productSchema = new Schema<IProduct>(
     tags: { type: [String], default: [] },
     hsn: { type: String, trim: true },
     gstRate: { type: Number, min: 0, max: 28 },
+    paymentMode: { type: String, enum: ['both', 'cod', 'online'], default: 'both' },
     isActive: { type: Boolean, default: true },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },

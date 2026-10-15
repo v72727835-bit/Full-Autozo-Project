@@ -97,7 +97,7 @@ export function buildCartView(groups: ResolvedGroup[]) {
         quantity: l.quantity,
         lineTotal,
         stock: l.product.stock,
-        ...productRules(l.product.category),
+        ...productRules(l.product.category, l.product.paymentMode),
         issue,
       };
     });

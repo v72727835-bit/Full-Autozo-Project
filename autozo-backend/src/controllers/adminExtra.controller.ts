@@ -174,8 +174,9 @@ export const listRidersAdmin = asyncHandler(async (req, res) => {
 
   const riders = await User.find(filter)
     .sort({ lastSeenAt: -1, name: 1 })
-    .select('name phone email warehouse isActive lastSeenAt lastLoginAt riderPaused riderPausedAt riderCancelCount riderLongDistance')
+    .select('name phone email warehouse warehouses isActive lastSeenAt lastLoginAt riderPaused riderPausedAt riderCancelCount riderLongDistance')
     .populate('warehouse', 'name')
+    .populate('warehouses', 'name')
     .lean();
   const cod = await codSummary(riders.map((r) => r._id as Types.ObjectId));
 

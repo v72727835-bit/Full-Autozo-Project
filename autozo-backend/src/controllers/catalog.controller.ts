@@ -10,20 +10,21 @@ import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { escapeRegex, idOrSlugFilter } from '../utils/helpers';
 import { ok, pageMeta } from '../utils/response';
+import { haversineKm } from '../utils/helpers';
 import { cachedSettings, loadSettings, productRules } from '../services/settings.service';
 
 const CARD_FIELDS =
-  'name slug brand images icon price mrp unit stock attributes foodType rating ratingCount ratingLabel variantGroup variantLabel nameHi shop category';
+  'name slug brand images icon price mrp unit stock attributes foodType rating ratingCount ratingLabel variantGroup variantLabel nameHi shop category paymentMode';
 const SHOP_CARD_FIELDS =
   'name slug logo banner description isOpen rating ratingCount deliveryFee minOrderAmount deliveryRadiusKm address location';
 const CAT_FIELDS = 'name nameHi slug icon image tint parent level';
 
 /** Adds the computed bits every product card shows. */
-function toCard<T extends { price: number; mrp: number; stock: number; category?: unknown }>(p: T) {
+function toCard<T extends { price: number; mrp: number; stock: number; category?: unknown; paymentMode?: 'both' | 'cod' | 'online' }>(p: T) {
   return {
     ...p,
     // 6-day aisles and aisles without cash on delivery, set in the admin panel.
-    ...productRules(p.category),
+    ...productRules(p.category, p.paymentMode),
     discountPercent: p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0,
     inStock: p.stock > 0,
   };
@@ -66,28 +67,40 @@ async function categoryFamily(rootId: Types.ObjectId): Promise<Types.ObjectId[]>
 
 const visible = { isActive: true, stock: { $gt: 0 } };
 
+/** Active shops whose own delivery radius covers a point, nearest first. */
+async function shopsServing(lat: number, lng: number) {
+  const shops = await Shop.find({ isActive: true }).select('name location deliveryRadiusKm isOpen').lean();
+  return shops
+    .map((sh) => {
+      const c = sh.location?.coordinates;
+      const km = c ? haversineKm(lat, lng, c[1], c[0]) : Infinity;
+      return { _id: sh._id as Types.ObjectId, name: sh.name, km, radius: sh.deliveryRadiusKm ?? 10, isOpen: sh.isOpen !== false };
+    })
+    .filter((sh) => sh.km <= sh.radius)
+    .sort((a, b) => a.km - b.km);
+}
+
 /**
- * Shops that deliver to a point: each shop has its own delivery radius, so
- * the 2dsphere index finds candidates within the widest plausible range and
- * each is then held to its own radius. Returns null when no point was given
+ * Ids of the shops that deliver to a point. Returns null when no point was given
  * (show everything), or the list - possibly empty - when one was.
  */
 async function servingShopIds(lat?: number, lng?: number): Promise<Types.ObjectId[] | null> {
   if (lat === undefined || lng === undefined) return null;
-  const found = await Shop.aggregate<{ _id: Types.ObjectId; dist: number; deliveryRadiusKm: number }>([
-    {
-      $geoNear: {
-        near: { type: 'Point', coordinates: [lng, lat] },
-        distanceField: 'dist',
-        maxDistance: 50_000,
-        query: { isActive: true },
-        spherical: true,
-      },
-    },
-    { $project: { dist: 1, deliveryRadiusKm: 1 } },
-  ]);
-  return found.filter((s) => s.dist <= (s.deliveryRadiusKm ?? 10) * 1000).map((s) => s._id);
+  return (await shopsServing(lat, lng)).map((sh) => sh._id);
 }
+
+/**
+ * Does any warehouse deliver to this point? Used by the website's "where should we deliver?"
+ * step, so a customer outside every warehouse's range is told so instead of seeing products.
+ */
+export const coverage = asyncHandler(async (req, res) => {
+  const { lat, lng } = req.query as unknown as { lat: number; lng: number };
+  const serving = await shopsServing(lat, lng);
+  ok(res, {
+    serviceable: serving.length > 0,
+    warehouses: serving.map((sh) => ({ name: sh.name, distanceKm: Math.round(sh.km * 10) / 10, isOpen: sh.isOpen })),
+  });
+});
 
 function railQuery(categoryIds: Types.ObjectId[], limit: number, scope: Record<string, unknown> = visible) {
   return Product.find({ ...scope, category: { $in: categoryIds } })

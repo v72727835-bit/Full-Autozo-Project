@@ -1,7 +1,7 @@
 import { notifyBackToPickup, notifyOrderStatus, notifyRiderAssigned } from '../services/orderNotify.service';
 import { FilterQuery } from 'mongoose';
 import { Order, IOrder } from '../models/Order';
-import { User } from '../models/User';
+import { riderWarehouseIds, User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ok, pageMeta } from '../utils/response';
@@ -19,8 +19,9 @@ export const touchRider: RequestHandler = (req, _res, next) => {
 
 export const getProfile = asyncHandler(async (req, res) => {
   const rider = await User.findById(req.user!.id)
-    .select('name phone email role warehouse isActive lastLoginAt createdAt riderPaused riderPausedAt riderCancelCount')
+    .select('name phone email role warehouse warehouses isActive lastLoginAt createdAt riderPaused riderPausedAt riderCancelCount')
     .populate('warehouse', 'name')
+    .populate('warehouses', 'name')
     .lean();
   if (!rider) throw new ApiError(404, 'Rider not found');
 
@@ -49,18 +50,19 @@ const visibleStatuses = ['ready_for_pickup', 'out_for_delivery', 'delivered'] as
 
 export const listOrders = asyncHandler(async (req, res) => {
   const { page, limit, status } = req.query as unknown as { page: number; limit: number; status?: string };
-  const rider = await User.findById(req.user!.id).select('warehouse riderPaused riderLongDistance').lean();
-  if (!rider?.warehouse) throw new ApiError(400, 'No warehouse is assigned to this rider');
+  const rider = await User.findById(req.user!.id).select('warehouse warehouses riderPaused riderLongDistance').lean();
+  const shops = rider ? riderWarehouseIds(rider) : [];
+  if (!rider || !shops.length) throw new ApiError(400, 'No warehouse is assigned to this rider');
   // Long-distance orders go only to the special rider; everyone else never sees them.
   const lane = rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } };
   // A paused rider sees only their own orders - no new pickups until resumed.
   if (rider.riderPaused && (!status || status === 'ready_for_pickup')) {
-    const own = { ...lane, shop: rider.warehouse, rider: req.user!.id, status: status ? '__none__' : { $in: ['out_for_delivery', 'delivered'] } };
+    const own = { ...lane, shop: { $in: shops }, rider: req.user!.id, status: status ? '__none__' : { $in: ['out_for_delivery', 'delivered'] } };
     const orders = await Order.find(own).sort({ createdAt: 1 }).skip((page - 1) * limit).limit(limit)
       .select('-statusHistory -deliveryOtp').populate('shop', 'name address phone location').populate('user', 'name phone').lean();
     return ok(res, orders, pageMeta(page, limit, await Order.countDocuments(own)));
   }
-  const filter: FilterQuery<IOrder> = { ...lane, shop: rider.warehouse, status: status ?? { $in: visibleStatuses } };
+  const filter: FilterQuery<IOrder> = { ...lane, shop: { $in: shops }, status: status ?? { $in: visibleStatuses } };
   if (!status) filter.$or = [{ status: 'ready_for_pickup' }, { rider: req.user!.id, status: { $in: ['out_for_delivery', 'delivered'] } }];
   else if (status !== 'ready_for_pickup') filter.rider = req.user!.id;
   const [orders, total] = await Promise.all([
@@ -72,13 +74,14 @@ export const listOrders = asyncHandler(async (req, res) => {
 });
 
 export const acceptOrder = asyncHandler(async (req, res) => {
-  const rider = await User.findById(req.user!.id).select('warehouse riderPaused riderLongDistance').lean();
-  if (!rider?.warehouse) throw new ApiError(400, 'No warehouse is assigned to this rider');
+  const rider = await User.findById(req.user!.id).select('warehouse warehouses riderPaused riderLongDistance').lean();
+  const shops = rider ? riderWarehouseIds(rider) : [];
+  if (!rider || !shops.length) throw new ApiError(400, 'No warehouse is assigned to this rider');
   if (rider.riderPaused) {
     throw new ApiError(403, 'Your delivery service has been stopped for a short time. Submit your COD payment to the cash department.');
   }
   const order = await Order.findOneAndUpdate(
-    { _id: req.params.id, shop: rider.warehouse, status: 'ready_for_pickup', rider: { $exists: false }, ...(rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } }) },
+    { _id: req.params.id, shop: { $in: shops }, status: 'ready_for_pickup', rider: { $exists: false }, ...(rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } }) },
     { $set: { rider: req.user!.id, status: 'out_for_delivery' }, $push: { statusHistory: { status: 'out_for_delivery', at: new Date(), note: 'Accepted by rider' } } },
     { new: true },
   ).select('-statusHistory -deliveryOtp').populate('shop', 'name address phone location').populate('user', 'name phone').lean();

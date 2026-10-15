@@ -3,11 +3,12 @@ import { createRider, fetchAllShops } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Shop } from '../types';
 import { Button, ErrorBanner, Field, Modal } from './ui';
+import WarehouseChecks from './WarehouseChecks';
 
 /** Creates a rider login: the rider signs in to the rider app with this phone number and password. */
 export default function CreateRiderModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [f, setF] = useState({ name: '', phone: '', password: '', warehouse: '' });
+  const [f, setF] = useState({ name: '', phone: '', password: '', warehouses: [] as string[] });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -20,8 +21,12 @@ export default function CreateRiderModal({ onClose, onDone }: { onClose: () => v
   };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
     setError('');
+    if (f.warehouses.length === 0) {
+      setError('Choose at least one warehouse.');
+      return;
+    }
+    setBusy(true);
     try {
       await createRider(f);
       window.alert(`Rider created.\n\nRider app login (phone): ${f.phone}\nPassword: ${f.password}\n\nShare this with the rider now - the password cannot be shown again.`);
@@ -50,15 +55,8 @@ export default function CreateRiderModal({ onClose, onDone }: { onClose: () => v
             </Button>
           </div>
         </Field>
-        <Field label="Warehouse">
-          <select value={f.warehouse} onChange={(e) => setF({ ...f, warehouse: e.target.value })} required>
-            <option value="">Select warehouse…</option>
-            {shops.map((s) => (
-              <option key={s._id} value={s._id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+        <Field label="Warehouses (tick one or more)">
+          <WarehouseChecks options={shops} value={f.warehouses} onChange={(warehouses) => setF({ ...f, warehouses })} />
         </Field>
         <div className="modal-actions">
           <Button type="button" variant="ghost" onClick={onClose}>

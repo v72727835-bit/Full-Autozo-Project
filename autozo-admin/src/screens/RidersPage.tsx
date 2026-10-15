@@ -5,7 +5,11 @@ import CreateRiderModal from '../components/CreateRiderModal';
 import { Badge, Button, CenterSpinner, ErrorBanner, money, timeAgo } from '../components/ui';
 import { RiderRow, RiderTotals } from '../types';
 
-const warehouseName = (r: RiderRow) => (typeof r.warehouse === 'string' ? '—' : r.warehouse?.name ?? '—');
+const warehouseName = (r: RiderRow) => {
+  const list = (r.warehouses ?? []).map((w) => w.name).filter(Boolean);
+  if (list.length) return list.join(', ');
+  return typeof r.warehouse === 'string' ? '—' : r.warehouse?.name ?? '—';
+};
 
 /**
  * Delivery partners at a glance: who is online, how much cash on delivery each
@@ -108,7 +112,7 @@ export default function RidersPage() {
               <thead>
                 <tr>
                   <th>Rider</th>
-                  <th>Warehouse</th>
+                  <th>Warehouses</th>
                   <th>Cash to collect</th>
                   <th>Delivered</th>
                   <th>Cancelled</th>

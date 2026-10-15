@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import WarehouseChecks from '../components/WarehouseChecks';
 import { createRider, deleteUser, fetchShops, fetchUsers, updateUser } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Tone, formatDate, timeAgo } from '../components/ui';
@@ -185,14 +186,18 @@ function EditUserModal({ user, onClose, onSaved }: { user: AppUser; onClose: () 
 }
 
 function CreateRiderModal({ warehouses, onClose, onSaved }: { warehouses: Shop[]; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', password: '', warehouse: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', password: '', warehouses: [] as string[] });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSaving(true);
     setError('');
+    if (form.warehouses.length === 0) {
+      setError('Choose at least one warehouse.');
+      return;
+    }
+    setSaving(true);
     try {
       await createRider({ ...form, email: form.email || undefined });
       onSaved();
@@ -211,7 +216,7 @@ function CreateRiderModal({ warehouses, onClose, onSaved }: { warehouses: Shop[]
         <Field label="Phone"><input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="10-digit mobile number" /></Field>
         <Field label="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
         <Field label="Temporary password"><input required type="password" minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
-        <Field label="Assign warehouse"><select required value={form.warehouse} onChange={(e) => setForm({ ...form, warehouse: e.target.value })}><option value="">Select warehouse...</option>{warehouses.map((warehouse) => <option key={warehouse._id} value={warehouse._id}>{warehouse.name}</option>)}</select></Field>
+        <Field label="Warehouses (tick one or more)"><WarehouseChecks options={warehouses} value={form.warehouses} onChange={(w) => setForm({ ...form, warehouses: w })} /></Field>
         <div className="modal-actions"><Button type="button" variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? 'Creating...' : 'Create rider'}</Button></div>
       </form>
     </Modal>

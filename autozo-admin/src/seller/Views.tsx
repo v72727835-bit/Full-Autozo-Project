@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { sellerCategories, sellerCreateRider, sellerCustomers, sellerRiders, WarehouseCustomer, WarehouseRider } from '../api/admin';
 import { getErrorMessage } from '../api/client';
+import WarehouseChecks from '../components/WarehouseChecks';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, formatDate, money } from '../components/ui';
 import { PageMeta } from '../types';
 import type { Cat } from './Products';
@@ -28,7 +29,7 @@ function RidersInner({ warehouses }: { warehouses: Wh[] }) {
   const [rows, setRows] = useState<WarehouseRider[]>([]);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
-  const [f, setF] = useState({ name: '', phone: '', password: '', warehouse: '' });
+  const [f, setF] = useState({ name: '', phone: '', password: '', warehouses: [] as string[] });
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
@@ -47,13 +48,17 @@ function RidersInner({ warehouses }: { warehouses: Wh[] }) {
   };
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
     setError('');
+    if (warehouses.length > 1 && f.warehouses.length === 0) {
+      setError('Choose at least one warehouse.');
+      return;
+    }
+    setBusy(true);
     try {
-      await sellerCreateRider({ ...f, warehouse: f.warehouse || undefined });
+      await sellerCreateRider({ ...f, warehouses: f.warehouses.length ? f.warehouses : undefined });
       window.alert(`Rider created.\n\nRider app login (phone): ${f.phone}\nPassword: ${f.password}\n\nShare it with the rider now - the password cannot be shown again.`);
       setAdding(false);
-      setF({ name: '', phone: '', password: '', warehouse: '' });
+      setF({ name: '', phone: '', password: '', warehouses: [] });
       load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -109,11 +114,8 @@ function RidersInner({ warehouses }: { warehouses: Wh[] }) {
               </div>
             </Field>
             {warehouses.length > 1 && (
-              <Field label="Warehouse">
-                <select value={f.warehouse} onChange={(e) => setF({ ...f, warehouse: e.target.value })} required>
-                  <option value="">Select…</option>
-                  {warehouses.map((w) => <option key={w._id} value={w._id}>{w.name}</option>)}
-                </select>
+              <Field label="Warehouses (tick one or more)">
+                <WarehouseChecks options={warehouses} value={f.warehouses} onChange={(w) => setF({ ...f, warehouses: w })} />
               </Field>
             )}
             <ErrorBanner message={error} />

@@ -14,7 +14,7 @@ export function RidersScreen() {
   const [rows, setRows] = useState<WhRider[] | null>(null);
   const [adding, setAdding] = useState(false);
   const [f, setF] = useState({ name: '', phone: '', password: '' });
-  const [warehouse, setWarehouse] = useState(warehouses.length === 1 ? warehouses[0]._id : '');
+  const [picked, setPicked] = useState<string[]>(warehouses.length === 1 ? [warehouses[0]._id] : []);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const load = useCallback(() => { sellerRiders().then(setRows).catch((e) => setError(getErrorMessage(e))); }, []);
@@ -23,10 +23,10 @@ export function RidersScreen() {
   const add = async () => {
     setError('');
     if (f.name.trim().length < 2 || f.phone.trim().length < 10 || f.password.length < 6) return setError('Enter the rider name, a 10-digit phone number and a password of at least 6 characters.');
-    if (warehouses.length > 1 && !warehouse) return setError('Choose the warehouse for this rider.');
+    if (warehouses.length > 1 && picked.length === 0) return setError('Choose at least one warehouse for this rider.');
     setBusy(true);
     try {
-      await createRider({ name: f.name.trim(), phone: f.phone.trim(), password: f.password, warehouse: warehouse || undefined });
+      await createRider({ name: f.name.trim(), phone: f.phone.trim(), password: f.password, warehouses: picked.length ? picked : undefined });
       setF({ name: '', phone: '', password: '' }); setAdding(false); load();
       Alert.alert('Rider added', 'They can sign in to the Autozo Rider app with this phone number and password.');
     } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
@@ -42,7 +42,17 @@ export function RidersScreen() {
             <Input label="Rider name" value={f.name} onChangeText={(v) => setF({ ...f, name: v })} />
             <Input label="Phone number (their login)" value={f.phone} onChangeText={(v) => setF({ ...f, phone: v })} keyboardType="phone-pad" />
             <Input label="Password" value={f.password} onChangeText={(v) => setF({ ...f, password: v })} />
-            {warehouses.length > 1 ? <><Text style={{ fontSize: 13, fontWeight: '600' }}>Warehouse</Text><Chips value={warehouse} options={warehouses.map((w) => [w._id, w.name] as const)} onChange={setWarehouse} /></> : null}
+            {warehouses.length > 1 ? (
+              <View style={{ marginBottom: 8 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 4 }}>Warehouses (choose one or more)</Text>
+                {warehouses.map((w) => (
+                  <View key={w._id} style={[row, { paddingVertical: 4 }]}>
+                    <Text style={{ flex: 1 }}>{w.name}</Text>
+                    <Switch value={picked.includes(w._id)} onValueChange={(on) => setPicked((cur) => (on ? [...cur, w._id] : cur.filter((x) => x !== w._id)))} />
+                  </View>
+                ))}
+              </View>
+            ) : null}
             <Btn title={busy ? 'Please wait…' : 'Add rider'} onPress={add} disabled={busy} />
           </Card>
         ) : null}

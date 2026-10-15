@@ -97,8 +97,12 @@ async function runPlaceOrder(
       if (issue) problems.push({ shop: g.shop.name, productId: String(l.product._id), name: l.product.name, reason: issue });
       else subtotal += l.product.price * l.quantity;
       // Some aisles (fruits & vegetables by default) cannot be paid in cash.
-      if (paymentMethod === 'cod' && !productRules(l.product.category).codAvailable) {
+      const rules = productRules(l.product.category, l.product.paymentMode);
+      if (paymentMethod === 'cod' && !rules.codAvailable) {
         problems.push({ shop: g.shop.name, productId: String(l.product._id), name: l.product.name, reason: 'cod_unavailable' });
+      }
+      if (paymentMethod === 'online' && !rules.onlineAvailable) {
+        problems.push({ shop: g.shop.name, productId: String(l.product._id), name: l.product.name, reason: 'online_unavailable' });
       }
     }
     if (subtotal < g.shop.minOrderAmount) {

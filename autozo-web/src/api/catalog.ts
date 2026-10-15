@@ -133,3 +133,14 @@ export const fetchBrands = async (category?: string): Promise<string[]> => {
   const { data } = await api.get('/products/brands', { params: { category } });
   return data.data as string[];
 };
+
+export interface Coverage {
+  serviceable: boolean;
+  warehouses: { name: string; distanceKm: number; isOpen: boolean }[];
+}
+
+/** Does any warehouse deliver to this point? */
+export const fetchCoverage = async (lat: number, lng: number): Promise<Coverage> => {
+  const { data } = await api.get('/coverage', { params: { lat: Math.round(lat * 1000) / 1000, lng: Math.round(lng * 1000) / 1000 } });
+  return data.data as Coverage;
+};

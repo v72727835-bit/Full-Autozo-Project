@@ -21,7 +21,7 @@ export interface BulkResponse {
 /** Same page size the server accepts per request. */
 const CHUNK = 300;
 
-const COLUMNS_ADMIN = ['name', 'category', 'price', 'mrp', 'unit', 'stock', 'warehouse', 'brand', 'description', 'images', 'video', 'foodType', 'tags', 'attributes', 'variantGroup', 'variantLabel', 'nameHi', 'points', 'sortCode', 'hsn', 'gstRate'];
+const COLUMNS_ADMIN = ['name', 'category', 'price', 'mrp', 'unit', 'stock', 'warehouse', 'brand', 'description', 'images', 'video', 'foodType', 'tags', 'attributes', 'variantGroup', 'variantLabel', 'nameHi', 'points', 'sortCode', 'hsn', 'gstRate', 'payment'];
 const COLUMNS_SELLER = COLUMNS_ADMIN.filter((c) => c !== 'points' && c !== 'sortCode');
 const REQUIRED = ['name', 'category', 'price'];
 
@@ -69,8 +69,8 @@ export default function BulkUpload({
     const sample = (o: Record<string, string>) => columns.map((c) => o[c] ?? '');
     downloadCsv('autozo-products-template.csv', [
       columns,
-      sample({ name: 'Shimla Apple', category: cat, price: '120', mrp: '140', unit: '1 kg', stock: '30', warehouse: shop, brand: 'Fresh', description: 'Crisp and sweet', images: 'https://example.com/apple1.jpg|https://example.com/apple2.jpg', video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', foodType: 'veg', tags: 'fruit|fresh', attributes: 'Premium', points: '2', sortCode: '1', hsn: '0808', gstRate: '0' }),
-      sample({ name: 'Amul Taaza Milk', category: cat, price: '29', mrp: '32', unit: '500 ml', stock: '100', warehouse: shop, brand: 'Amul', foodType: 'veg', hsn: '0401', gstRate: '0' }),
+      sample({ name: 'Shimla Apple', category: cat, price: '120', mrp: '140', unit: '1 kg', stock: '30', warehouse: shop, brand: 'Fresh', description: 'Crisp and sweet', images: 'https://example.com/apple1.jpg|https://example.com/apple2.jpg', video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', foodType: 'veg', tags: 'fruit|fresh', attributes: 'Premium', points: '2', sortCode: '1', hsn: '0808', gstRate: '0', payment: 'both' }),
+      sample({ name: 'Amul Taaza Milk', category: cat, price: '29', mrp: '32', unit: '500 ml', stock: '100', warehouse: shop, brand: 'Amul', foodType: 'veg', hsn: '0401', gstRate: '0', payment: 'cod' }),
     ]);
   };
 
@@ -160,6 +160,7 @@ export default function BulkUpload({
           <li><b>video</b>: one YouTube link or a direct .mp4 link (optional).</li>
           <li><b>foodType</b>: veg or nonveg (leave empty for other products).</li>
           <li><b>hsn</b> (HSN code) and <b>gstRate</b> (0, 5, 12, 18 or 28; the GST already inside the price). Leave gstRate empty to use the default rate.</li>
+          <li><b>payment</b>: <code>both</code> (default), <code>cod</code> (cash on delivery only) or <code>online</code> (online payment only).</li>
           {mode === 'admin' ? <li><b>points</b> (0-50) and <b>sortCode</b> are admin-only.</li> : null}
         </ul>
       </details>

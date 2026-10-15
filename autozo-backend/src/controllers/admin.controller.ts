@@ -197,7 +197,7 @@ export const stats = asyncHandler(async (req, res) => {
 /* ============ Products ============ */
 
 const ADMIN_PRODUCT_FIELDS =
-  'name slug brand images icon price mrp unit stock attributes foodType hsn gstRate tags isActive rating ratingCount soldCount nameHi points sortCode ratingLabel variantGroup variantLabel seller shop category createdAt';
+  'name slug brand images icon price mrp unit stock attributes foodType hsn gstRate paymentMode tags isActive rating ratingCount soldCount nameHi points sortCode ratingLabel variantGroup variantLabel seller shop category createdAt';
 
 export const listProductsAdmin = asyncHandler(async (req, res) => {
   const { q, category, shop, isActive, page, limit } = req.query as unknown as {
@@ -473,8 +473,9 @@ export const listUsersAdmin = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .select('name phone email role warehouse isActive lastLoginAt createdAt')
+      .select('name phone email role warehouse warehouses isActive lastLoginAt createdAt')
       .populate('warehouse', 'name')
+      .populate('warehouses', 'name')
       .lean(),
     User.countDocuments(filter),
   ]);
@@ -482,17 +483,20 @@ export const listUsersAdmin = asyncHandler(async (req, res) => {
 });
 
 export const createRider = asyncHandler(async (req, res) => {
-  const { name, phone, email, password, warehouse } = req.body as {
+  const { name, phone, email, password, warehouse, warehouses } = req.body as {
     name: string;
     phone: string;
     email?: string;
     password: string;
-    warehouse: string;
+    warehouse?: string;
+    warehouses?: string[];
   };
-  const warehouseDoc = await Shop.findById(warehouse).select('_id').lean();
-  if (!warehouseDoc) throw new ApiError(400, 'Warehouse not found');
-  const rider = await User.create({ name, phone, email, password, role: 'rider', warehouse, isActive: true });
-  const safeRider = await User.findById(rider._id).select('name phone email role warehouse isActive createdAt').populate('warehouse', 'name');
+  const ids = [...new Set(warehouses?.length ? warehouses : warehouse ? [warehouse] : [])];
+  if (!ids.length) throw new ApiError(400, 'Choose at least one warehouse');
+  const found = await Shop.countDocuments({ _id: { $in: ids } });
+  if (found !== ids.length) throw new ApiError(400, 'Warehouse not found');
+  const rider = await User.create({ name, phone, email, password, role: 'rider', warehouse: ids[0], warehouses: ids, isActive: true });
+  const safeRider = await User.findById(rider._id).select('name phone email role warehouse warehouses isActive createdAt').populate('warehouse', 'name').populate('warehouses', 'name');
   created(res, safeRider);
 });
 
@@ -516,6 +520,16 @@ export const updateUserAdmin = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'You cannot block or change the role of your own account');
   }
 
+  const wh = (update as { warehouses?: string[] }).warehouses;
+  if (wh) {
+    const ids = [...new Set(wh)];
+    if ((await Shop.countDocuments({ _id: { $in: ids } })) !== ids.length) throw new ApiError(400, 'Warehouse not found');
+    (update as Partial<IUser>).warehouses = ids as never;
+    (update as Partial<IUser>).warehouse = ids[0] as never;
+  } else if ('warehouse' in update) {
+    // Single-warehouse edit: keep the list in step with it.
+    (update as Partial<IUser>).warehouses = (update.warehouse ? [update.warehouse] : []) as never;
+  }
   Object.assign(user, update);
   if (email !== undefined) user.email = email || undefined;
   if (password) {
@@ -524,7 +538,7 @@ export const updateUserAdmin = asyncHandler(async (req, res) => {
   }
   await user.save();
 
-  const saved = await User.findById(user._id).select('name phone email role warehouse isActive lastLoginAt createdAt').populate('warehouse', 'name');
+  const saved = await User.findById(user._id).select('name phone email role warehouse isActive lastLoginAt createdAt warehouses').populate('warehouse', 'name').populate('warehouses', 'name');
   ok(res, saved);
 });
 

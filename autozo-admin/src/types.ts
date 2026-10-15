@@ -72,6 +72,7 @@ export interface Product {
   _id: string;
   hsn?: string;
   gstRate?: number | null;
+  paymentMode?: 'both' | 'cod' | 'online';
   standardCategories?: string[];
   name: string;
   slug: string;
@@ -396,6 +397,7 @@ export interface RiderRow {
   phone: string;
   email?: string;
   warehouse?: { _id: string; name: string } | string;
+  warehouses?: { _id: string; name: string }[];
   isActive: boolean;
   online: boolean;
   paused: boolean;

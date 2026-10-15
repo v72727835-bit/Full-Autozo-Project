@@ -326,8 +326,10 @@ export function ProductDetailScreen() {
           {[
             { icon: 'shield-checkmark-outline' as const, title: 'Fulfilled by', body: 'Autozo' },
             product.codAvailable === false
-              ? { icon: 'card-outline' as const, title: 'COD', body: 'Not available' }
-              : { icon: 'cash-outline' as const, title: 'COD available', body: 'Pay when it arrives' },
+              ? { icon: 'card-outline' as const, title: 'Online payment only', body: 'No cash on delivery' }
+              : product.onlineAvailable === false
+                ? { icon: 'cash-outline' as const, title: 'COD only', body: 'Pay when it arrives' }
+                : { icon: 'cash-outline' as const, title: 'COD & online', body: 'Pay as you like' },
             { icon: 'bicycle-outline' as const, title: 'Free delivery', body: 'On this order' },
             product.deliveryDays && product.deliveryDays > 1
               ? { icon: 'calendar-outline' as const, title: `${product.deliveryDays} day delivery`, body: 'For this aisle' }

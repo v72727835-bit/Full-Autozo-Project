@@ -295,7 +295,7 @@ export default function ProductPage() {
             </li>
             <li>
               <Icon name="wallet" size={16} />
-              {p.codAvailable === false ? 'Cash on delivery not available' : 'COD available'}
+              {p.codAvailable === false ? 'Online payment only (no cash on delivery)' : p.onlineAvailable === false ? 'Cash on delivery only' : 'COD & online payment available'}
             </li>
             <li>
               <Icon name="truck" size={16} />

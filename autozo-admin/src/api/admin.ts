@@ -104,7 +104,7 @@ export const deleteShop = async (id: string): Promise<void> => {
   await api.delete(`/admin/shops/${id}`);
 };
 
-export const createRider = async (body: { name: string; phone: string; email?: string; password: string; warehouse: string }): Promise<AppUser> =>
+export const createRider = async (body: { name: string; phone: string; email?: string; password: string; warehouses: string[] }): Promise<AppUser> =>
   (await api.post('/admin/riders', body)).data.data;
 
 /* ---------- users ---------- */
@@ -311,7 +311,7 @@ export const setWarehouseLogin = async (shopId: string, body: { name?: string; p
 };
 export interface WarehouseRider { _id: string; name: string; phone: string; isActive: boolean; online: boolean; busy: boolean; paused: boolean; lastSeenAt?: string }
 export const sellerRiders = async (): Promise<WarehouseRider[]> => (await api.get('/seller/riders')).data.data;
-export const sellerCreateRider = async (body: { name: string; phone: string; password: string; warehouse?: string }): Promise<void> => {
+export const sellerCreateRider = async (body: { name: string; phone: string; password: string; warehouses?: string[] }): Promise<void> => {
   await api.post('/seller/riders', body);
 };
 

@@ -116,6 +116,7 @@ export function product(raw: RawProduct): Product {
     ratingLabel: raw.ratingLabel || undefined,
     deliveryDays: raw.deliveryDays ?? null,
     codAvailable: raw.codAvailable !== false,
+    onlineAvailable: raw.onlineAvailable !== false,
     variants: (raw.variants ?? []).map((v) => ({
       id: idOf(v),
       slug: v.slug,
@@ -318,6 +319,7 @@ function cartItem(raw: Record<string, unknown>): CartItem {
     stock: (raw.stock as number) ?? 0,
     deliveryDays: (raw.deliveryDays as number | null) ?? null,
     codAvailable: (raw.codAvailable as boolean) ?? true,
+    onlineAvailable: (raw.onlineAvailable as boolean) ?? true,
     issue: (raw.issue as string) ?? null,
   };
 }

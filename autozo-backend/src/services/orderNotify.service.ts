@@ -36,7 +36,7 @@ async function warehouseRiders(o: OrderLike): Promise<string[]> {
   const riders = await User.find({
     role: 'rider',
     isActive: true,
-    warehouse: idOf(o.shop),
+    $or: [{ warehouse: idOf(o.shop) }, { warehouses: idOf(o.shop) }],
     riderPaused: { $ne: true },
     ...(o.longDistance ? { riderLongDistance: true } : { riderLongDistance: { $ne: true } }),
   })

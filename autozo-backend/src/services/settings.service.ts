@@ -80,12 +80,21 @@ const idOf = (category: unknown): string | null => {
 };
 
 /** Delivery promise and COD availability for a product in this category. */
-export function productRules(category: unknown): { deliveryDays: number | null; codAvailable: boolean } {
+export type PaymentMode = 'both' | 'cod' | 'online';
+
+export function productRules(
+  category: unknown,
+  paymentMode?: PaymentMode | null,
+): { deliveryDays: number | null; codAvailable: boolean; onlineAvailable: boolean; paymentMode: PaymentMode } {
   const id = idOf(category);
-  if (!cache || !id) return { deliveryDays: null, codAvailable: true };
+  const mode: PaymentMode = paymentMode === 'cod' || paymentMode === 'online' ? paymentMode : 'both';
+  const aisleCod = !cache || !id ? true : !cache.codOff.has(id);
   return {
-    deliveryDays: cache.sixDay.has(id) ? cache.settings.sixDay.days : null,
-    codAvailable: !cache.codOff.has(id),
+    deliveryDays: cache && id && cache.sixDay.has(id) ? cache.settings.sixDay.days : null,
+    // The product's own choice and the aisle rule both have to allow cash.
+    codAvailable: aisleCod && mode !== 'online',
+    onlineAvailable: mode !== 'cod',
+    paymentMode: mode,
   };
 }
 
