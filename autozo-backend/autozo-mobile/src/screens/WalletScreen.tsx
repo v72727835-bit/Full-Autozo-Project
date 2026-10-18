@@ -7,6 +7,7 @@ import { fetchWallet, fetchWalletTxns, requestWithdraw, savePayoutAccount, submi
 import { getErrorMessage } from '../api/client';
 import { PayoutAccount, RiderWallet, WalletTxn } from '../types';
 import { colors, radius, shadow } from '../theme';
+import { AnimatedNumber, FadeSlide } from '../components/anim';
 
 const money = (v: number) => `₹${Math.round(v).toLocaleString('en-IN')}`;
 const KIND_LABEL: Record<WalletTxn['kind'], string> = { earning: 'Delivery earning', bonus: 'Bonus', adjustment: 'Adjustment', withdrawal: 'Withdrawal', cash_submit: 'Cash submitted' };
@@ -37,9 +38,10 @@ export default function WalletScreen() {
         <ErrorBanner message={error} />
 
         {/* Balance you can withdraw */}
+        <FadeSlide>
         <View style={styles.hero}>
           <Text style={styles.heroEyebrow}>WITHDRAWABLE BALANCE</Text>
-          <Text style={styles.heroValue}>{money(wallet?.balance ?? 0)}</Text>
+          <AnimatedNumber value={wallet?.balance ?? 0} format={(v) => `₹${Math.round(v).toLocaleString('en-IN')}`} style={styles.heroValue} />
           <View style={styles.heroRow}>
             <Text style={styles.heroSmall}>Earned {money(wallet?.lifetimeEarned ?? 0)}</Text>
             {wallet?.pendingWithdraw ? <Text style={styles.heroSmall}>· {money(wallet.pendingWithdraw)} on the way</Text> : null}
@@ -49,8 +51,10 @@ export default function WalletScreen() {
             <Button title={wallet?.account?.upi || wallet?.account?.bankNumber ? 'Edit account' : 'Add account'} variant="outline" onPress={() => setSheet('account')} style={{ flex: 1 }} />
           </View>
         </View>
+        </FadeSlide>
 
         {/* Cash to submit */}
+        <FadeSlide delay={90}>
         <View style={styles.cashCard}>
           <View style={{ flex: 1 }}>
             <Text style={styles.cashLabel}>Cash to submit to office</Text>
@@ -59,14 +63,16 @@ export default function WalletScreen() {
           </View>
           <Button title="Submit cash" variant="outline" onPress={() => setSheet('cash')} />
         </View>
+        </FadeSlide>
 
         <Text style={styles.sectionTitle}>Passbook</Text>
         {txns.length === 0 ? (
           <View style={styles.empty}><Ionicons name="receipt-outline" size={40} color={colors.primary} /><Text style={styles.muted}>Nothing yet. Deliver orders to start earning.</Text></View>
-        ) : txns.map((t) => {
+        ) : txns.map((t, i) => {
           const out = t.kind === 'withdrawal' || t.kind === 'cash_submit';
           return (
-            <View key={t._id} style={styles.txn}>
+            <FadeSlide key={t._id} delay={Math.min(i, 8) * 45}>
+            <View style={styles.txn}>
               <View style={[styles.txnIcon, { backgroundColor: out ? colors.dangerSoft : colors.successSoft }]}>
                 <Ionicons name={t.kind === 'withdrawal' ? 'arrow-up' : t.kind === 'cash_submit' ? 'cash-outline' : 'arrow-down'} size={16} color={out ? colors.danger : colors.success} />
               </View>
@@ -79,6 +85,7 @@ export default function WalletScreen() {
                 {t.status !== 'completed' ? <Text style={[styles.pill, pillTone(t.status)]}>{t.status}</Text> : null}
               </View>
             </View>
+            </FadeSlide>
           );
         })}
       </ScrollView>

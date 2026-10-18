@@ -1,8 +1,11 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, shadow } from '../theme';
+import { FadeSlide, Pulse } from './anim';
+
+const LOGO = require('../assets/logo-mark.png');
 
 interface Props {
   title: string;
@@ -20,17 +23,26 @@ export function AuthLayout({ title, subtitle, children }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.brandRow}>
-            <View style={styles.logo}>
-              <Ionicons name="bag-handle" size={26} color="#fff" />
+          <FadeSlide>
+            <View style={styles.brandRow}>
+              <Pulse style={styles.logo}>
+                <Image source={LOGO} style={styles.logoImg} />
+              </Pulse>
+              <View>
+                <Text style={styles.brand}>Autozo</Text>
+                <Text style={styles.brandSub}>Rider partner</Text>
+              </View>
             </View>
-            <Text style={styles.brand}>Autozo</Text>
-          </View>
+          </FadeSlide>
 
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <FadeSlide delay={90}>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
+          </FadeSlide>
 
-          <View style={styles.card}>{children}</View>
+          <FadeSlide delay={160}>
+            <View style={styles.card}>{children}</View>
+          </FadeSlide>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -50,14 +62,17 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1, padding: 24, paddingTop: 32 },
   brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
+  logoImg: { width: 34, height: 34, borderRadius: 9 },
+  brandSub: { color: colors.muted, fontSize: 12, fontWeight: '600', marginTop: 1 },
   logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#1F2937',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
+    ...shadow,
   },
   brand: { fontSize: 26, fontWeight: '800', color: colors.text },
   title: { fontSize: 28, fontWeight: '800', color: colors.text },
