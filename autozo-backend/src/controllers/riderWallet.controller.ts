@@ -6,7 +6,7 @@ import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ok, pageMeta } from '../utils/response';
 import { codSummary } from '../services/rider.service';
-import { payRules, walletSummary } from '../services/riderPay.service';
+import { earningsSeries, payRules, walletSummary } from '../services/riderPay.service';
 import { loadSettings } from '../services/settings.service';
 
 /** Everything the wallet screen shows at the top: balance, earnings, cash owed, saved account. */
@@ -50,37 +50,8 @@ export const listWalletTxns = asyncHandler(async (req, res) => {
  * today / week / month roll-ups.
  */
 export const earningsSummary = asyncHandler(async (req, res) => {
-  const id = req.user!.id;
-  const days = Math.min(60, Math.max(7, Number(req.query.days) || 14));
-  const since = new Date();
-  since.setHours(0, 0, 0, 0);
-  since.setDate(since.getDate() - (days - 1));
-
-  const rows = await WalletTxn.find({ rider: id, kind: { $in: ['earning', 'bonus'] }, createdAt: { $gte: since } })
-    .select('kind amount createdAt')
-    .lean();
-  // Bucket by Indian calendar day so the graph lines up with the rider's own day.
-  const fmt = (d: Date) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-  const amountByDay = new Map<string, number>();
-  const deliveriesByDay = new Map<string, number>();
-  for (const r of rows) {
-    const key = fmt(r.createdAt);
-    amountByDay.set(key, (amountByDay.get(key) ?? 0) + r.amount);
-    if (r.kind === 'earning') deliveriesByDay.set(key, (deliveriesByDay.get(key) ?? 0) + 1);
-  }
-  const series: { date: string; amount: number; deliveries: number }[] = [];
-  for (let i = 0; i < days; i++) {
-    const d = new Date(since);
-    d.setDate(since.getDate() + i);
-    const key = fmt(d);
-    series.push({ date: key, amount: amountByDay.get(key) ?? 0, deliveries: deliveriesByDay.get(key) ?? 0 });
-  }
-  const todayKey = fmt(new Date());
-  const today = series.find((s) => s.date === todayKey)?.amount ?? 0;
-  const week = series.slice(-7).reduce((a, s) => a + s.amount, 0);
-  const month = series.reduce((a, s) => a + s.amount, 0);
-  const deliveries = series.reduce((a, s) => a + s.deliveries, 0);
-  ok(res, { series, today, week, month, deliveries });
+  const days = Number(req.query.days) || 14;
+  ok(res, await earningsSeries(req.user!.id, days));
 });
 
 /** Save or update where the rider gets paid. */

@@ -187,6 +187,30 @@ export interface Withdrawal {
   createdAt: string;
 }
 
+export interface WalletTxnRow {
+  _id: string;
+  kind: 'earning' | 'bonus' | 'adjustment' | 'withdrawal' | 'cash_submit';
+  amount: number;
+  status: 'completed' | 'pending' | 'paid' | 'rejected' | 'confirmed';
+  note?: string; km?: number; reference?: string; method?: 'upi' | 'bank'; destination?: string; createdAt: string;
+}
+
+export interface RiderProfileFull {
+  rider: {
+    _id: string; name: string; phone: string; email: string | null; isActive: boolean; paused: boolean;
+    pausedAt: string | null; longDistance: boolean; online: boolean; lastSeenAt: string | null; createdAt: string;
+    warehouses: { _id: string; name: string }[];
+    payout: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string } | null;
+  };
+  finance: { balance: number; lifetimeEarned: number; pendingWithdraw: number; withdrawnTotal: number; codPending: number; codCollected: number };
+  analytics: { series: { date: string; amount: number; deliveries: number }[]; today: number; week: number; month: number; deliveries: number; delivered: number; cancelled: number; avgPerDelivery: number };
+  recentTxns: WalletTxnRow[];
+  withdrawals: WalletTxnRow[];
+}
+
+export const fetchRiderProfile = async (id: string): Promise<RiderProfileFull> =>
+  (await api.get(`/admin/riders/${id}/profile`)).data.data;
+
 export const fetchWithdrawals = async (status = 'pending', page = 1): Promise<{ items: Withdrawal[]; meta: { total: number; totalPages: number; hasNext: boolean; pendingTotal: number } }> => {
   const { data } = await api.get('/admin/withdrawals', { params: { status, page, limit: 20 } });
   return { items: data.data, meta: data.meta };

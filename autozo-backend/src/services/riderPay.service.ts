@@ -103,3 +103,36 @@ export async function walletSummary(riderId: Types.ObjectId | string) {
   const balance = Math.max(0, credit - withdrawHeld);
   return { balance, lifetimeEarned, pendingWithdraw, withdrawnTotal: withdrawHeld - pendingWithdraw };
 }
+
+/** Per-day earnings for the last `days` days (Indian calendar), plus roll-ups. */
+export async function earningsSeries(riderId: Types.ObjectId | string, days = 14) {
+  const id = String(riderId);
+  const span = Math.min(60, Math.max(7, days));
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (span - 1));
+  const rows = await WalletTxn.find({ rider: id, kind: { $in: ['earning', 'bonus'] }, createdAt: { $gte: since } })
+    .select('kind amount createdAt')
+    .lean();
+  const fmt = (d: Date) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const amountByDay = new Map<string, number>();
+  const deliveriesByDay = new Map<string, number>();
+  for (const r of rows) {
+    const key = fmt(r.createdAt);
+    amountByDay.set(key, (amountByDay.get(key) ?? 0) + r.amount);
+    if (r.kind === 'earning') deliveriesByDay.set(key, (deliveriesByDay.get(key) ?? 0) + 1);
+  }
+  const series: { date: string; amount: number; deliveries: number }[] = [];
+  for (let i = 0; i < span; i++) {
+    const d = new Date(since);
+    d.setDate(since.getDate() + i);
+    const key = fmt(d);
+    series.push({ date: key, amount: amountByDay.get(key) ?? 0, deliveries: deliveriesByDay.get(key) ?? 0 });
+  }
+  const todayKey = fmt(new Date());
+  const today = series.find((s) => s.date === todayKey)?.amount ?? 0;
+  const week = series.slice(-7).reduce((a, s) => a + s.amount, 0);
+  const month = series.reduce((a, s) => a + s.amount, 0);
+  const deliveries = series.reduce((a, s) => a + s.deliveries, 0);
+  return { series, today, week, month, deliveries };
+}

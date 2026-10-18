@@ -15,6 +15,7 @@ const MediaPage = dynamic(() => import('./screens/MediaPage'), { ssr: false });
 const NoticesPage = dynamic(() => import('./screens/NoticesPage'), { ssr: false });
 const RidersPage = dynamic(() => import('./screens/RidersPage'), { ssr: false });
 const PayoutsPage = dynamic(() => import('./screens/PayoutsPage'), { ssr: false });
+const RiderProfilePage = dynamic(() => import('./screens/RiderProfilePage'), { ssr: false });
 const SettingsStorePage = dynamic(() => import('./screens/SettingsStorePage'), { ssr: false });
 const SupportPage = dynamic(() => import('./screens/SupportPage'), { ssr: false });
 const CategoriesPage = dynamic(() => import('./screens/CategoriesPage'), { ssr: false });
@@ -44,6 +45,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function CurrentPage({ pathname }: { pathname: string }) {
+  if (pathname.startsWith('/riders/')) return <RiderProfilePage riderId={pathname.slice('/riders/'.length)} />;
   switch (pathname) {
     case '/':
       return <DashboardPage />;
