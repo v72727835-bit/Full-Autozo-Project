@@ -191,6 +191,18 @@ export const riderOrdersQuery = pagination.extend({
   status: z.enum(['ready_for_pickup', 'out_for_delivery', 'delivered']).optional(),
 });
 
+export const walletAccountBody = z.object({
+  upi: z.string().trim().max(80).optional().or(z.literal('')),
+  bankHolder: z.string().trim().max(80).optional().or(z.literal('')),
+  bankNumber: z.string().trim().max(30).optional().or(z.literal('')),
+  bankIfsc: z.string().trim().toUpperCase().max(15).optional().or(z.literal('')),
+});
+export const withdrawBody = z.object({ amount: z.coerce.number().positive().max(1_000_000), method: z.enum(['upi', 'bank']) });
+export const cashSubmitBody = z.object({ amount: z.coerce.number().min(0).max(1_000_000).optional(), note: z.string().trim().max(200).optional() });
+export const walletTxnsQuery = pagination.extend({ kind: z.enum(['earning', 'bonus', 'adjustment', 'withdrawal', 'cash_submit']).optional() });
+export const withdrawalsQuery = pagination.extend({ status: z.enum(['pending', 'paid', 'rejected', 'all']).optional() });
+export const markWithdrawalBody = z.object({ status: z.enum(['paid', 'rejected']), reference: z.string().trim().max(120).optional() });
+export const walletAdjustBody = z.object({ amount: z.coerce.number().positive().max(1_000_000), note: z.string().trim().max(200).optional() });
 export const riderLocationBody = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
@@ -426,6 +438,16 @@ export const adminSettingsBody = z
     sixDay: z.object({ days: z.coerce.number().int().min(1).max(60), categories: z.array(objectId).max(100) }).partial(),
     cod: z.object({ disabledCategories: z.array(objectId).max(100), message: z.string().trim().max(300) }).partial(),
     riderCodLimit: z.coerce.number().min(0).max(1_000_000),
+    riderPay: z
+      .object({
+        enabled: z.boolean(),
+        baseFare: z.coerce.number().min(0).max(10_000),
+        slabs: z.array(z.object({ maxKm: z.coerce.number().min(0).max(500), pay: z.coerce.number().min(0).max(100_000) })).max(20),
+        perKmBeyond: z.coerce.number().min(0).max(10_000),
+        minPerOrder: z.coerce.number().min(0).max(100_000),
+        minWithdraw: z.coerce.number().min(0).max(100_000),
+      })
+      .partial(),
     appLinks: z
       .object({ android: z.string().trim().max(500), ios: z.string().trim().max(500), rider: z.string().trim().max(500), warehouse: z.string().trim().max(500) })
       .partial(),

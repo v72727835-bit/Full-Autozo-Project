@@ -1,23 +1,20 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, PermissionsAndroid, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, PermissionsAndroid, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import { OsmMap } from '../components/OsmMap';
 import { cancelRiderOrder, deliverRiderOrder, fetchRiderOrders, fetchRiderProfile, acceptRiderOrder, sendRiderLocation } from '../api/rider';
 import { getErrorMessage } from '../api/client';
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/AuthLayout';
-import { useAuth } from '../context/AuthContext';
 import { RiderOrder, RiderProfile } from '../types';
 import { colors, radius, shadow } from '../theme';
 
-const LOGO = require('../assets/logo-mark.png');
 
 const money = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 const statusLabel: Record<RiderOrder['status'], string> = { ready_for_pickup: 'Ready for pickup', out_for_delivery: 'On the way', delivered: 'Delivered' };
 
-export default function RiderDashboardScreen() {
-  const { user, signOut } = useAuth();
+export default function OrdersScreen() {
   const [orders, setOrders] = useState<RiderOrder[]>([]);
   const [tab, setTab] = useState<'available' | 'active' | 'history'>('available');
   const [loading, setLoading] = useState(true);
@@ -31,7 +28,6 @@ export default function RiderDashboardScreen() {
   const [newCount, setNewCount] = useState(0);
   const seenIds = useRef<Set<string> | null>(null);
   const [profile, setProfile] = useState<RiderProfile | null>(null);
-  const [bellOpen, setBellOpen] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -89,7 +85,6 @@ export default function RiderDashboardScreen() {
     lastSent.current = now;
     sendRiderLocation(riderLocation.latitude, riderLocation.longitude).catch(() => undefined);
   }, [carrying, riderLocation]);
-  const notices = profile?.notices ?? [];
   const accept = async (order: RiderOrder) => { setSaving(order._id); try { const updated = await acceptRiderOrder(order._id); setOrders((items) => [updated, ...items.filter((item) => item._id !== order._id)]); setTab('active'); } catch (err) { setError(getErrorMessage(err)); } finally { setSaving(null); } };
   const cancel = async (order: RiderOrder) => {
     setSaving(order._id);
@@ -99,17 +94,7 @@ export default function RiderDashboardScreen() {
   };
   const deliver = async () => { if (!delivery || otp.length !== 4) return; setSaving(delivery._id); try { const updated = await deliverRiderOrder(delivery._id, otp); setOrders((items) => [updated, ...items.filter((item) => item._id !== delivery._id)]); setDelivery(null); setOtp(''); setTab('history'); setError(''); void loadProfile(); } catch (err) { setError(getErrorMessage(err)); } finally { setSaving(null); } };
 
-  return <View style={styles.safe}>
-    <View style={styles.header}>
-      <View style={styles.brandRow}><Image source={LOGO} style={styles.logo} accessibilityIgnoresInvertColors /><View><Text style={styles.brand}>Autozo Rider</Text><Text style={styles.sub}>{user?.warehouse?.name ?? 'Delivery partner'}</Text></View></View>
-      <View style={styles.headerActions}>
-        <Pressable onPress={() => setBellOpen(true)} style={styles.iconBtn} accessibilityLabel={notices.length ? `${notices.length} notifications` : 'Notifications'}>
-          <Ionicons name="notifications-outline" size={21} color={colors.text} />
-          {notices.length > 0 ? <View style={styles.bellDot}><Text style={styles.bellDotText}>{notices.length}</Text></View> : null}
-        </Pressable>
-        <Pressable onPress={() => void signOut()} style={styles.iconBtn} accessibilityLabel="Log out"><Ionicons name="log-out-outline" size={21} color={colors.text} /></Pressable>
-      </View>
-    </View>
+  return <View style={{ flex: 1 }}>
     {/* Cash in hand is the number a rider is accountable for, so it leads. */}
     <View style={styles.hero}>
       <View style={{ flex: 1 }}>
@@ -126,17 +111,6 @@ export default function RiderDashboardScreen() {
     {error ? <ErrorBanner message={error} /> : null}
     {tab === 'active' && activeOrder ? <DeliveryMap order={activeOrder} riderLocation={riderLocation} /> : null}
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} /> : <FlatList data={visible} keyExtractor={(item) => item._id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />} contentContainerStyle={visible.length ? styles.list : styles.emptyList} ListEmptyComponent={<View style={styles.empty}><Ionicons name={tab === 'history' ? 'checkmark-done-circle-outline' : 'bicycle-outline'} size={50} color={colors.primary} /><Text style={styles.emptyTitle}>{tab === 'available' ? 'No new orders' : tab === 'active' ? 'No active deliveries' : 'No delivery history'}</Text><Text style={styles.emptyText}>New updates will appear here automatically.</Text></View>} renderItem={({ item }) => <OrderCard order={item} saving={saving === item._id} riderLocation={riderLocation} onAccept={() => accept(item)} onDeliver={() => { setDelivery(item); setOtp(''); }} onCancel={() => void cancel(item)} />} />}
-    <Modal visible={bellOpen} transparent animationType="slide" onRequestClose={() => setBellOpen(false)}>
-      <Pressable style={styles.modalBackdrop} onPress={() => setBellOpen(false)}>
-        <Pressable style={styles.modal} onPress={() => undefined}>
-          <Text style={styles.modalTitle}>Notifications</Text>
-          {notices.length === 0 ? <Text style={styles.modalSub}>Nothing to action right now. Keep riding.</Text> : notices.map((n) => (
-            <View key={n} style={styles.notice}><Ionicons name="alert-circle" size={19} color={colors.primaryDark} /><Text style={styles.noticeText}>{n}</Text></View>
-          ))}
-          <Button title="Close" variant="outline" onPress={() => setBellOpen(false)} style={{ marginTop: 14 }} />
-        </Pressable>
-      </Pressable>
-    </Modal>
     <Modal visible={!!delivery} transparent animationType="slide" onRequestClose={() => setDelivery(null)}><View style={styles.modalBackdrop}><View style={styles.modal}><Text style={styles.modalTitle}>Confirm delivery</Text><Text style={styles.modalSub}>Ask the customer for the 4-digit OTP before handing over the order.</Text><TextInput value={otp} onChangeText={(value) => setOtp(value.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" maxLength={4} placeholder="••••" placeholderTextColor="#94A3B8" style={styles.otp} autoFocus /><Button title="Mark as delivered" onPress={() => void deliver()} loading={saving === delivery?._id} disabled={otp.length !== 4} /><Button title="Cancel" variant="outline" onPress={() => setDelivery(null)} style={{ marginTop: 10 }} /></View></View></Modal>
   </View>;
 }
@@ -144,16 +118,12 @@ export default function RiderDashboardScreen() {
 function DeliveryMap({ order, riderLocation }: { order: RiderOrder; riderLocation: { latitude: number; longitude: number } | null }) {
   const destination = order.address.location ? { latitude: order.address.location.lat, longitude: order.address.location.lng } : null;
   if (!destination) return <View style={styles.mapUnavailable}><Ionicons name="map-outline" size={20} color={colors.primary} /><Text style={styles.mapUnavailableText}>Customer location is not available for this order.</Text></View>;
-  const rider = riderLocation ?? { latitude: destination.latitude + 0.004, longitude: destination.longitude + 0.004 };
   return <View style={styles.mapWrap}>
-    <MapView style={styles.map} initialRegion={{ ...destination, latitudeDelta: 0.025, longitudeDelta: 0.025 }} showsUserLocation={!!riderLocation} showsMyLocationButton={false} loadingEnabled rotateEnabled={false}>
-      <Marker coordinate={rider} title="You" anchor={{ x: 0.5, y: 0.5 }}><View style={styles.riderMarker}><Ionicons name="bicycle" size={20} color="#fff" /></View></Marker>
-      <Marker coordinate={destination} title={order.address.name}><View style={styles.customerMarker}><Ionicons name="location" size={25} color="#DC2626" /></View></Marker>
-      <Polyline coordinates={[rider, destination]} strokeColor={colors.primary} strokeWidth={4} lineDashPattern={[8, 6]} />
-    </MapView>
+    <OsmMap rider={riderLocation} destination={destination} height={210} />
     <View style={styles.mapCaption}><Ionicons name="navigate" size={16} color={colors.primary} /><Text style={styles.mapCaptionText}>Live delivery route</Text><Text style={styles.mapCaptionAddress}>{order.address.city}</Text></View>
   </View>;
 }
+
 function Stat({ value, label, last }: { value: string; label: string; last?: boolean }) { return <View style={[styles.stat, last && styles.statLast]}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>; }
 
 /** Straight-line kilometres between two pins - close enough to judge a run. */

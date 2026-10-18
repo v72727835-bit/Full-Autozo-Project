@@ -11,6 +11,8 @@ import { StandardCategory } from '../models/StandardCategory';
 import { StockAlert } from '../models/StockAlert';
 import { Ticket } from '../models/Ticket';
 import { User } from '../models/User';
+import { WalletTxn } from '../models/WalletTxn';
+import { walletSummary, earningsSeries } from '../services/riderPay.service';
 import { clearCatalogCache } from '../middleware/cache';
 import { getIntegrations, invalidateIntegrations } from '../services/integrations.service';
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
@@ -221,6 +223,114 @@ export const settleRiderCod = asyncHandler(async (req, res) => {
     { $set: { codSettled: true } },
   );
   ok(res, { settledOrders: result.modifiedCount });
+});
+
+/* ============ Rider profile (super admin) ============ */
+
+/** Everything about one rider on a single page: details, money, and a report. */
+export const getRiderProfileAdmin = asyncHandler(async (req, res) => {
+  const rider = await User.findOne({ _id: req.params.id, role: 'rider' })
+    .select('name phone email isActive riderPaused riderPausedAt riderCancelCount riderLongDistance lastSeenAt createdAt payout warehouse warehouses')
+    .populate('warehouse', 'name')
+    .populate('warehouses', 'name')
+    .lean();
+  if (!rider) throw new ApiError(404, 'Rider not found');
+
+  const riderId = new Types.ObjectId(req.params.id);
+  const [wallet, analytics, cod, delivered, cancelled, recentTxns, withdrawals] = await Promise.all([
+    walletSummary(riderId),
+    earningsSeries(riderId, 14),
+    codSummary([riderId]),
+    Order.countDocuments({ rider: riderId, status: 'delivered' }),
+    Order.countDocuments({ rider: riderId, status: 'cancelled' }),
+    WalletTxn.find({ rider: riderId }).sort({ createdAt: -1 }).limit(15).lean(),
+    WalletTxn.find({ rider: riderId, kind: 'withdrawal' }).sort({ createdAt: -1 }).limit(10).lean(),
+  ]);
+  const c = cod.get(req.params.id);
+  const online = !!rider.lastSeenAt && Date.now() - new Date(rider.lastSeenAt).getTime() < 2 * 60_000;
+  const avgPerDelivery = delivered > 0 ? Math.round(wallet.lifetimeEarned / delivered) : 0;
+
+  ok(res, {
+    rider: {
+      _id: rider._id,
+      name: rider.name,
+      phone: rider.phone,
+      email: rider.email ?? null,
+      isActive: rider.isActive,
+      paused: !!rider.riderPaused,
+      pausedAt: rider.riderPausedAt ?? null,
+      longDistance: !!rider.riderLongDistance,
+      online,
+      lastSeenAt: rider.lastSeenAt ?? null,
+      createdAt: rider.createdAt,
+      warehouses: rider.warehouses?.length ? rider.warehouses : rider.warehouse ? [rider.warehouse] : [],
+      payout: rider.payout ?? null,
+    },
+    finance: {
+      balance: wallet.balance,
+      lifetimeEarned: wallet.lifetimeEarned,
+      pendingWithdraw: wallet.pendingWithdraw,
+      withdrawnTotal: wallet.withdrawnTotal,
+      codPending: c?.pending ?? 0,
+      codCollected: c?.total ?? 0,
+    },
+    analytics: { ...analytics, delivered, cancelled, avgPerDelivery },
+    recentTxns,
+    withdrawals,
+  });
+});
+
+/* ============ Rider payouts ============ */
+
+/** Pending and recent withdrawal requests across all riders. */
+export const listWithdrawals = asyncHandler(async (req, res) => {
+  const status = typeof req.query.status === 'string' ? req.query.status : 'pending';
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const filter: Record<string, unknown> = { kind: 'withdrawal' };
+  if (status && status !== 'all') filter.status = status;
+  const [rows, total] = await Promise.all([
+    WalletTxn.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).populate('rider', 'name phone payout').lean(),
+    WalletTxn.countDocuments(filter),
+  ]);
+  const pendingTotal = (await WalletTxn.aggregate<{ t: number }>([{ $match: { kind: 'withdrawal', status: 'pending' } }, { $group: { _id: null, t: { $sum: '$amount' } } }]))[0]?.t ?? 0;
+  ok(res, rows, { ...pageMeta(page, limit, total), pendingTotal });
+});
+
+/** Mark a withdrawal paid (with a reference) or reject it. */
+export const markWithdrawal = asyncHandler(async (req, res) => {
+  const { status, reference } = req.body as { status: 'paid' | 'rejected'; reference?: string };
+  const txn = await WalletTxn.findOne({ _id: req.params.id, kind: 'withdrawal' });
+  if (!txn) throw new ApiError(404, 'Withdrawal not found');
+  if (txn.status !== 'pending') throw new ApiError(409, 'This withdrawal was already handled.');
+  txn.status = status;
+  if (reference) txn.reference = reference;
+  await txn.save();
+  ok(res, txn);
+});
+
+/** Confirm a rider's cash submission: clear the COD they owe and mark it confirmed. */
+export const confirmCashSubmit = asyncHandler(async (req, res) => {
+  const txn = await WalletTxn.findOne({ _id: req.params.id, kind: 'cash_submit' });
+  if (!txn) throw new ApiError(404, 'Cash submission not found');
+  if (txn.status !== 'pending') throw new ApiError(409, 'This submission was already handled.');
+  txn.status = 'confirmed';
+  await txn.save();
+  await Order.updateMany(
+    { rider: txn.rider, status: 'delivered', paymentMethod: 'cod', codSettled: { $ne: true } },
+    { $set: { codSettled: true } },
+  );
+  await User.updateOne({ _id: txn.rider, riderPaused: true }, { $set: { riderPaused: false, riderPausedAt: null } });
+  ok(res, txn);
+});
+
+/** Give a rider a bonus or a manual adjustment on their wallet. */
+export const adjustRiderWallet = asyncHandler(async (req, res) => {
+  const { amount, note } = req.body as { amount: number; note?: string };
+  const rider = await User.exists({ _id: req.params.id, role: 'rider' });
+  if (!rider) throw new ApiError(404, 'Rider not found');
+  const txn = await WalletTxn.create({ rider: req.params.id, kind: 'bonus', amount: Math.round(amount), status: 'completed', note: note || 'Bonus from admin' });
+  ok(res, txn, undefined, 201);
 });
 
 /* ============ Dashboard bell ============ */

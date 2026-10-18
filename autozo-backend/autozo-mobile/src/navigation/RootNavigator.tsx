@@ -3,13 +3,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import RiderDashboardScreen from '../screens/RiderDashboardScreen';
+import RiderHome from '../screens/RiderHome';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { colors } from '../theme';
 
 export type AuthStackParamList = { Login: undefined; ForgotPassword: undefined };
-export type AppStackParamList = { RiderDashboard: undefined };
+export type AppStackParamList = { RiderHome: undefined };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -21,7 +21,7 @@ export default function RootNavigator() {
   const { user, initializing } = useAuth();
   if (initializing) return <Splash />;
   return <NavigationContainer theme={navTheme}>
-    {user?.role === 'rider' ? <AppStack.Navigator screenOptions={{ headerShown: false }}><AppStack.Screen name="RiderDashboard" component={RiderDashboardScreen} /></AppStack.Navigator> : <AuthStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}><AuthStack.Screen name="Login" component={LoginScreen} /><AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /></AuthStack.Navigator>}
+    {user?.role === 'rider' ? <AppStack.Navigator screenOptions={{ headerShown: false }}><AppStack.Screen name="RiderHome" component={RiderHome} /></AppStack.Navigator> : <AuthStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}><AuthStack.Screen name="Login" component={LoginScreen} /><AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /></AuthStack.Navigator>}
   </NavigationContainer>;
 }
 

@@ -280,6 +280,14 @@ export interface Settings {
   sixDay: { days: number; categories: (CategoryRef | string)[] };
   cod: { disabledCategories: (CategoryRef | string)[]; message: string };
   riderCodLimit: number;
+  riderPay?: {
+    enabled: boolean;
+    baseFare: number;
+    slabs: { maxKm: number; pay: number }[];
+    perKmBeyond: number;
+    minPerOrder: number;
+    minWithdraw: number;
+  };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   company?: CompanyDetails;
   gst?: { defaultRate: number; deliveryRate: number; homeState: string };

@@ -43,6 +43,8 @@ export interface IUser {
   /** Customers who signed in with Google / Facebook. */
   /** The phone number was proven with a Firebase OTP. */
   phoneVerified?: boolean;
+  /** Where a rider is paid their earnings. */
+  payout?: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string };
   googleId?: string;
   facebookId?: string;
   /** Sellers: unique id shown on their dashboard and in the admin panel. */
@@ -136,6 +138,12 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     riderCancelCount: { type: Number, default: 0 },
     riderLongDistance: { type: Boolean, default: false },
     phoneVerified: { type: Boolean, default: false },
+    payout: {
+      upi: { type: String, trim: true },
+      bankHolder: { type: String, trim: true },
+      bankNumber: { type: String, trim: true },
+      bankIfsc: { type: String, trim: true, uppercase: true },
+    },
     googleId: { type: String, unique: true, sparse: true },
     facebookId: { type: String, unique: true, sparse: true },
     sellerId: { type: String, unique: true, sparse: true },

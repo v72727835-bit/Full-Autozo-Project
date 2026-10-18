@@ -4,6 +4,7 @@ import { getErrorMessage } from '../api/client';
 import CreateRiderModal from '../components/CreateRiderModal';
 import { Badge, Button, CenterSpinner, ErrorBanner, money, timeAgo } from '../components/ui';
 import { RiderRow, RiderTotals } from '../types';
+import { useNavigate } from '../navigation';
 
 const warehouseName = (r: RiderRow) => {
   const list = (r.warehouses ?? []).map((w) => w.name).filter(Boolean);
@@ -19,6 +20,7 @@ const warehouseName = (r: RiderRow) => {
  * in Store settings; "Collected cash" clears what they owe and lets them resume.
  */
 export default function RidersPage() {
+  const navigate = useNavigate();
   const [riders, setRiders] = useState<RiderRow[]>([]);
   const [meta, setMeta] = useState<RiderTotals | null>(null);
   const [q, setQ] = useState('');
@@ -125,7 +127,7 @@ export default function RidersPage() {
                   <tr key={r._id}>
                     <td className="cell-name">
                       <span className={`dot${r.online ? ' dot-on' : ''}`} title={r.online ? 'Online' : 'Offline'} />
-                      {r.name}
+                      <button className="linklike" onClick={() => navigate(`/riders/${r._id}`)} style={{ background: 'none', border: 0, padding: 0, color: 'inherit', font: 'inherit', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}>{r.name}</button>
                       {r.paused && (
                         <>
                           {' '}

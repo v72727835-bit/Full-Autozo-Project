@@ -88,6 +88,10 @@ export interface IOrder {
   cancelledBy?: 'customer' | 'shop' | 'admin';
   cancelReason?: string;
   deliveredAt?: Date;
+  /** What the rider earned for this delivery (set when delivered). */
+  riderEarning?: number;
+  /** Distance used for that earning, in km. */
+  riderEarningKm?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +167,8 @@ const orderSchema = new Schema<IOrder>(
     cancelledBy: { type: String, enum: ['customer', 'shop', 'admin'] },
     cancelReason: String,
     deliveredAt: Date,
+    riderEarning: { type: Number, default: 0, min: 0 },
+    riderEarningKm: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true },
 );

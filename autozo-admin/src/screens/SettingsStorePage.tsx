@@ -71,6 +71,7 @@ export default function SettingsStorePage() {
       <DeliveryCard settings={settings} subCategories={subCategories} onSave={save} />
       <CodCard settings={settings} subCategories={subCategories} onSave={save} />
       <RiderCard settings={settings} onSave={save} />
+      <RiderPayCard settings={settings} onSave={save} />
       <CompanyCard settings={settings} onSave={save} />
       <GstCard settings={settings} onSave={save} />
       <SocialCard settings={settings} onSave={save} />
@@ -387,6 +388,82 @@ function RiderCard({ settings, onSave }: { settings: Settings; onSave: (patch: R
         <Button onClick={submit} disabled={saving}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ----------------------------- rider pay ----------------------------- */
+
+function RiderPayCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
+  const rp = settings.riderPay ?? { enabled: true, baseFare: 10, slabs: [{ maxKm: 2, pay: 15 }, { maxKm: 5, pay: 25 }, { maxKm: 10, pay: 40 }], perKmBeyond: 6, minPerOrder: 15, minWithdraw: 100 };
+  const [enabled, setEnabled] = useState(rp.enabled);
+  const [baseFare, setBaseFare] = useState(String(rp.baseFare));
+  const [slabs, setSlabs] = useState(rp.slabs.length ? rp.slabs.map((s) => ({ maxKm: String(s.maxKm), pay: String(s.pay) })) : [{ maxKm: '', pay: '' }]);
+  const [perKmBeyond, setPerKmBeyond] = useState(String(rp.perKmBeyond));
+  const [minPerOrder, setMinPerOrder] = useState(String(rp.minPerOrder));
+  const [minWithdraw, setMinWithdraw] = useState(String(rp.minWithdraw));
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    setSaving(true);
+    await onSave({
+      riderPay: {
+        enabled,
+        baseFare: Number(baseFare) || 0,
+        slabs: slabs
+          .map((s) => ({ maxKm: Number(s.maxKm) || 0, pay: Number(s.pay) || 0 }))
+          .filter((s) => s.maxKm > 0)
+          .sort((a, b) => a.maxKm - b.maxKm),
+        perKmBeyond: Number(perKmBeyond) || 0,
+        minPerOrder: Number(minPerOrder) || 0,
+        minWithdraw: Number(minWithdraw) || 0,
+      },
+    });
+    setSaving(false);
+  };
+
+  return (
+    <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <h2 className="card-title">Rider earnings (pay per delivery)</h2>
+      <div className="page-subtitle" style={{ marginBottom: 12 }}>
+        A rider earns this for every delivery, worked out from the distance from the warehouse to the customer. The base fare is
+        added on top of the band amount. Riders see and withdraw these earnings in the rider app.
+      </div>
+      <label className="checkbox-row" style={{ marginBottom: 12 }}>
+        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        <span>Pay riders per delivery</span>
+      </label>
+      <div className="field-row">
+        <Field label="Base fare added to every delivery (₹)">
+          <input type="number" min={0} value={baseFare} onChange={(e) => setBaseFare(e.target.value)} />
+        </Field>
+        <Field label="Never pay less than (₹ per order)">
+          <input type="number" min={0} value={minPerOrder} onChange={(e) => setMinPerOrder(e.target.value)} />
+        </Field>
+      </div>
+
+      <div className="page-subtitle" style={{ margin: '6px 0' }}>Distance bands — a run up to this many km pays this much:</div>
+      {slabs.map((s, i) => (
+        <div className="row-flex" key={i} style={{ gap: 8, marginBottom: 8, alignItems: 'flex-end' }}>
+          <Field label="Up to km"><input type="number" min={0} value={s.maxKm} onChange={(e) => setSlabs((cur) => cur.map((x, j) => (j === i ? { ...x, maxKm: e.target.value } : x)))} /></Field>
+          <Field label="Pays (₹)"><input type="number" min={0} value={s.pay} onChange={(e) => setSlabs((cur) => cur.map((x, j) => (j === i ? { ...x, pay: e.target.value } : x)))} /></Field>
+          <Button variant="ghost" size="sm" onClick={() => setSlabs((cur) => cur.filter((_, j) => j !== i))}>Remove</Button>
+        </div>
+      ))}
+      <Button variant="secondary" size="sm" onClick={() => setSlabs((cur) => [...cur, { maxKm: '', pay: '' }])}>+ Add band</Button>
+
+      <div className="field-row" style={{ marginTop: 12 }}>
+        <Field label="Each km beyond the last band (₹)">
+          <input type="number" min={0} value={perKmBeyond} onChange={(e) => setPerKmBeyond(e.target.value)} />
+        </Field>
+        <Field label="Smallest a rider can withdraw (₹)">
+          <input type="number" min={0} value={minWithdraw} onChange={(e) => setMinWithdraw(e.target.value)} />
+        </Field>
+      </div>
+      <div className="modal-actions">
+        <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>
     </div>
   );
