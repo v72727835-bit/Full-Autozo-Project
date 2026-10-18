@@ -14,6 +14,7 @@ const BannersPage = dynamic(() => import('./screens/BannersPage'), { ssr: false 
 const MediaPage = dynamic(() => import('./screens/MediaPage'), { ssr: false });
 const NoticesPage = dynamic(() => import('./screens/NoticesPage'), { ssr: false });
 const RidersPage = dynamic(() => import('./screens/RidersPage'), { ssr: false });
+const PayoutsPage = dynamic(() => import('./screens/PayoutsPage'), { ssr: false });
 const SettingsStorePage = dynamic(() => import('./screens/SettingsStorePage'), { ssr: false });
 const SupportPage = dynamic(() => import('./screens/SupportPage'), { ssr: false });
 const CategoriesPage = dynamic(() => import('./screens/CategoriesPage'), { ssr: false });
@@ -72,6 +73,8 @@ function CurrentPage({ pathname }: { pathname: string }) {
       return <ShopsPage />;
     case '/riders':
       return <RidersPage />;
+    case '/payouts':
+      return <PayoutsPage />;
     case '/rider-accounts':
       return <UsersPage fixedRole="rider" title="Riders" subtitle="Delivery partners authorised to collect and deliver Autozo orders." />;
     case '/customers':

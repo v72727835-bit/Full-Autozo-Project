@@ -1,4 +1,4 @@
-import { ApiEnvelope, RiderOrder, RiderProfile } from '../types';
+import { ApiEnvelope, EarningsSummary, PayoutAccount, RiderOrder, RiderProfile, RiderWallet, WalletTxn } from '../types';
 import { api } from './client';
 
 export async function fetchRiderOrders(status?: 'ready_for_pickup' | 'out_for_delivery' | 'delivered'): Promise<RiderOrder[]> {
@@ -33,5 +33,37 @@ export async function cancelRiderOrder(id: string, reason?: string): Promise<Rid
     `/rider/orders/${id}/cancel`,
     reason ? { reason } : {},
   );
+  return data.data;
+}
+
+/* ---------------- earnings wallet ---------------- */
+
+export async function fetchWallet(): Promise<RiderWallet> {
+  const { data } = await api.get<ApiEnvelope<RiderWallet>>('/rider/wallet');
+  return data.data;
+}
+
+export async function fetchWalletTxns(page = 1, kind?: WalletTxn['kind']): Promise<WalletTxn[]> {
+  const { data } = await api.get<ApiEnvelope<WalletTxn[]>>('/rider/wallet/txns', { params: { page, limit: 30, kind } });
+  return data.data;
+}
+
+export async function fetchEarnings(days = 14): Promise<EarningsSummary> {
+  const { data } = await api.get<ApiEnvelope<EarningsSummary>>('/rider/earnings', { params: { days } });
+  return data.data;
+}
+
+export async function savePayoutAccount(body: PayoutAccount): Promise<PayoutAccount> {
+  const { data } = await api.post<ApiEnvelope<PayoutAccount>>('/rider/wallet/account', body);
+  return data.data;
+}
+
+export async function requestWithdraw(amount: number, method: 'upi' | 'bank'): Promise<WalletTxn> {
+  const { data } = await api.post<ApiEnvelope<WalletTxn>>('/rider/wallet/withdraw', { amount, method });
+  return data.data;
+}
+
+export async function submitCash(amount?: number): Promise<WalletTxn> {
+  const { data } = await api.post<ApiEnvelope<WalletTxn>>('/rider/wallet/cash-submit', amount ? { amount } : {});
   return data.data;
 }

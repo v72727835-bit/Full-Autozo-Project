@@ -28,6 +28,20 @@ export interface ISettings {
   };
   /** A rider is paused automatically once this much COD cash is unsettled. */
   riderCodLimit: number;
+  /** How a rider earns per delivery, by distance. */
+  riderPay: {
+    enabled: boolean;
+    /** Flat amount added to every delivery. */
+    baseFare: number;
+    /** Distance bands: a run up to `maxKm` pays `pay` (the base fare is added on top). First match wins, cheapest first. */
+    slabs: { maxKm: number; pay: number }[];
+    /** Each km beyond the last band pays this much. */
+    perKmBeyond: number;
+    /** A delivery never pays less than this (base + slab together). */
+    minPerOrder: number;
+    /** Smallest amount a rider may withdraw at once. */
+    minWithdraw: number;
+  };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   /** Company details printed on every bill (logo, signature, seal, GSTIN, declaration...). */
   company: {
@@ -89,6 +103,17 @@ const settingsSchema = new Schema<ISettings>(
       },
     },
     riderCodLimit: { type: Number, default: 2000, min: 0 },
+    riderPay: {
+      enabled: { type: Boolean, default: true },
+      baseFare: { type: Number, default: 10, min: 0 },
+      slabs: {
+        type: [{ maxKm: { type: Number, min: 0 }, pay: { type: Number, min: 0 }, _id: false }],
+        default: [{ maxKm: 2, pay: 15 }, { maxKm: 5, pay: 25 }, { maxKm: 10, pay: 40 }],
+      },
+      perKmBeyond: { type: Number, default: 6, min: 0 },
+      minPerOrder: { type: Number, default: 15, min: 0 },
+      minWithdraw: { type: Number, default: 100, min: 0 },
+    },
     appLinks: { android: String, ios: String, rider: String, warehouse: String },
     company: {
       name: { type: String, trim: true }, tagline: { type: String, trim: true }, address: { type: String, trim: true }, phone: { type: String, trim: true },

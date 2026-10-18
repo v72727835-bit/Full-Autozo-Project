@@ -1,0 +1,129 @@
+import { Types } from 'mongoose';
+import { Order } from '../models/Order';
+import { User } from '../models/User';
+import { WalletTxn } from '../models/WalletTxn';
+import { ApiError } from '../utils/ApiError';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ok, pageMeta } from '../utils/response';
+import { codSummary } from '../services/rider.service';
+import { payRules, walletSummary } from '../services/riderPay.service';
+import { loadSettings } from '../services/settings.service';
+
+/** Everything the wallet screen shows at the top: balance, earnings, cash owed, saved account. */
+export const getWallet = asyncHandler(async (req, res) => {
+  const id = req.user!.id;
+  const { settings } = await loadSettings();
+  const rules = payRules(settings);
+  const [sum, cod, me] = await Promise.all([
+    walletSummary(id),
+    codSummary([new Types.ObjectId(id)]),
+    User.findById(id).select('payout').lean(),
+  ]);
+  const c = cod.get(id);
+  ok(res, {
+    ...sum,
+    codPending: c?.pending ?? 0,
+    codCollected: c?.total ?? 0,
+    codLimit: settings.riderCodLimit ?? 2000,
+    minWithdraw: rules.minWithdraw,
+    account: me?.payout ?? null,
+    payEnabled: rules.enabled,
+  });
+});
+
+/** The passbook: every earning, bonus, withdrawal and cash submit, newest first. */
+export const listWalletTxns = asyncHandler(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const kind = typeof req.query.kind === 'string' ? req.query.kind : undefined;
+  const filter: Record<string, unknown> = { rider: req.user!.id };
+  if (kind) filter.kind = kind;
+  const [rows, total] = await Promise.all([
+    WalletTxn.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    WalletTxn.countDocuments(filter),
+  ]);
+  ok(res, rows, pageMeta(page, limit, total));
+});
+
+/**
+ * Earnings for the graph: a per-day total for the last `days` days, plus the
+ * today / week / month roll-ups.
+ */
+export const earningsSummary = asyncHandler(async (req, res) => {
+  const id = req.user!.id;
+  const days = Math.min(60, Math.max(7, Number(req.query.days) || 14));
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (days - 1));
+
+  const rows = await WalletTxn.find({ rider: id, kind: { $in: ['earning', 'bonus'] }, createdAt: { $gte: since } })
+    .select('kind amount createdAt')
+    .lean();
+  // Bucket by Indian calendar day so the graph lines up with the rider's own day.
+  const fmt = (d: Date) => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const amountByDay = new Map<string, number>();
+  const deliveriesByDay = new Map<string, number>();
+  for (const r of rows) {
+    const key = fmt(r.createdAt);
+    amountByDay.set(key, (amountByDay.get(key) ?? 0) + r.amount);
+    if (r.kind === 'earning') deliveriesByDay.set(key, (deliveriesByDay.get(key) ?? 0) + 1);
+  }
+  const series: { date: string; amount: number; deliveries: number }[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since);
+    d.setDate(since.getDate() + i);
+    const key = fmt(d);
+    series.push({ date: key, amount: amountByDay.get(key) ?? 0, deliveries: deliveriesByDay.get(key) ?? 0 });
+  }
+  const todayKey = fmt(new Date());
+  const today = series.find((s) => s.date === todayKey)?.amount ?? 0;
+  const week = series.slice(-7).reduce((a, s) => a + s.amount, 0);
+  const month = series.reduce((a, s) => a + s.amount, 0);
+  const deliveries = series.reduce((a, s) => a + s.deliveries, 0);
+  ok(res, { series, today, week, month, deliveries });
+});
+
+/** Save or update where the rider gets paid. */
+export const saveAccount = asyncHandler(async (req, res) => {
+  const { upi, bankHolder, bankNumber, bankIfsc } = req.body as { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string };
+  if (!upi && !(bankHolder && bankNumber && bankIfsc)) {
+    throw new ApiError(400, 'Add a UPI id, or the full bank account (holder name, number and IFSC).');
+  }
+  const payout = { upi: upi || undefined, bankHolder: bankHolder || undefined, bankNumber: bankNumber || undefined, bankIfsc: bankIfsc || undefined };
+  await User.updateOne({ _id: req.user!.id }, { $set: { payout } });
+  ok(res, payout);
+});
+
+/** The rider asks to withdraw part of their balance; an admin pays it out later. */
+export const requestWithdraw = asyncHandler(async (req, res) => {
+  const { amount, method } = req.body as { amount: number; method: 'upi' | 'bank' };
+  const { settings } = await loadSettings();
+  const rules = payRules(settings);
+  const me = await User.findById(req.user!.id).select('payout').lean();
+  const payout = me?.payout;
+  const destination = method === 'upi' ? payout?.upi : payout?.bankNumber ? `${payout.bankHolder ?? ''} · ${payout.bankNumber} · ${payout.bankIfsc ?? ''}` : undefined;
+  if (!destination) throw new ApiError(400, method === 'upi' ? 'Add your UPI id first.' : 'Add your bank account first.');
+
+  const open = await WalletTxn.exists({ rider: req.user!.id, kind: 'withdrawal', status: 'pending' });
+  if (open) throw new ApiError(409, 'You already have a withdrawal waiting. Please wait until it is paid.');
+
+  const sum = await walletSummary(req.user!.id);
+  if (amount < rules.minWithdraw) throw new ApiError(400, `The smallest withdrawal is ₹${rules.minWithdraw}.`);
+  if (amount > sum.balance) throw new ApiError(400, `You can withdraw up to ₹${Math.floor(sum.balance)}.`);
+
+  const txn = await WalletTxn.create({ rider: req.user!.id, kind: 'withdrawal', amount: Math.round(amount), status: 'pending', method, destination, note: 'Withdrawal request' });
+  ok(res, txn, undefined, 201);
+});
+
+/** The rider records that they handed collected COD cash to the office. */
+export const submitCash = asyncHandler(async (req, res) => {
+  const { amount, note } = req.body as { amount: number; note?: string };
+  const cod = (await codSummary([new Types.ObjectId(req.user!.id)])).get(req.user!.id);
+  const pending = cod?.pending ?? 0;
+  if (pending <= 0) throw new ApiError(400, 'You have no cash to submit right now.');
+  const open = await WalletTxn.exists({ rider: req.user!.id, kind: 'cash_submit', status: 'pending' });
+  if (open) throw new ApiError(409, 'A cash submission is already waiting for the office to confirm.');
+  const amt = Math.min(Math.round(amount || pending), Math.round(pending));
+  const txn = await WalletTxn.create({ rider: req.user!.id, kind: 'cash_submit', amount: amt, status: 'pending', note: note || 'Cash handed to office' });
+  ok(res, txn, undefined, 201);
+});

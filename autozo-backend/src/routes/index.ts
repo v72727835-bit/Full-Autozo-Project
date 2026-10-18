@@ -10,6 +10,7 @@ import * as invoices from '../controllers/invoice.controller';
 import * as reviews from '../controllers/review.controller';
 import * as me from '../controllers/user.controller';
 import * as rider from '../controllers/rider.controller';
+import * as wallet from '../controllers/riderWallet.controller';
 import * as extra from '../controllers/adminExtra.controller';
 import * as support from '../controllers/support.controller';
 import * as seller from '../controllers/seller.controller';
@@ -145,6 +146,12 @@ router.post('/rider/orders/:id/accept', protect, authorize('rider'), validate({ 
 router.post('/rider/location', protect, authorize('rider'), rider.touchRider, validate({ body: v.riderLocationBody }), rider.updateLocation);
 router.post('/rider/orders/:id/cancel', protect, authorize('rider'), validate({ params: v.idParam, body: v.cancelOrderBody }), rider.cancelOrder);
 router.post('/rider/orders/:id/deliver', protect, authorize('rider'), validate({ params: v.idParam, body: v.riderDeliveryBody }), rider.deliverOrder);
+router.get('/rider/wallet', protect, authorize('rider'), rider.touchRider, wallet.getWallet);
+router.get('/rider/wallet/txns', protect, authorize('rider'), validate({ query: v.walletTxnsQuery }), wallet.listWalletTxns);
+router.get('/rider/earnings', protect, authorize('rider'), wallet.earningsSummary);
+router.post('/rider/wallet/account', protect, authorize('rider'), validate({ body: v.walletAccountBody }), wallet.saveAccount);
+router.post('/rider/wallet/withdraw', protect, authorize('rider'), validate({ body: v.withdrawBody }), wallet.requestWithdraw);
+router.post('/rider/wallet/cash-submit', protect, authorize('rider'), validate({ body: v.cashSubmitBody }), wallet.submitCash);
 
 /* ============ Admin panel ============ */
 router.use('/admin', invalidateOnWrite, adminRoutes);

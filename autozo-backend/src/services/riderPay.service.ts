@@ -1,0 +1,105 @@
+import { Types } from 'mongoose';
+import { Order } from '../models/Order';
+import { Shop } from '../models/Shop';
+import { WalletTxn } from '../models/WalletTxn';
+import { haversineKm } from '../utils/helpers';
+import { loadSettings } from './settings.service';
+
+export interface RiderPayRules {
+  enabled: boolean;
+  baseFare: number;
+  slabs: { maxKm: number; pay: number }[];
+  perKmBeyond: number;
+  minPerOrder: number;
+  minWithdraw: number;
+}
+
+const DEFAULTS: RiderPayRules = { enabled: true, baseFare: 10, slabs: [{ maxKm: 2, pay: 15 }, { maxKm: 5, pay: 25 }, { maxKm: 10, pay: 40 }], perKmBeyond: 6, minPerOrder: 15, minWithdraw: 100 };
+
+export function payRules(settings: { riderPay?: Partial<RiderPayRules> }): RiderPayRules {
+  const p = settings.riderPay ?? {};
+  return {
+    enabled: p.enabled ?? DEFAULTS.enabled,
+    baseFare: p.baseFare ?? DEFAULTS.baseFare,
+    slabs: (p.slabs && p.slabs.length ? p.slabs : DEFAULTS.slabs).slice().sort((a, b) => a.maxKm - b.maxKm),
+    perKmBeyond: p.perKmBeyond ?? DEFAULTS.perKmBeyond,
+    minPerOrder: p.minPerOrder ?? DEFAULTS.minPerOrder,
+    minWithdraw: p.minWithdraw ?? DEFAULTS.minWithdraw,
+  };
+}
+
+/** What a run of `km` kilometres pays, given the rules. */
+export function earningFor(km: number, rules: RiderPayRules): number {
+  if (!rules.enabled) return 0;
+  const slabs = rules.slabs;
+  let slabPay = 0;
+  const band = slabs.find((s) => km <= s.maxKm);
+  if (band) slabPay = band.pay;
+  else if (slabs.length) {
+    const last = slabs[slabs.length - 1];
+    slabPay = last.pay + Math.max(0, km - last.maxKm) * rules.perKmBeyond;
+  } else {
+    slabPay = km * rules.perKmBeyond;
+  }
+  const total = rules.baseFare + slabPay;
+  return Math.max(rules.minPerOrder, Math.round(total));
+}
+
+/**
+ * Credits a rider for a delivery they just completed: works out the distance
+ * from the warehouse to the customer, applies the pay rules, saves the figure
+ * on the order and adds an "earning" line to the rider's wallet.
+ */
+export async function creditDeliveryEarning(orderId: Types.ObjectId | string): Promise<number> {
+  const order = await Order.findById(orderId).select('rider shop address riderEarning deliveredAt orderNumber').lean();
+  if (!order || !order.rider || (order.riderEarning ?? 0) > 0) return 0;
+  const { settings } = await loadSettings();
+  const rules = payRules(settings);
+  if (!rules.enabled) return 0;
+
+  let km = 0;
+  const dest = order.address?.location;
+  if (dest?.lat && dest?.lng) {
+    const shop = await Shop.findById(order.shop).select('location').lean();
+    const c = shop?.location?.coordinates;
+    if (c) km = haversineKm(dest.lat, dest.lng, c[1], c[0]);
+  }
+  const amount = earningFor(km, rules);
+  await Order.updateOne({ _id: order._id, riderEarning: { $in: [0, null, undefined] } }, { $set: { riderEarning: amount, riderEarningKm: Math.round(km * 10) / 10 } });
+  await WalletTxn.create({
+    rider: order.rider,
+    kind: 'earning',
+    amount,
+    status: 'completed',
+    order: order._id,
+    km: Math.round(km * 10) / 10,
+    note: `Delivery #${order.orderNumber}`,
+  });
+  return amount;
+}
+
+/**
+ * A rider's money at a glance: what they have earned, what is still owed to
+ * them (balance), and what is tied up in pending withdrawals.
+ */
+export async function walletSummary(riderId: Types.ObjectId | string) {
+  const id = new Types.ObjectId(String(riderId));
+  const rows = await WalletTxn.aggregate<{ _id: { kind: string; status: string }; total: number }>([
+    { $match: { rider: id } },
+    { $group: { _id: { kind: '$kind', status: '$status' }, total: { $sum: '$amount' } } },
+  ]);
+  let credit = 0; // earnings + bonus + positive adjustments
+  let withdrawHeld = 0; // pending + paid withdrawals
+  let pendingWithdraw = 0;
+  for (const r of rows) {
+    const { kind, status } = r._id;
+    if (kind === 'earning' || kind === 'bonus' || kind === 'adjustment') credit += r.total;
+    else if (kind === 'withdrawal' && (status === 'pending' || status === 'paid')) {
+      withdrawHeld += r.total;
+      if (status === 'pending') pendingWithdraw += r.total;
+    }
+  }
+  const lifetimeEarned = credit;
+  const balance = Math.max(0, credit - withdrawHeld);
+  return { balance, lifetimeEarned, pendingWithdraw, withdrawnTotal: withdrawHeld - pendingWithdraw };
+}

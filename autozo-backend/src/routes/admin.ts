@@ -113,6 +113,10 @@ router.patch('/sellers/:id/active', validate({ params: v.idParam, body: v.active
 router.get('/enquiries', validate({ query: v.adminEnquiriesQuery }), extra.listEnquiries);
 router.delete('/enquiries/:id', validate({ params: v.idParam }), extra.deleteEnquiry);
 router.post('/riders/:id/settle-cod', validate({ params: v.idParam }), extra.settleRiderCod);
+router.get('/withdrawals', validate({ query: v.withdrawalsQuery }), extra.listWithdrawals);
+router.post('/withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), extra.markWithdrawal);
+router.post('/cash-submits/:id/confirm', validate({ params: v.idParam }), extra.confirmCashSubmit);
+router.post('/riders/:id/bonus', validate({ params: v.idParam, body: v.walletAdjustBody }), extra.adjustRiderWallet);
 
 router.get('/alerts', extra.listAdminAlerts);
 router.post('/alerts/read', extra.readAdminAlerts);

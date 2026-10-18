@@ -175,6 +175,29 @@ export const fetchSettings = async (): Promise<Settings> => (await api.get('/adm
 export const saveSettings = async (body: DeepPartial<Settings>): Promise<Settings> =>
   (await api.patch('/admin/settings', body)).data.data;
 
+export interface Withdrawal {
+  _id: string;
+  rider?: { _id: string; name: string; phone: string; payout?: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string } } | string;
+  amount: number;
+  status: 'pending' | 'paid' | 'rejected';
+  method?: 'upi' | 'bank';
+  destination?: string;
+  reference?: string;
+  note?: string;
+  createdAt: string;
+}
+
+export const fetchWithdrawals = async (status = 'pending', page = 1): Promise<{ items: Withdrawal[]; meta: { total: number; totalPages: number; hasNext: boolean; pendingTotal: number } }> => {
+  const { data } = await api.get('/admin/withdrawals', { params: { status, page, limit: 20 } });
+  return { items: data.data, meta: data.meta };
+};
+export const markWithdrawal = async (id: string, status: 'paid' | 'rejected', reference?: string): Promise<void> => {
+  await api.post(`/admin/withdrawals/${id}/mark`, { status, reference });
+};
+export const giveRiderBonus = async (riderId: string, amount: number, note?: string): Promise<void> => {
+  await api.post(`/admin/riders/${riderId}/bonus`, { amount, note });
+};
+
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
 
 /* ---------- notification bell ---------- */

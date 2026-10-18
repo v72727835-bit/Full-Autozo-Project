@@ -11,6 +11,7 @@ import { StandardCategory } from '../models/StandardCategory';
 import { StockAlert } from '../models/StockAlert';
 import { Ticket } from '../models/Ticket';
 import { User } from '../models/User';
+import { WalletTxn } from '../models/WalletTxn';
 import { clearCatalogCache } from '../middleware/cache';
 import { getIntegrations, invalidateIntegrations } from '../services/integrations.service';
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
@@ -221,6 +222,59 @@ export const settleRiderCod = asyncHandler(async (req, res) => {
     { $set: { codSettled: true } },
   );
   ok(res, { settledOrders: result.modifiedCount });
+});
+
+/* ============ Rider payouts ============ */
+
+/** Pending and recent withdrawal requests across all riders. */
+export const listWithdrawals = asyncHandler(async (req, res) => {
+  const status = typeof req.query.status === 'string' ? req.query.status : 'pending';
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const filter: Record<string, unknown> = { kind: 'withdrawal' };
+  if (status && status !== 'all') filter.status = status;
+  const [rows, total] = await Promise.all([
+    WalletTxn.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).populate('rider', 'name phone payout').lean(),
+    WalletTxn.countDocuments(filter),
+  ]);
+  const pendingTotal = (await WalletTxn.aggregate<{ t: number }>([{ $match: { kind: 'withdrawal', status: 'pending' } }, { $group: { _id: null, t: { $sum: '$amount' } } }]))[0]?.t ?? 0;
+  ok(res, rows, { ...pageMeta(page, limit, total), pendingTotal });
+});
+
+/** Mark a withdrawal paid (with a reference) or reject it. */
+export const markWithdrawal = asyncHandler(async (req, res) => {
+  const { status, reference } = req.body as { status: 'paid' | 'rejected'; reference?: string };
+  const txn = await WalletTxn.findOne({ _id: req.params.id, kind: 'withdrawal' });
+  if (!txn) throw new ApiError(404, 'Withdrawal not found');
+  if (txn.status !== 'pending') throw new ApiError(409, 'This withdrawal was already handled.');
+  txn.status = status;
+  if (reference) txn.reference = reference;
+  await txn.save();
+  ok(res, txn);
+});
+
+/** Confirm a rider's cash submission: clear the COD they owe and mark it confirmed. */
+export const confirmCashSubmit = asyncHandler(async (req, res) => {
+  const txn = await WalletTxn.findOne({ _id: req.params.id, kind: 'cash_submit' });
+  if (!txn) throw new ApiError(404, 'Cash submission not found');
+  if (txn.status !== 'pending') throw new ApiError(409, 'This submission was already handled.');
+  txn.status = 'confirmed';
+  await txn.save();
+  await Order.updateMany(
+    { rider: txn.rider, status: 'delivered', paymentMethod: 'cod', codSettled: { $ne: true } },
+    { $set: { codSettled: true } },
+  );
+  await User.updateOne({ _id: txn.rider, riderPaused: true }, { $set: { riderPaused: false, riderPausedAt: null } });
+  ok(res, txn);
+});
+
+/** Give a rider a bonus or a manual adjustment on their wallet. */
+export const adjustRiderWallet = asyncHandler(async (req, res) => {
+  const { amount, note } = req.body as { amount: number; note?: string };
+  const rider = await User.exists({ _id: req.params.id, role: 'rider' });
+  if (!rider) throw new ApiError(404, 'Rider not found');
+  const txn = await WalletTxn.create({ rider: req.params.id, kind: 'bonus', amount: Math.round(amount), status: 'completed', note: note || 'Bonus from admin' });
+  ok(res, txn, undefined, 201);
 });
 
 /* ============ Dashboard bell ============ */

@@ -71,6 +71,7 @@ export interface RiderProfile {
   name: string;
   phone: string;
   warehouse?: { _id: string; name: string };
+  warehouses?: { _id: string; name: string }[];
   codPending: number;
   codCollected: number;
   codLimit: number;
@@ -96,4 +97,44 @@ export interface RiderOrder {
   address: { name: string; phone: string; line1: string; line2?: string; landmark?: string; city: string; state: string; pincode: string; location?: { lat: number; lng: number } };
   shop?: { name: string; phone?: string };
   user?: { name: string; phone: string };
+}
+
+export interface PayoutAccount {
+  upi?: string;
+  bankHolder?: string;
+  bankNumber?: string;
+  bankIfsc?: string;
+}
+
+export interface RiderWallet {
+  balance: number;
+  lifetimeEarned: number;
+  pendingWithdraw: number;
+  withdrawnTotal: number;
+  codPending: number;
+  codCollected: number;
+  codLimit: number;
+  minWithdraw: number;
+  payEnabled: boolean;
+  account: PayoutAccount | null;
+}
+
+export interface WalletTxn {
+  _id: string;
+  kind: 'earning' | 'bonus' | 'adjustment' | 'withdrawal' | 'cash_submit';
+  amount: number;
+  status: 'completed' | 'pending' | 'paid' | 'rejected' | 'confirmed';
+  note?: string;
+  km?: number;
+  reference?: string;
+  method?: 'upi' | 'bank';
+  createdAt: string;
+}
+
+export interface EarningsSummary {
+  series: { date: string; amount: number; deliveries: number }[];
+  today: number;
+  week: number;
+  month: number;
+  deliveries: number;
 }
