@@ -8,6 +8,7 @@ import { getErrorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { RiderProfile, RiderWallet } from '../types';
 import { colors, radius, shadow } from '../theme';
+import { FadeSlide } from '../components/anim';
 
 const LOGO = require('../assets/logo-mark.png');
 const money = (v: number) => `₹${Math.round(v).toLocaleString('en-IN')}`;
@@ -33,18 +34,18 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />}>
       <ErrorBanner message={error} />
-      <View style={styles.card}>
+      <FadeSlide><View style={styles.card}>
         <View style={styles.avatar}><Image source={LOGO} style={{ width: 40, height: 40, borderRadius: 12 }} /></View>
         <Text style={styles.name}>{profile?.name ?? user?.name}</Text>
         <Text style={styles.muted}>{profile?.phone ?? user?.phone}</Text>
         {profile?.paused ? <View style={styles.pausedPill}><Ionicons name="pause-circle" size={14} color="#fff" /><Text style={styles.pausedText}>Service paused — submit your cash</Text></View> : null}
-      </View>
+      </View></FadeSlide>
 
-      <View style={styles.statRow}>
+      <FadeSlide delay={80}><View style={styles.statRow}>
         <Stat label="Delivered" value={String(profile?.deliveredCount ?? 0)} />
         <Stat label="Cancelled" value={String(profile?.cancelledCount ?? 0)} />
         <Stat label="Earned" value={money(wallet?.lifetimeEarned ?? 0)} last />
-      </View>
+      </View></FadeSlide>
 
       <Text style={styles.sectionTitle}>My warehouses</Text>
       <View style={styles.card2}>

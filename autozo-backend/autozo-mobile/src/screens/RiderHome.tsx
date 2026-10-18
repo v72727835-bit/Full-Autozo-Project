@@ -7,6 +7,7 @@ import { fetchRiderProfile } from '../api/rider';
 import { useAuth } from '../context/AuthContext';
 import { RiderProfile } from '../types';
 import { colors, radius, shadow } from '../theme';
+import { CrossFade } from '../components/anim';
 import OrdersScreen from './OrdersScreen';
 import EarningsScreen from './EarningsScreen';
 import WalletScreen from './WalletScreen';
@@ -38,7 +39,10 @@ export default function RiderHome() {
   useEffect(() => { loadProfile(); const t = setInterval(loadProfile, 30000); return () => clearInterval(t); }, [loadProfile]);
   const notices = profile?.notices ?? [];
 
-  const title = tab === 'orders' ? 'Autozo Rider' : tab === 'earnings' ? 'My earnings' : tab === 'wallet' ? 'My wallet' : 'My profile';
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = (profile?.name ?? user?.name ?? 'Rider').split(' ')[0];
+  const title = tab === 'orders' ? `${greet}, ${firstName}` : tab === 'earnings' ? 'My earnings' : tab === 'wallet' ? 'My wallet' : 'My profile';
   const warehouse = profile?.warehouses?.[0]?.name ?? user?.warehouse?.name ?? 'Delivery partner';
 
   return (
@@ -55,9 +59,9 @@ export default function RiderHome() {
         </Pressable>
       </View>
 
-      <View style={{ flex: 1 }}>
+      <CrossFade dep={tab} style={{ flex: 1 }}>
         {tab === 'orders' ? <OrdersScreen /> : tab === 'earnings' ? <EarningsScreen /> : tab === 'wallet' ? <WalletScreen /> : <ProfileScreen />}
-      </View>
+      </CrossFade>
 
       {/* Bottom tabs */}
       <View style={[styles.tabbar, { paddingBottom: Math.max(insets.bottom, 8) }]}>

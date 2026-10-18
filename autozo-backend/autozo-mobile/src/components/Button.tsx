@@ -1,5 +1,6 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { useRef } from 'react';
 import { colors, radius } from '../theme';
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
 export function Button({ title, onPress, loading, disabled, variant = 'primary', style }: Props) {
   const inactive = disabled || loading;
   const outline = variant === 'outline';
+  const scale = useRef(new Animated.Value(1)).current;
+  const to = (v: number) => Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: 7 }).start();
 
   return (
     <Pressable
@@ -21,19 +24,24 @@ export function Button({ title, onPress, loading, disabled, variant = 'primary',
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       onPress={onPress}
       disabled={inactive}
-      style={({ pressed }) => [
-        styles.base,
-        outline ? styles.outline : styles.primary,
-        pressed && { opacity: 0.85 },
-        inactive && { opacity: 0.6 },
-        style,
-      ]}
+      onPressIn={() => !inactive && to(0.96)}
+      onPressOut={() => to(1)}
     >
-      {loading ? (
-        <ActivityIndicator color={outline ? colors.primary : '#fff'} />
-      ) : (
-        <Text style={[styles.text, outline && { color: colors.primary }]}>{title}</Text>
-      )}
+      <Animated.View
+        style={[
+          styles.base,
+          outline ? styles.outline : styles.primary,
+          inactive && { opacity: 0.6 },
+          { transform: [{ scale }] },
+          style,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={outline ? colors.primary : '#fff'} />
+        ) : (
+          <Text style={[styles.text, outline && { color: colors.primary }]}>{title}</Text>
+        )}
+      </Animated.View>
     </Pressable>
   );
 }

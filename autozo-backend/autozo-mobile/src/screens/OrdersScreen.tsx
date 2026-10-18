@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Modal, PermissionsAndroid, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, Vibration, View } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { OsmMap } from '../components/OsmMap';
+import { AnimatedNumber, FadeSlide } from '../components/anim';
 import { cancelRiderOrder, deliverRiderOrder, fetchRiderOrders, fetchRiderProfile, acceptRiderOrder, sendRiderLocation } from '../api/rider';
 import { getErrorMessage } from '../api/client';
 import { Button } from '../components/Button';
@@ -96,21 +97,21 @@ export default function OrdersScreen() {
 
   return <View style={{ flex: 1 }}>
     {/* Cash in hand is the number a rider is accountable for, so it leads. */}
-    <View style={styles.hero}>
+    <FadeSlide><View style={styles.hero}>
       <View style={{ flex: 1 }}>
         <Text style={styles.heroEyebrow}>CASH TO SUBMIT</Text>
-        <Text style={styles.heroTitle}>{money(profile?.codPending ?? 0)}</Text>
+        <AnimatedNumber value={profile?.codPending ?? 0} format={money} style={styles.heroTitle} />
         <Text style={styles.heroText}>Collected in total {money(profile?.codCollected ?? 0)}{profile?.codLimit ? ` · hand in before ${money(profile.codLimit)}` : ''}</Text>
       </View>
       <Ionicons name="cash-outline" size={44} color="#fff" />
-    </View>
+    </View></FadeSlide>
     {profile?.paused ? <View style={styles.pausedBar}><Ionicons name="pause-circle" size={18} color="#fff" /><Text style={styles.newBannerText}>Your delivery service is stopped. Submit the cash to clear it.</Text></View> : null}
-    <View style={styles.stats}><Stat value={String(orders.filter((o) => o.status === 'ready_for_pickup').length)} label="Available" /><Stat value={String(orders.filter((o) => o.status === 'out_for_delivery').length)} label="Active" /><Stat value={String(profile?.deliveredCount ?? orders.filter((o) => o.status === 'delivered').length)} label="Delivered" /><Stat value={String(profile?.cancelledCount ?? 0)} label="Cancelled" last /></View>
+    <FadeSlide delay={70}><View style={styles.stats}><Stat value={String(orders.filter((o) => o.status === 'ready_for_pickup').length)} label="Available" /><Stat value={String(orders.filter((o) => o.status === 'out_for_delivery').length)} label="Active" /><Stat value={String(profile?.deliveredCount ?? orders.filter((o) => o.status === 'delivered').length)} label="Delivered" /><Stat value={String(profile?.cancelledCount ?? 0)} label="Cancelled" last /></View></FadeSlide>
     <View style={styles.tabs}>{(['available', 'active', 'history'] as const).map((value) => <Pressable key={value} onPress={() => setTab(value)} style={[styles.tab, tab === value && styles.tabActive]}><Text style={[styles.tabText, tab === value && styles.tabTextActive]}>{value === 'available' ? 'New orders' : value === 'active' ? 'My deliveries' : 'History'}</Text></Pressable>)}</View>
     {newCount > 0 ? <Pressable onPress={() => { setTab('available'); setNewCount(0); }} style={styles.newBanner} accessibilityRole="button"><Ionicons name="notifications" size={18} color="#fff" /><Text style={styles.newBannerText}>{newCount} new order{newCount > 1 ? 's' : ''} ready for pickup</Text></Pressable> : null}
     {error ? <ErrorBanner message={error} /> : null}
     {tab === 'active' && activeOrder ? <DeliveryMap order={activeOrder} riderLocation={riderLocation} /> : null}
-    {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} /> : <FlatList data={visible} keyExtractor={(item) => item._id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />} contentContainerStyle={visible.length ? styles.list : styles.emptyList} ListEmptyComponent={<View style={styles.empty}><Ionicons name={tab === 'history' ? 'checkmark-done-circle-outline' : 'bicycle-outline'} size={50} color={colors.primary} /><Text style={styles.emptyTitle}>{tab === 'available' ? 'No new orders' : tab === 'active' ? 'No active deliveries' : 'No delivery history'}</Text><Text style={styles.emptyText}>New updates will appear here automatically.</Text></View>} renderItem={({ item }) => <OrderCard order={item} saving={saving === item._id} riderLocation={riderLocation} onAccept={() => accept(item)} onDeliver={() => { setDelivery(item); setOtp(''); }} onCancel={() => void cancel(item)} />} />}
+    {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} /> : <FlatList data={visible} keyExtractor={(item) => item._id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />} contentContainerStyle={visible.length ? styles.list : styles.emptyList} ListEmptyComponent={<View style={styles.empty}><Ionicons name={tab === 'history' ? 'checkmark-done-circle-outline' : 'bicycle-outline'} size={50} color={colors.primary} /><Text style={styles.emptyTitle}>{tab === 'available' ? 'No new orders' : tab === 'active' ? 'No active deliveries' : 'No delivery history'}</Text><Text style={styles.emptyText}>New updates will appear here automatically.</Text></View>} renderItem={({ item, index }) => <FadeSlide delay={Math.min(index, 6) * 55}><OrderCard order={item} saving={saving === item._id} riderLocation={riderLocation} onAccept={() => accept(item)} onDeliver={() => { setDelivery(item); setOtp(''); }} onCancel={() => void cancel(item)} /></FadeSlide>} />}
     <Modal visible={!!delivery} transparent animationType="slide" onRequestClose={() => setDelivery(null)}><View style={styles.modalBackdrop}><View style={styles.modal}><Text style={styles.modalTitle}>Confirm delivery</Text><Text style={styles.modalSub}>Ask the customer for the 4-digit OTP before handing over the order.</Text><TextInput value={otp} onChangeText={(value) => setOtp(value.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" maxLength={4} placeholder="••••" placeholderTextColor="#94A3B8" style={styles.otp} autoFocus /><Button title="Mark as delivered" onPress={() => void deliver()} loading={saving === delivery?._id} disabled={otp.length !== 4} /><Button title="Cancel" variant="outline" onPress={() => setDelivery(null)} style={{ marginTop: 10 }} /></View></View></Modal>
   </View>;
 }
