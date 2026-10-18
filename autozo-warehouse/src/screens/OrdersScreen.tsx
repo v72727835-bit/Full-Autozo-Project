@@ -106,7 +106,7 @@ export default function OrdersScreen({ onChanged }: { onChanged: (newCount: numb
 
   return (
     <View style={{ flex: 1 }}>
-      <H title="Orders" sub="Accept new orders, prepare them and hand them to a free rider." />
+      <H title="Orders" sub="Accept new orders, prepare them and hand them to a free rider." center />
       <SearchBar value={q} onChangeText={setQ} onSubmit={() => setQuery(q.trim())} placeholder="Search order number" />
       <View style={{ height: 52 }}><Chips value={status} options={TABS} onChange={(v) => { setRows(null); setStatus(v); }} /></View>
       <ErrorText message={error} />

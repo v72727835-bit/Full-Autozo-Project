@@ -91,7 +91,7 @@ export function CustomersScreen() {
   useEffect(() => { setRows(null); load(1); }, [load]);
   return (
     <View style={{ flex: 1 }}>
-      <H title="Customers" sub="People who ordered from your warehouse." />
+      <H title="Customers" sub="People who ordered from your warehouse." center />
       <SearchBar value={q} onChangeText={setQ} onSubmit={() => setQuery(q.trim())} placeholder="Search name or phone" />
       <ErrorText message={error} />
       {!rows ? <Center /> : rows.length === 0 ? <Empty text="No customers yet." /> : (
@@ -116,7 +116,7 @@ export function CategoriesScreen() {
   const kids = (id: string | null) => cats.filter((c) => c.parent === id);
   return (
     <ScrollView>
-      <H title="Categories" sub="The shelves your products go under. Pick a last-level category when adding a product." />
+      <H title="Categories" sub="The shelves your products go under. Pick a last-level category when adding a product." center />
       <View style={{ padding: 16, paddingTop: 8 }}>
         {kids(null).map((a) => (
           <Card key={a._id}>
@@ -142,7 +142,7 @@ export function StoreScreen() {
   if (!shops) return error ? <Center><ErrorText message={error} /></Center> : <Center />;
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      <H title="Store settings" sub="Open or close the store, delivery fee, minimum order and radius." />
+      <H title="Store settings" sub="Open or close the store, delivery fee, minimum order and radius." center />
       <View style={{ padding: 16, paddingTop: 8 }}>{shops.map((s) => <ShopCard key={s._id} shop={s} />)}</View>
     </ScrollView>
   );
@@ -233,7 +233,7 @@ export function AccountScreen() {
   const u = me?.user;
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      <H title="My account" />
+      <H title="My account" center />
       <View style={{ padding: 16, paddingTop: 8 }}>
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 16 }}>{u?.name}</Text>

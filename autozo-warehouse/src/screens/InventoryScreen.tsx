@@ -37,7 +37,7 @@ export default function InventoryScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <H title="Inventory" sub="Keep stock right. Five or fewer counts as low." />
+      <H title="Inventory" sub="Keep stock right. Five or fewer counts as low." center />
       <View style={{ height: 52 }}><Chips value={status} options={TABS} onChange={setStatus} /></View>
       <ErrorText message={error} />
       {!rows ? <Center /> : rows.length === 0 ? <Empty text="Nothing here." /> : (
