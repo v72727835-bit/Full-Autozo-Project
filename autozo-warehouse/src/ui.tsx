@@ -1,5 +1,5 @@
-import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
 import { colors, radius, shadow } from './theme';
 
 export const money = (n: number) => `₹${(Math.round(n * 100) / 100).toLocaleString('en-IN')}`;
@@ -35,9 +35,13 @@ export function ErrorText({ message }: { message: string }) { return message ? <
 export function Btn({ title, onPress, tone = 'primary', disabled, small }: { title: string; onPress: () => void; tone?: 'primary' | 'outline' | 'danger'; disabled?: boolean; small?: boolean }) {
   const bg = tone === 'primary' ? colors.primary : tone === 'danger' ? colors.dangerSoft : 'transparent';
   const fg = tone === 'primary' ? '#fff' : tone === 'danger' ? colors.danger : colors.primary;
+  const scale = useRef(new Animated.Value(1)).current;
+  const to = (v: number) => Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: 7 }).start();
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [s.btn, small && s.btnSm, { backgroundColor: bg, borderColor: tone === 'outline' ? colors.primary : bg }, (pressed || disabled) && { opacity: 0.6 }]}>
-      <Text style={[s.btnText, small && { fontSize: 13 }, { color: fg }]}>{title}</Text>
+    <Pressable onPress={onPress} disabled={disabled} onPressIn={() => !disabled && to(0.96)} onPressOut={() => to(1)}>
+      <Animated.View style={[s.btn, small && s.btnSm, { backgroundColor: bg, borderColor: tone === 'outline' ? colors.primary : bg, transform: [{ scale }] }, disabled && { opacity: 0.6 }]}>
+        <Text style={[s.btnText, small && { fontSize: 13 }, { color: fg }]}>{title}</Text>
+      </Animated.View>
     </Pressable>
   );
 }

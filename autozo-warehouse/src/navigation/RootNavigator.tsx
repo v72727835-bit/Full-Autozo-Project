@@ -1,6 +1,9 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { CrossFade, FadeSlide, Pulse } from '../components/anim';
+
+const LOGO = require('../assets/logo-mark.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { AccountScreen, CategoriesScreen, CustomersScreen, RidersScreen, StoreScreen } from '../screens/MoreScreens';
@@ -65,7 +68,7 @@ function Shell() {
       {tab === 'more' && more ? (
         <Pressable onPress={() => setMore(null)} style={styles.back}><Ionicons name="chevron-back" size={20} color={colors.primary} /><Text style={{ color: colors.primary, fontWeight: '700' }}>More</Text></Pressable>
       ) : null}
-      <View style={{ flex: 1 }}>{body}</View>
+      <CrossFade dep={`${tab}:${more ?? ''}`} style={{ flex: 1 }}>{body}</CrossFade>
       <SafeAreaView edges={['bottom']} style={styles.bar}>
         {TABS.map((t) => {
           const on = tab === t.key;
@@ -86,13 +89,23 @@ function Shell() {
 
 export default function RootNavigator() {
   const { me, initializing } = useAuth();
-  if (initializing) return <View style={styles.splash}><Text style={styles.brand}>Autozo Warehouse</Text><ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} /></View>;
+  if (initializing) return (
+    <View style={styles.splash}>
+      <FadeSlide><Pulse style={styles.splashLogo}><Image source={LOGO} style={styles.splashLogoImg} /></Pulse></FadeSlide>
+      <FadeSlide delay={120}><Text style={styles.brand}>Autozo Warehouse</Text></FadeSlide>
+      <FadeSlide delay={220}><Text style={styles.splashTag}>Run your store, your way</Text></FadeSlide>
+      <ActivityIndicator color={colors.primary} style={{ marginTop: 22 }} />
+    </View>
+  );
   return me ? <Shell /> : <LoginScreen />;
 }
 
 const styles = StyleSheet.create({
   splash: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  brand: { fontSize: 30, fontWeight: '800', color: colors.primary },
+  splashLogo: { width: 92, height: 92, borderRadius: 26, backgroundColor: '#1F2937', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  splashLogoImg: { width: 62, height: 62, borderRadius: 16 },
+  splashTag: { color: colors.muted, fontSize: 13.5, marginTop: 6 },
+  brand: { fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center' },
   bar: { flexDirection: 'row', backgroundColor: colors.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 },
   tabText: { fontSize: 11, color: colors.muted, fontWeight: '600' },
