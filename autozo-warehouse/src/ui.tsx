@@ -1,6 +1,8 @@
-import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
-import { colors, radius, shadow } from './theme';
+import React, { useRef } from 'react';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
+import { accents, colors, radius, shadow, softShadow } from './theme';
+import { Ionicons } from '@react-native-vector-icons/ionicons/static';
+import { AnimatedNumber } from './components/anim';
 
 export const money = (n: number) => `₹${(Math.round(n * 100) / 100).toLocaleString('en-IN')}`;
 export const when = (iso: string) => {
@@ -26,8 +28,32 @@ export function Pill({ text, tone = 'brand' }: { text: string; tone?: Tone }) {
   return <View style={[s.pill, { backgroundColor: TONES[tone].bg }]}><Text style={[s.pillText, { color: TONES[tone].fg }]}>{text}</Text></View>;
 }
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) { return <View style={[s.card, style]}>{children}</View>; }
-export function H({ title, sub }: { title: string; sub?: string }) {
-  return <View style={s.head}><Text style={s.title}>{title}</Text>{sub ? <Text style={s.sub}>{sub}</Text> : null}</View>;
+
+export function Section({ title, color = colors.primary, right }: { title: string; color?: string; right?: React.ReactNode }) {
+  return (
+    <View style={[row, { marginBottom: 12 }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: color }} />
+        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>{title}</Text>
+      </View>
+      {right}
+    </View>
+  );
+}
+
+export function StatTile({ label, value, num, fmt, hint, icon, accent = 'blue' }: { label: string; value?: string; num?: number; fmt?: (n: number) => string; hint?: string; icon: React.ComponentProps<typeof Ionicons>['name']; accent?: keyof typeof accents }) {
+  const a = accents[accent];
+  return (
+    <View style={[s.tile, { flex: 1, minWidth: '45%' }]}>
+      <View style={[s.tileIcon, { backgroundColor: a.soft }]}><Ionicons name={icon} size={18} color={a.base} /></View>
+      <Text style={s.tileLabel}>{label}</Text>
+      {num !== undefined ? <AnimatedNumber value={num} format={fmt} style={[s.tileValue, { color: a.ink }]} /> : <Text style={[s.tileValue, { color: a.ink }]}>{value}</Text>}
+      {hint ? <Text style={s.tileHint}>{hint}</Text> : null}
+    </View>
+  );
+}
+export function H({ title, sub, center }: { title: string; sub?: string; center?: boolean }) {
+  return <View style={[s.head, center && { alignItems: 'center' }]}><Text style={[s.title, center && { textAlign: 'center' }]}>{title}</Text>{sub ? <Text style={[s.sub, center && { textAlign: 'center' }]}>{sub}</Text> : null}</View>;
 }
 export function Center({ children }: { children?: React.ReactNode }) { return <View style={s.center}>{children ?? <ActivityIndicator color={colors.primary} size="large" />}</View>; }
 export function Empty({ text }: { text: string }) { return <View style={s.center}><Text style={s.sub}>{text}</Text></View>; }
@@ -35,9 +61,13 @@ export function ErrorText({ message }: { message: string }) { return message ? <
 export function Btn({ title, onPress, tone = 'primary', disabled, small }: { title: string; onPress: () => void; tone?: 'primary' | 'outline' | 'danger'; disabled?: boolean; small?: boolean }) {
   const bg = tone === 'primary' ? colors.primary : tone === 'danger' ? colors.dangerSoft : 'transparent';
   const fg = tone === 'primary' ? '#fff' : tone === 'danger' ? colors.danger : colors.primary;
+  const scale = useRef(new Animated.Value(1)).current;
+  const to = (v: number) => Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: 7 }).start();
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [s.btn, small && s.btnSm, { backgroundColor: bg, borderColor: tone === 'outline' ? colors.primary : bg }, (pressed || disabled) && { opacity: 0.6 }]}>
-      <Text style={[s.btnText, small && { fontSize: 13 }, { color: fg }]}>{title}</Text>
+    <Pressable onPress={onPress} disabled={disabled} onPressIn={() => !disabled && to(0.96)} onPressOut={() => to(1)}>
+      <Animated.View style={[s.btn, small && s.btnSm, { backgroundColor: bg, borderColor: tone === 'outline' ? colors.primary : bg, transform: [{ scale }] }, disabled && { opacity: 0.6 }]}>
+        <Text style={[s.btnText, small && { fontSize: 13 }, { color: fg }]}>{title}</Text>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -68,21 +98,26 @@ export const row: ViewStyle = { flexDirection: 'row', alignItems: 'center', just
 const s = StyleSheet.create({
   pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill, alignSelf: 'flex-start' },
   pillText: { fontSize: 12, fontWeight: '700' },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 14, marginBottom: 12, ...shadow },
+  card: { backgroundColor: colors.card, borderRadius: radius.xl, padding: 16, marginBottom: 14, ...softShadow },
   head: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
-  title: { fontSize: 24, fontWeight: '800', color: colors.text },
+  title: { fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -0.3 },
   sub: { fontSize: 14, color: colors.muted, marginTop: 2 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   err: { backgroundColor: colors.dangerSoft, padding: 10, borderRadius: radius.md, marginHorizontal: 16, marginBottom: 8 },
   errText: { color: colors.danger, fontSize: 13.5, fontWeight: '500' },
-  btn: { height: 46, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, borderWidth: 1.5 },
+  btn: { height: 50, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderWidth: 1.5 },
   btnSm: { height: 36, paddingHorizontal: 12 },
-  btnText: { fontSize: 15, fontWeight: '700' },
+  btnText: { fontSize: 15.5, fontWeight: '800', letterSpacing: 0.2 },
   chips: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill, backgroundColor: '#E2E8F0' },
+  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: radius.pill, backgroundColor: '#EEF2F8' },
   chipOn: { backgroundColor: colors.primary },
   chipText: { fontSize: 13.5, fontWeight: '600', color: colors.text },
-  search: { height: 44, marginHorizontal: 16, marginVertical: 6, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card, paddingHorizontal: 12, fontSize: 15, color: colors.text },
+  search: { height: 48, marginHorizontal: 16, marginVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card, paddingHorizontal: 18, fontSize: 15, color: colors.text, ...softShadow },
+  tile: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 14, ...softShadow },
+  tileIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  tileLabel: { color: colors.muted, fontSize: 12.5, fontWeight: '600' },
+  tileValue: { fontSize: 22, fontWeight: '900', marginTop: 2, letterSpacing: -0.5 },
+  tileHint: { color: colors.muted, fontSize: 11.5, marginTop: 3 },
   label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 5 },
-  input: { height: 46, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card, paddingHorizontal: 12, fontSize: 15, color: colors.text },
+  input: { height: 50, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: '#FBFCFE', paddingHorizontal: 14, fontSize: 15, color: colors.text },
 });

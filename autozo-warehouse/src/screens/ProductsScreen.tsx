@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { getErrorMessage } from '../api/client';
-import { createProduct, deleteProduct, sellerCategories, sellerProducts, updateProduct, uploadImages } from '../api/seller';
+import { createProduct, deleteProduct, sellerCategories, sellerProducts, updateProduct, uploadImages, uploadVideo } from '../api/seller';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 import { Category, Product } from '../types';
@@ -91,6 +91,7 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
   const [paymentMode, setPaymentMode] = useState<'both' | 'cod' | 'online'>(product?.paymentMode ?? 'both');
   const [foodType, setFoodType] = useState<'' | 'veg' | 'nonveg'>(product?.foodType ?? '');
   const [images, setImages] = useState<string[]>(product?.images ?? []);
+  const [video, setVideo] = useState<string>(product?.video ?? '');
   const [category, setCategory] = useState<string>(product ? idOf(product.category) : '');
   const [warehouse, setWarehouse] = useState<string>(warehouses.length === 1 ? warehouses[0]._id : '');
   const [cats, setCats] = useState<Category[]>([]);
@@ -115,6 +116,17 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
     } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
   };
 
+  const addVideo = async () => {
+    const res = await launchImageLibrary({ mediaType: 'video', selectionLimit: 1 });
+    if (res.didCancel || !res.assets?.length) return;
+    const a = res.assets[0];
+    setBusy(true); setError('');
+    try {
+      const url = await uploadVideo({ uri: a.uri ?? '', name: a.fileName ?? `video-${Date.now()}.mp4`, type: a.type ?? 'video/mp4' });
+      setVideo(url);
+    } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
+  };
+
   const save = async () => {
     setError('');
     if (f.name.trim().length < 2) return setError('Enter the product name.');
@@ -126,7 +138,7 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
       category, name: f.name.trim(), nameHi: f.nameHi.trim(), brand: f.brand.trim(), description: f.description.trim(), images,
       price, mrp: Number(f.mrp) || price, unit: f.unit.trim() || '1 pc', stock: Math.max(0, Math.floor(Number(f.stock) || 0)),
       foodType, attributes: list(f.attributes), tags: list(f.tags), variantGroup: f.variantGroup.trim(), variantLabel: f.variantLabel.trim(),
-      hsn: f.hsn.trim(), gstRate: gstRate === '' ? null : Number(gstRate), paymentMode,
+      hsn: f.hsn.trim(), gstRate: gstRate === '' ? null : Number(gstRate), paymentMode, video: video || '',
     };
     setBusy(true);
     try {
@@ -196,6 +208,12 @@ function ProductForm({ product, onClose, onSaved }: { product: Product | null; o
             ))}
           </ScrollView>
           <Btn tone="outline" title="Add photos" onPress={addImages} disabled={busy || images.length >= 10} />
+          <View style={{ height: 14 }} />
+          <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Product video {video ? '· added ✓' : '(optional)'}</Text>
+          <View style={[row, { gap: 8 }]}>
+            <View style={{ flex: 1 }}><Btn tone="outline" title={video ? 'Replace video' : 'Add a video'} onPress={addVideo} disabled={busy} /></View>
+            {video ? <View style={{ flex: 1 }}><Btn tone="danger" title="Remove video" onPress={() => setVideo('')} disabled={busy} /></View> : null}
+          </View>
           <View style={{ height: 14 }} />
           <Btn title={busy ? 'Please wait…' : product ? 'Save changes' : 'Add product'} onPress={save} disabled={busy} />
           <View style={{ height: 40 }} />

@@ -17,7 +17,7 @@ export interface Order {
   subtotal: number; deliveryFee: number; discount: number; total: number; note?: string; createdAt: string;
 }
 export interface Product {
-  _id: string; name: string; nameHi?: string; brand?: string; description?: string; images: string[]; price: number; mrp: number;
+  _id: string; name: string; nameHi?: string; brand?: string; description?: string; images: string[]; video?: string; price: number; mrp: number;
   unit: string; stock: number; isActive: boolean; foodType: 'veg' | 'nonveg' | ''; attributes: string[]; tags: string[];
   variantGroup?: string; variantLabel?: string; hsn?: string; gstRate?: number | null; paymentMode?: 'both' | 'cod' | 'online'; category: { _id: string; name: string } | string; shop: { _id: string; name: string } | string;
 }
@@ -34,7 +34,7 @@ export interface Dashboard {
   recent: { _id: string; orderNumber: string; status: string; total: number; createdAt: string; paymentMethod: string }[];
 }
 export interface Shop {
-  _id: string; name: string; gstin?: string; description?: string; phone?: string; isOpen: boolean; deliveryRadiusKm: number; minOrderAmount: number; deliveryFee: number;
+  _id: string; name: string; gstin?: string; description?: string; phone?: string; isOpen: boolean; deliveryRadiusKm: number; minOrderAmount: number; deliveryFee: number; logo?: string; banner?: string;
   address: { line1?: string; city?: string; state?: string; pincode?: string };
 }
 export interface Customer { _id: string; name: string; phone: string; orders: number; spent: number; last: string }

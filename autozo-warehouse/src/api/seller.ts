@@ -29,6 +29,13 @@ export const sellerCategories = async (): Promise<Category[]> => (await api.get(
 export const createProduct = async (body: Record<string, unknown>): Promise<Product> => (await api.post('/seller/products', body)).data.data;
 export const updateProduct = async (id: string, body: Record<string, unknown>): Promise<Product> => (await api.patch(`/seller/products/${id}`, body)).data.data;
 export const deleteProduct = async (id: string): Promise<void> => { await api.delete(`/seller/products/${id}`); };
+export async function uploadVideo(file: { uri: string; name: string; type: string }): Promise<string> {
+  const form = new FormData();
+  form.append('video', file as unknown as Blob);
+  const { data } = await api.post('/seller/uploads/video', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+  return (data.data?.url ?? data.data) as string;
+}
+
 export async function uploadImages(files: { uri: string; name: string; type: string }[]): Promise<string[]> {
   const form = new FormData();
   files.forEach((f) => form.append('images', f as unknown as Blob));

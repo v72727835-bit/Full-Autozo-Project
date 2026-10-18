@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, FlatList, Image, ScrollView, Switch, Text, View } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { getErrorMessage } from '../api/client';
-import { changePassword, createRider, sellerCategories, sellerCustomers, sellerRiders, sellerShops, updateShop } from '../api/seller';
+import { changePassword, createRider, sellerCategories, sellerCustomers, sellerRiders, sellerShops, updateShop, uploadImages } from '../api/seller';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 import { Category, Customer, Shop, WhRider } from '../types';
@@ -90,7 +91,7 @@ export function CustomersScreen() {
   useEffect(() => { setRows(null); load(1); }, [load]);
   return (
     <View style={{ flex: 1 }}>
-      <H title="Customers" sub="People who ordered from your warehouse." />
+      <H title="Customers" sub="People who ordered from your warehouse." center />
       <SearchBar value={q} onChangeText={setQ} onSubmit={() => setQuery(q.trim())} placeholder="Search name or phone" />
       <ErrorText message={error} />
       {!rows ? <Center /> : rows.length === 0 ? <Empty text="No customers yet." /> : (
@@ -115,7 +116,7 @@ export function CategoriesScreen() {
   const kids = (id: string | null) => cats.filter((c) => c.parent === id);
   return (
     <ScrollView>
-      <H title="Categories" sub="The shelves your products go under. Pick a last-level category when adding a product." />
+      <H title="Categories" sub="The shelves your products go under. Pick a last-level category when adding a product." center />
       <View style={{ padding: 16, paddingTop: 8 }}>
         {kids(null).map((a) => (
           <Card key={a._id}>
@@ -141,7 +142,7 @@ export function StoreScreen() {
   if (!shops) return error ? <Center><ErrorText message={error} /></Center> : <Center />;
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      <H title="Store settings" sub="Open or close the store, delivery fee, minimum order and radius." />
+      <H title="Store settings" sub="Open or close the store, delivery fee, minimum order and radius." center />
       <View style={{ padding: 16, paddingTop: 8 }}>{shops.map((s) => <ShopCard key={s._id} shop={s} />)}</View>
     </ScrollView>
   );
@@ -153,10 +154,19 @@ function ShopCard({ shop }: { shop: Shop }) {
     deliveryRadiusKm: String(shop.deliveryRadiusKm), minOrderAmount: String(shop.minOrderAmount), deliveryFee: String(shop.deliveryFee),
     gstin: shop.gstin ?? '',
   });
+  const [logo, setLogo] = useState<string>(shop.logo ?? '');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  const pickLogo = async () => {
+    const res = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, quality: 0.8 });
+    if (res.didCancel || !res.assets?.length) return;
+    const a = res.assets[0];
+    setBusy(true); setError('');
+    try { const [url] = await uploadImages([{ uri: a.uri ?? '', name: a.fileName ?? `logo-${Date.now()}.jpg`, type: a.type ?? 'image/jpeg' }]); setLogo(url); }
+    catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
+  };
   const toggle = async (v: boolean) => {
     setError('');
     try { await updateShop(shop._id, { isOpen: v }); setIsOpen(v); } catch (e) { setError(getErrorMessage(e)); }
@@ -167,7 +177,7 @@ function ShopCard({ shop }: { shop: Shop }) {
       await updateShop(shop._id, {
         name: f.name.trim(), description: f.description.trim(), phone: f.phone.trim(), address: { line1: f.line1, city: f.city, state: f.state, pincode: f.pincode },
         deliveryRadiusKm: Number(f.deliveryRadiusKm) || 0, minOrderAmount: Number(f.minOrderAmount) || 0, deliveryFee: Number(f.deliveryFee) || 0,
-        gstin: f.gstin.trim().toUpperCase(),
+        gstin: f.gstin.trim().toUpperCase(), logo: logo || '',
       });
       setMsg('Saved.');
     } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
@@ -193,6 +203,13 @@ function ShopCard({ shop }: { shop: Shop }) {
       <Input label="Delivery radius (km)" value={f.deliveryRadiusKm} onChangeText={(v) => set('deliveryRadiusKm', v)} keyboardType="decimal-pad" />
       <Input label="Minimum order ₹" value={f.minOrderAmount} onChangeText={(v) => set('minOrderAmount', v)} keyboardType="numeric" />
       <Input label="Delivery fee ₹" value={f.deliveryFee} onChangeText={(v) => set('deliveryFee', v)} keyboardType="numeric" />
+      <View style={[row, { marginVertical: 10 }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 }}>
+          {logo ? <Image source={{ uri: logo }} style={{ width: 52, height: 52, borderRadius: 12 }} /> : <View style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: colors.border }} />}
+          <Text style={{ color: colors.muted, flex: 1 }}>Store logo {logo ? '· added ✓' : '(shown on your bills)'}</Text>
+        </View>
+        <Btn small tone="outline" title={logo ? 'Change' : 'Add logo'} onPress={pickLogo} disabled={busy} />
+      </View>
       <Input label="GSTIN (printed on your bills)" value={f.gstin} onChangeText={(v) => set('gstin', v.toUpperCase().slice(0, 15))} placeholder="09ABCDE1234F1Z5" />
       <Btn title={busy ? 'Saving…' : 'Save store settings'} onPress={save} disabled={busy} />
     </Card>
@@ -216,7 +233,7 @@ export function AccountScreen() {
   const u = me?.user;
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      <H title="My account" />
+      <H title="My account" center />
       <View style={{ padding: 16, paddingTop: 8 }}>
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 16 }}>{u?.name}</Text>
