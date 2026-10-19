@@ -151,6 +151,8 @@ export interface Order {
   user: { _id: string; name: string; phone: string; email?: string } | string;
   shop: { _id: string; name: string; phone?: string } | string;
   rider?: { _id: string; name: string; phone?: string } | string;
+  fulfillment?: 'rider' | 'shiprocket';
+  shiprocket?: { orderId?: string; shipmentId?: string; awb?: string; courier?: string; labelUrl?: string; status?: string; syncedAt?: string };
   items: OrderItem[];
   address: {
     name: string;

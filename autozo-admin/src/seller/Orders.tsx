@@ -112,9 +112,9 @@ export default function Orders({ onChanged }: { onChanged: () => void }) {
               <div className="row-flex" style={{ flexWrap: 'wrap' }}>
                 {next && <Button size="sm" disabled={busy === o._id} onClick={() => move(o._id, next.to)}>{next.label}</Button>}
                 {o.status === 'placed' && <Button size="sm" variant="ghost" disabled={busy === o._id} onClick={() => move(o._id, 'rejected')}>Reject</Button>}
-                {['accepted', 'preparing', 'ready_for_pickup'].includes(o.status) && !o.rider && (
+                {['accepted', 'preparing', 'ready_for_pickup'].includes(o.status) && !o.rider && o.fulfillment !== 'shiprocket' && (
                   <Button size="sm" variant="secondary" onClick={() => setAssigning(assigning === o._id ? null : o._id)}>
-                    {assigning === o._id ? 'Hide riders' : 'Assign rider'}
+                    {assigning === o._id ? 'Close' : 'Rider / Shiprocket'}
                   </Button>
                 )}
                 {['accepted', 'preparing', 'ready_for_pickup'].includes(o.status) && (
@@ -124,6 +124,9 @@ export default function Orders({ onChanged }: { onChanged: () => void }) {
                 <Button size="sm" variant="secondary" onClick={() => openBill(() => sellerInvoiceLink(o._id), 'pos').catch((e) => setError(getErrorMessage(e)))}>POS bill</Button>
                 <Button size="sm" variant="ghost" onClick={() => setOpen(expanded ? null : o._id)}>{expanded ? 'Hide details' : 'Details'}</Button>
                 {rider && <span className="cell-muted">Rider: {rider.name}{rider.phone ? ` · ${rider.phone}` : ''}</span>}
+                {o.fulfillment === 'shiprocket' && (
+                  <span className="cell-muted">📦 Shiprocket{o.shiprocket?.courier ? ` · ${o.shiprocket.courier}` : ''}{o.shiprocket?.awb ? ` · AWB ${o.shiprocket.awb}` : ''}</span>
+                )}
               </div>
 
               {assigning === o._id && (

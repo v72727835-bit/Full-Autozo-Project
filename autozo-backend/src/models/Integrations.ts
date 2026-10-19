@@ -17,6 +17,8 @@ export interface IIntegrations {
     otpOnLogin?: boolean;
     pushEnabled?: boolean;
   };
+  /** Shiprocket courier: API user email + password, and the pickup location to ship from. */
+  shiprocket?: { email?: string; passwordEnc?: string; pickupLocation?: string; channelId?: string; enabled?: boolean };
 }
 
 const schema = new Schema<IIntegrations>(
@@ -39,6 +41,13 @@ const schema = new Schema<IIntegrations>(
       otpOnSignup: { type: Boolean, default: false },
       otpOnLogin: { type: Boolean, default: false },
       pushEnabled: { type: Boolean, default: false },
+    },
+    shiprocket: {
+      email: { type: String, trim: true },
+      passwordEnc: String,
+      pickupLocation: { type: String, trim: true },
+      channelId: { type: String, trim: true },
+      enabled: { type: Boolean, default: false },
     },
   },
   { timestamps: true },

@@ -5,6 +5,7 @@ import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { notifyOrderStatus, notifyRiderAssigned } from './orderNotify.service';
 import { ONLINE_WINDOW_MS } from './rider.service';
+import { createShiprocketOrder } from './shiprocket.service';
 
 /**
  * Where the store side (admin or seller) may move an order next. A rider
@@ -109,5 +110,30 @@ export async function assignRiderToOrder(orderId: string, riderId: string, by: s
   );
   if (!updated) throw new ApiError(409, 'This order changed a moment ago. Refresh and try again.');
   notifyRiderAssigned(updated, true);
+  return updated;
+}
+
+/**
+ * Hand an accepted order to the Shiprocket courier network instead of a rider.
+ * We create the order in Shiprocket first, and only then mark it out for
+ * delivery, so a Shiprocket failure never leaves our order in a wrong state.
+ */
+export async function assignToShiprocket(orderId: string, by: string) {
+  const order = await Order.findById(orderId);
+  if (!order) throw new ApiError(404, 'Order not found');
+  if (order.rider) throw new ApiError(409, 'A rider is already assigned to this order.');
+  if (order.fulfillment === 'shiprocket' && order.shiprocket?.orderId) throw new ApiError(409, 'This order is already sent to Shiprocket.');
+  if (!ASSIGNABLE.includes(order.status)) throw new ApiError(409, 'Accept the order first, then send it to Shiprocket.');
+  const sr = await createShiprocketOrder(order);
+  const updated = await Order.findOneAndUpdate(
+    { _id: order._id, rider: { $exists: false }, status: order.status },
+    {
+      $set: { fulfillment: 'shiprocket', status: 'out_for_delivery', shiprocket: { ...sr, syncedAt: new Date() } },
+      $push: { statusHistory: { status: 'out_for_delivery', at: new Date(), note: `Sent to Shiprocket by ${by}${sr.awb ? ` · AWB ${sr.awb}` : ''}${sr.courier ? ` · ${sr.courier}` : ''}` } },
+    },
+    { new: true },
+  );
+  if (!updated) throw new ApiError(409, 'This order changed a moment ago. Refresh and try again.');
+  notifyOrderStatus(updated, 'out_for_delivery');
   return updated;
 }

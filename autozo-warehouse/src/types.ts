@@ -12,6 +12,8 @@ export interface Order {
   user?: { _id: string; name: string; phone: string } | string;
   shop?: { _id: string; name: string } | string;
   rider?: { _id: string; name: string; phone?: string } | string;
+  fulfillment?: 'rider' | 'shiprocket';
+  shiprocket?: { orderId?: string; awb?: string; courier?: string; status?: string };
   items: OrderItem[];
   address: { name: string; phone: string; line1: string; line2?: string; city: string; state: string; pincode: string };
   subtotal: number; deliveryFee: number; discount: number; total: number; note?: string; createdAt: string;

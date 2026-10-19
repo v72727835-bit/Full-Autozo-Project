@@ -23,6 +23,7 @@ export const orderRiders = async (id: string): Promise<OrderRiders> => (await ap
 /** A short-lived link that opens the invoice (A4) or the thermal bill in the phone's browser, where it can be printed or saved as PDF. */
 export const invoiceLinks = async (id: string): Promise<{ a4: string; pos: string }> => (await api.post(`/seller/orders/${id}/invoice-link`)).data.data;
 export const assignRider = async (id: string, rider: string): Promise<void> => { await api.post(`/seller/orders/${id}/assign-rider`, { rider }); };
+export const assignShiprocket = async (id: string): Promise<void> => { await api.post(`/seller/orders/${id}/assign-shiprocket`); };
 
 export const sellerProducts = (p: { page?: number; limit?: number; q?: string; status?: string; category?: string }) => paged<Product>('/seller/products', p);
 export const sellerCategories = async (): Promise<Category[]> => (await api.get('/seller/categories')).data.data;

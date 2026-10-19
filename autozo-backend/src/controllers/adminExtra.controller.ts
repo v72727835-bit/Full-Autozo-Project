@@ -16,6 +16,7 @@ import { walletSummary, earningsSeries } from '../services/riderPay.service';
 import { clearCatalogCache } from '../middleware/cache';
 import { getIntegrations, invalidateIntegrations } from '../services/integrations.service';
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
+import { testShiprocket } from '../services/shiprocket.service';
 import { seal } from '../utils/secretBox';
 import { checkServiceAccount, pushToUsers } from '../services/firebase.service';
 import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
@@ -437,8 +438,20 @@ async function integrationsView() {
     firebaseOtpOnSignup: !!doc?.firebase?.otpOnSignup,
     firebaseOtpOnLogin: !!doc?.firebase?.otpOnLogin,
     firebasePushEnabled: !!doc?.firebase?.pushEnabled,
+    shiprocketEmail: doc?.shiprocket?.email ?? '',
+    shiprocketPasswordSaved: !!doc?.shiprocket?.passwordEnc,
+    shiprocketPickupLocation: doc?.shiprocket?.pickupLocation ?? '',
+    shiprocketChannelId: doc?.shiprocket?.channelId ?? '',
+    shiprocketEnabled: !!doc?.shiprocket?.enabled,
     /** Whether each one is actually working for customers right now (the .env file counts too). */
-    live: { google: !!live.googleClientId, facebook: !!(live.facebookAppId && live.facebookAppSecret), razorpay: !!(await razorpayKeys()), firebaseOtp: !!(live.firebase.webConfig.apiKey && live.firebase.webConfig.projectId), firebasePush: !!live.firebase.serviceAccount },
+    live: {
+      google: !!live.googleClientId,
+      facebook: !!(live.facebookAppId && live.facebookAppSecret),
+      razorpay: !!(await razorpayKeys()),
+      firebaseOtp: !!(live.firebase.webConfig.apiKey && live.firebase.webConfig.projectId),
+      firebasePush: !!live.firebase.serviceAccount,
+      shiprocket: !!(live.shiprocket.enabled && live.shiprocket.email && live.shiprocket.password),
+    },
   };
 }
 
@@ -462,6 +475,12 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
     firebaseOtpOnSignup?: boolean;
     firebaseOtpOnLogin?: boolean;
     firebasePushEnabled?: boolean;
+    shiprocketEmail?: string;
+    shiprocketPassword?: string;
+    clearShiprocketPassword?: boolean;
+    shiprocketPickupLocation?: string;
+    shiprocketChannelId?: string;
+    shiprocketEnabled?: boolean;
   };
   const set: Record<string, unknown> = {};
   const unset: Record<string, 1> = {};
@@ -490,6 +509,12 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
   if (b.firebaseOtpOnSignup !== undefined) set['firebase.otpOnSignup'] = b.firebaseOtpOnSignup;
   if (b.firebaseOtpOnLogin !== undefined) set['firebase.otpOnLogin'] = b.firebaseOtpOnLogin;
   if (b.firebasePushEnabled !== undefined) set['firebase.pushEnabled'] = b.firebasePushEnabled;
+  if (b.shiprocketEmail !== undefined) set['shiprocket.email'] = b.shiprocketEmail;
+  if (b.shiprocketPassword) set['shiprocket.passwordEnc'] = seal(b.shiprocketPassword);
+  else if (b.clearShiprocketPassword) unset['shiprocket.passwordEnc'] = 1;
+  if (b.shiprocketPickupLocation !== undefined) set['shiprocket.pickupLocation'] = b.shiprocketPickupLocation;
+  if (b.shiprocketChannelId !== undefined) set['shiprocket.channelId'] = b.shiprocketChannelId;
+  if (b.shiprocketEnabled !== undefined) set['shiprocket.enabled'] = b.shiprocketEnabled;
   await Integrations.updateOne(
     { key: 'global' },
     { ...(Object.keys(set).length ? { $set: set } : {}), ...(Object.keys(unset).length ? { $unset: unset } : {}) },
@@ -513,6 +538,11 @@ export const testRazorpayAdmin = asyncHandler(async (_req, res) => {
   if (!keys) throw new ApiError(400, 'Save the Razorpay Key ID and Key Secret first.');
   await testRazorpayKeys(keys);
   ok(res, { ok: true, message: 'Razorpay accepted these keys.' });
+});
+
+/** Logs in to Shiprocket with the saved API credentials and lists the pickup locations found. */
+export const testShiprocketAdmin = asyncHandler(async (_req, res) => {
+  ok(res, await testShiprocket());
 });
 
 /* ============ Gallery and videos ============ */

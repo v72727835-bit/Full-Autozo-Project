@@ -1,4 +1,4 @@
-import { assignRiderToOrder, freeRidersForOrder, moveOrderStatus } from '../services/orderFlow.service';
+import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus } from '../services/orderFlow.service';
 import { FilterQuery, Types } from 'mongoose';
 import { Banner, IBanner } from '../models/Banner';
 import { riderFilter } from './adminExtra.controller';
@@ -390,6 +390,10 @@ export const freeRidersAdmin = asyncHandler(async (req, res) => {
 
 export const assignRiderAdmin = asyncHandler(async (req, res) => {
   ok(res, await assignRiderToOrder(String(req.params.id), req.body.rider, 'admin'));
+});
+
+export const assignShiprocketAdmin = asyncHandler(async (req, res) => {
+  ok(res, await assignToShiprocket(String(req.params.id), 'admin'));
 });
 
 /* ============ Shops ============ */

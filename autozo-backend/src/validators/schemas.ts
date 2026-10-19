@@ -672,6 +672,12 @@ export const integrationsBody = z.object({
   firebaseOtpOnSignup: z.boolean().optional(),
   firebaseOtpOnLogin: z.boolean().optional(),
   firebasePushEnabled: z.boolean().optional(),
+  shiprocketEmail: z.string().trim().max(200).optional(),
+  shiprocketPassword: z.string().trim().max(200).optional(),
+  clearShiprocketPassword: z.boolean().optional(),
+  shiprocketPickupLocation: z.string().trim().max(120).optional(),
+  shiprocketChannelId: z.string().trim().max(60).optional(),
+  shiprocketEnabled: z.boolean().optional(),
 });
 
 /* ---------- warehouse self-registration ---------- */

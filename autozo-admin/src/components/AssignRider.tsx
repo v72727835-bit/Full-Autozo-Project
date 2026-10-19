@@ -10,10 +10,16 @@ import { Button, ErrorBanner } from './ui';
 export default function AssignRider({
   load,
   assign,
+  assignShiprocket,
+  shiprocketReady,
   onAssigned,
 }: {
   load: () => Promise<FreeRider[]>;
   assign: (riderId: string) => Promise<void>;
+  /** When given, shows a "Send to Shiprocket" option alongside the rider list. */
+  assignShiprocket?: () => Promise<void>;
+  /** Whether Shiprocket is switched on; when false the courier button is disabled with a hint. */
+  shiprocketReady?: boolean;
   onAssigned: () => void;
 }) {
   const [riders, setRiders] = useState<FreeRider[] | null>(null);
@@ -42,12 +48,42 @@ export default function AssignRider({
     }
   };
 
+  const sendShiprocket = async () => {
+    if (!assignShiprocket) return;
+    setBusy('shiprocket');
+    setError('');
+    try {
+      await assignShiprocket();
+      onAssigned();
+    } catch (e) {
+      setError(getErrorMessage(e));
+    } finally {
+      setBusy('');
+    }
+  };
+
   return (
     <div style={{ margin: '14px 0' }}>
       <div className="stat-label" style={{ marginBottom: 6 }}>
-        Free riders — assign this order
+        Deliver this order
       </div>
       <ErrorBanner message={error} />
+
+      {assignShiprocket && (
+        <div className="row-flex" style={{ justifyContent: 'space-between', padding: '8px 10px', margin: '2px 0 10px', border: '1px solid var(--border)', borderRadius: 10, background: 'rgba(124,108,255,.06)' }}>
+          <span>
+            📦 <b>Shiprocket courier</b>{' '}
+            <span className="cell-muted">{shiprocketReady ? 'sync this order to Shiprocket for pickup' : 'switch on Shiprocket in Integrations first'}</span>
+          </span>
+          <Button size="sm" variant="secondary" disabled={!!busy || shiprocketReady === false} onClick={sendShiprocket}>
+            {busy === 'shiprocket' ? 'Sending…' : 'Send to Shiprocket'}
+          </Button>
+        </div>
+      )}
+
+      <div className="stat-label" style={{ marginBottom: 6 }}>
+        {assignShiprocket ? 'Or give it to a rider' : 'Free riders — assign this order'}
+      </div>
       {riders === null ? (
         <span className="cell-muted">Loading riders…</span>
       ) : riders.length === 0 ? (

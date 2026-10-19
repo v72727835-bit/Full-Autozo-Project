@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Linking, Modal, ScrollView, Text, Vibration, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
-import { assignRider, invoiceLinks, orderRiders, sellerOrders, setOrderStatus } from '../api/seller';
+import { assignRider, assignShiprocket, invoiceLinks, orderRiders, sellerOrders, setOrderStatus } from '../api/seller';
 import { colors } from '../theme';
 import { Order, OrderRiders } from '../types';
 import { Btn, Card, Center, Chips, Empty, ErrorText, H, Pill, STATUS_LABEL, SearchBar, money, row, statusTone, when } from '../ui';
@@ -77,10 +77,11 @@ export default function OrdersScreen({ onChanged }: { onChanged: (newCount: numb
         </View>
         <Text style={{ color: colors.muted, marginVertical: 8 }}>{o.items.map((i) => `${i.name} × ${i.quantity}`).join(', ')}</Text>
         {rider ? <Text style={{ color: colors.muted, marginBottom: 6 }}>Rider: {rider.name}{rider.phone ? ` · ${rider.phone}` : ''}</Text> : null}
+        {o.fulfillment === 'shiprocket' ? <Text style={{ color: colors.muted, marginBottom: 6 }}>📦 Shiprocket{o.shiprocket?.courier ? ` · ${o.shiprocket.courier}` : ''}{o.shiprocket?.awb ? ` · AWB ${o.shiprocket.awb}` : ''}</Text> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {next ? <Btn small title={next.label} disabled={busy === o._id} onPress={() => move(o, next.to)} /> : null}
           {o.status === 'placed' ? <Btn small tone="danger" title="Reject" disabled={busy === o._id} onPress={() => move(o, 'rejected')} /> : null}
-          {canAssign && !o.rider ? <Btn small tone="outline" title="Assign rider" onPress={() => setAssign(o)} /> : null}
+          {canAssign && !o.rider && o.fulfillment !== 'shiprocket' ? <Btn small tone="outline" title="Rider / Shiprocket" onPress={() => setAssign(o)} /> : null}
           {canAssign ? <Btn small tone="danger" title="Cancel" disabled={busy === o._id} onPress={() => move(o, 'cancelled')} /> : null}
           <Btn small tone="outline" title="Invoice" onPress={() => openBill(o, 'a4')} />
           <Btn small tone="outline" title="POS bill" onPress={() => openBill(o, 'pos')} />
@@ -128,13 +129,22 @@ function AssignModal({ order, onClose, onDone }: { order: Order; onClose: () => 
     setBusy(id); setError('');
     try { await assignRider(order._id, id); onDone(); } catch (e) { setError(getErrorMessage(e)); setBusy(''); }
   };
+  const sendShiprocket = async () => {
+    setBusy('shiprocket'); setError('');
+    try { await assignShiprocket(order._id); onDone(); } catch (e) { setError(getErrorMessage(e)); setBusy(''); }
+  };
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, maxHeight: '75%' }}>
-          <Text style={{ fontSize: 18, fontWeight: '800' }}>Choose a rider for #{order.orderNumber}</Text>
+          <Text style={{ fontSize: 18, fontWeight: '800' }}>Deliver order #{order.orderNumber}</Text>
           {data?.distanceKm != null ? <Text style={{ color: colors.muted, marginTop: 2 }}>{data.distanceKm.toFixed(1)} km away{data.longDistance ? ' · long-distance order' : ''}</Text> : null}
           <ErrorText message={error} />
+          <View style={[row, { paddingVertical: 10, marginTop: 6 }]}>
+            <View style={{ flex: 1 }}><Text style={{ fontWeight: '700' }}>📦 Shiprocket courier</Text><Text style={{ color: colors.muted, fontSize: 12.5 }}>Send this order for courier pickup</Text></View>
+            <Btn small title={busy === 'shiprocket' ? 'Sending…' : 'Send'} disabled={!!busy} onPress={sendShiprocket} />
+          </View>
+          <Text style={{ fontWeight: '800', marginTop: 6 }}>Or give it to a rider</Text>
           {!data ? <Center /> : (
             <ScrollView style={{ marginTop: 8 }}>
               {data.riders.length === 0 ? <Empty text="No riders in this warehouse yet. Add one from More → Riders." /> : data.riders.map((r) => (
