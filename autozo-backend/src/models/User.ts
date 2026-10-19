@@ -44,7 +44,7 @@ export interface IUser {
   /** The phone number was proven with a Firebase OTP. */
   phoneVerified?: boolean;
   /** Where a rider is paid their earnings. */
-  payout?: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string };
+  payout?: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string; rzpContactId?: string; rzpFundAccountId?: string; rzpFundFingerprint?: string };
   googleId?: string;
   facebookId?: string;
   /** Sellers: unique id shown on their dashboard and in the admin panel. */
@@ -143,6 +143,10 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       bankHolder: { type: String, trim: true },
       bankNumber: { type: String, trim: true },
       bankIfsc: { type: String, trim: true, uppercase: true },
+      // RazorpayX contact + fund account ids, cached so we don't recreate them on every payout.
+      rzpContactId: { type: String, trim: true },
+      rzpFundAccountId: { type: String, trim: true },
+      rzpFundFingerprint: { type: String, trim: true },
     },
     googleId: { type: String, unique: true, sparse: true },
     facebookId: { type: String, unique: true, sparse: true },

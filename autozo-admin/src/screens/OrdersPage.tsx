@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from '../navigation';
 import AssignRider from '../components/AssignRider';
-import { adminAssignRider, adminAssignShiprocket, adminFreeRiders, adminInvoiceLink, fetchOrder, fetchOrders, fetchShops, updateOrderStatus } from '../api/admin';
+import { adminAssignRider, adminAssignShiprocket, adminFreeRiders, adminInvoiceLink, fetchOrder, fetchOrders, fetchShops, refundOrder, updateOrderStatus } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { playChime } from '../lib/alerts';
 import { openBill } from '../lib/invoice';
@@ -377,6 +377,21 @@ function OrderDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
     }
   };
 
+  const refund = async () => {
+    if (!order || !window.confirm(`Refund ${order.total ? '₹' + order.total : 'this order'} back to the customer via Razorpay?`)) return;
+    setSaving(true);
+    setError('');
+    try {
+      await refundOrder(id);
+      onChanged();
+      load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!order) {
     return (
       <Modal title="Order" onClose={onClose}>
@@ -519,6 +534,12 @@ function OrderDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
         <Button size="sm" onClick={() => apply()} disabled={saving || nextStatus === order.status}>
           {saving ? 'Saving…' : 'Update'}
         </Button>
+        {order.paymentMethod === 'online' && order.paymentStatus !== 'refunded' && (
+          <Button size="sm" variant="secondary" onClick={refund} disabled={saving}>
+            {order.paymentStatus === 'refund_pending' ? 'Refund now' : 'Refund'}
+          </Button>
+        )}
+        {order.paymentStatus === 'refunded' && <span className="cell-muted">Refunded</span>}
       </div>
 
       <div className="stat-label" style={{ marginTop: 18, marginBottom: 6 }}>

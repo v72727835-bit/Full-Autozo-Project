@@ -46,6 +46,9 @@ router.post('/devices', protect, validate({ body: v.deviceBody }), device.regist
 router.delete('/devices', protect, validate({ body: v.deviceDeleteBody }), device.removeDevice);
 router.post('/auth/change-password', ...customerOnly, validate({ body: v.changePasswordBody }), auth.changePassword);
 
+/* ============ Webhooks (no login; verified by re-fetching from the provider) ============ */
+router.post('/webhooks/razorpayx', extra.razorpayxWebhook);
+
 /* ============ Public catalog (no login needed) ============ */
 router.get('/home', catalogCache, validate({ query: v.homeQuery }), catalog.home);
 router.get('/coverage', catalogCache, validate({ query: v.coverageQuery }), catalog.coverage);

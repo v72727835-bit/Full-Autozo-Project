@@ -183,6 +183,8 @@ export interface Withdrawal {
   method?: 'upi' | 'bank';
   destination?: string;
   reference?: string;
+  payoutId?: string;
+  payoutStatus?: string;
   note?: string;
   createdAt: string;
 }
@@ -217,6 +219,12 @@ export const fetchWithdrawals = async (status = 'pending', page = 1): Promise<{ 
 };
 export const markWithdrawal = async (id: string, status: 'paid' | 'rejected', reference?: string): Promise<void> => {
   await api.post(`/admin/withdrawals/${id}/mark`, { status, reference });
+};
+export const payWithdrawal = async (id: string): Promise<void> => {
+  await api.post(`/admin/withdrawals/${id}/pay`);
+};
+export const refundOrder = async (id: string): Promise<void> => {
+  await api.post(`/admin/orders/${id}/refund`);
 };
 export const giveRiderBonus = async (riderId: string, amount: number, note?: string): Promise<void> => {
   await api.post(`/admin/riders/${riderId}/bonus`, { amount, note });
@@ -397,7 +405,12 @@ export interface IntegrationsView {
   shiprocketPickupLocation: string;
   shiprocketChannelId: string;
   shiprocketEnabled: boolean;
-  live: { google: boolean; facebook: boolean; razorpay: boolean; firebaseOtp: boolean; firebasePush: boolean; shiprocket: boolean };
+  razorpayxAccountNumber: string;
+  razorpayxKeyId: string;
+  razorpayxSecretSaved: boolean;
+  razorpayxEnabled: boolean;
+  razorpayxAutoPayout: boolean;
+  live: { google: boolean; facebook: boolean; razorpay: boolean; firebaseOtp: boolean; firebasePush: boolean; shiprocket: boolean; razorpayx: boolean };
 }
 export const fetchIntegrations = async (): Promise<IntegrationsView> => (await api.get('/admin/integrations')).data.data;
 export const saveIntegrations = async (body: Record<string, unknown>): Promise<IntegrationsView> =>
@@ -412,6 +425,10 @@ export const testShiprocket = async (): Promise<string> => {
   const d = (await api.post('/admin/integrations/shiprocket/test')).data.data as { pickupLocations: string[] };
   const list = d.pickupLocations.length ? d.pickupLocations.join(', ') : 'none set up yet';
   return `Shiprocket accepted these credentials. Pickup locations found: ${list}.`;
+};
+export const testRazorpayx = async (): Promise<string> => {
+  const d = (await api.post('/admin/integrations/razorpayx/test')).data.data as { accountNumber: string };
+  return `RazorpayX accepted these keys for account ${d.accountNumber}. Payouts are ready.`;
 };
 
 /* ---------- warehouse registrations ---------- */

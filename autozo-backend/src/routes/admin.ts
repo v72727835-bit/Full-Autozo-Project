@@ -34,6 +34,7 @@ router.put('/integrations', validate({ body: v.integrationsBody }), extra.update
 router.post('/integrations/razorpay/test', extra.testRazorpayAdmin);
 router.post('/integrations/firebase/test', extra.testFirebaseAdmin);
 router.post('/integrations/shiprocket/test', extra.testShiprocketAdmin);
+router.post('/integrations/razorpayx/test', extra.testRazorpayxAdmin);
 router.get('/standard-categories', extra.listStandardCategories);
 router.post('/standard-categories', validate({ body: v.standardCategoryBody }), extra.createStandardCategory);
 router.patch('/standard-categories/:id', validate({ params: v.idParam, body: v.standardCategoryUpdateBody }), extra.updateStandardCategory);
@@ -67,6 +68,7 @@ router.post('/orders/:id/invoice-link', validate({ params: v.idParam }), invoice
 router.get('/orders/:id/free-riders', validate({ params: v.idParam }), admin.freeRidersAdmin);
 router.post('/orders/:id/assign-rider', validate({ params: v.idParam, body: v.assignRiderBody }), admin.assignRiderAdmin);
 router.post('/orders/:id/assign-shiprocket', validate({ params: v.idParam }), admin.assignShiprocketAdmin);
+router.post('/orders/:id/refund', validate({ params: v.idParam }), admin.refundOrderAdmin);
 router.patch('/orders/:id/status', validate({ params: v.idParam, body: v.adminOrderStatusBody }), admin.updateOrderStatus);
 
 router.get('/shops', validate({ query: v.pagination }), admin.listShopsAdmin);
@@ -118,6 +120,7 @@ router.post('/riders/:id/settle-cod', validate({ params: v.idParam }), extra.set
 router.get('/riders/:id/profile', validate({ params: v.idParam }), extra.getRiderProfileAdmin);
 router.get('/withdrawals', validate({ query: v.withdrawalsQuery }), extra.listWithdrawals);
 router.post('/withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), extra.markWithdrawal);
+router.post('/withdrawals/:id/pay', validate({ params: v.idParam }), extra.payWithdrawalAdmin);
 router.post('/cash-submits/:id/confirm', validate({ params: v.idParam }), extra.confirmCashSubmit);
 router.post('/riders/:id/bonus', validate({ params: v.idParam, body: v.walletAdjustBody }), extra.adjustRiderWallet);
 
