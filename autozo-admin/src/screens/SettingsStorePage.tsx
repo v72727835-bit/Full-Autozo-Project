@@ -72,6 +72,7 @@ export default function SettingsStorePage() {
       <CodCard settings={settings} subCategories={subCategories} onSave={save} />
       <RiderCard settings={settings} onSave={save} />
       <RiderPayCard settings={settings} onSave={save} />
+      <SellerPayCard settings={settings} onSave={save} />
       <CompanyCard settings={settings} onSave={save} />
       <GstCard settings={settings} onSave={save} />
       <SocialCard settings={settings} onSave={save} />
@@ -459,6 +460,40 @@ function RiderPayCard({ settings, onSave }: { settings: Settings; onSave: (patch
           <input type="number" min={0} value={perKmBeyond} onChange={(e) => setPerKmBeyond(e.target.value)} />
         </Field>
         <Field label="Smallest a rider can withdraw (₹)">
+          <input type="number" min={0} value={minWithdraw} onChange={(e) => setMinWithdraw(e.target.value)} />
+        </Field>
+      </div>
+      <div className="modal-actions">
+        <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+      </div>
+    </div>
+  );
+}
+
+function SellerPayCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
+  const sp = settings.sellerPay ?? { commissionPct: 10, minWithdraw: 500 };
+  const [commissionPct, setCommissionPct] = useState(String(sp.commissionPct));
+  const [minWithdraw, setMinWithdraw] = useState(String(sp.minWithdraw));
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    setSaving(true);
+    await onSave({ sellerPay: { commissionPct: Number(commissionPct) || 0, minWithdraw: Number(minWithdraw) || 0 } });
+    setSaving(false);
+  };
+
+  return (
+    <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <h2 className="card-title">Seller earnings &amp; commission</h2>
+      <div className="page-subtitle" style={{ marginBottom: 12 }}>
+        When an order is delivered, each seller earns the value of their items in it minus this commission. Sellers see their sales,
+        commission and balance in their panel and withdraw it to their UPI / bank; you verify and pay from the Payouts page.
+      </div>
+      <div className="field-row">
+        <Field label="Commission you keep (% of item sales)">
+          <input type="number" min={0} max={100} value={commissionPct} onChange={(e) => setCommissionPct(e.target.value)} />
+        </Field>
+        <Field label="Smallest a seller can withdraw (₹)">
           <input type="number" min={0} value={minWithdraw} onChange={(e) => setMinWithdraw(e.target.value)} />
         </Field>
       </div>

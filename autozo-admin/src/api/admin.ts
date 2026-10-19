@@ -340,6 +340,59 @@ export const sellerUploadImages = async (files: File[]): Promise<string[]> => {
   return (await api.post('/seller/uploads/images', body)).data.data.urls;
 };
 
+/* ---------- seller earnings wallet (seller's own session) ---------- */
+export interface SellerWallet {
+  balance: number;
+  netEarned: number;
+  grossSales: number;
+  commissionTotal: number;
+  pendingWithdraw: number;
+  paidOut: number;
+  minWithdraw: number;
+  commissionPct: number;
+  account: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string } | null;
+}
+export interface SellerTxnRow {
+  _id: string;
+  kind: 'earning' | 'adjustment' | 'withdrawal';
+  amount: number;
+  status: 'completed' | 'pending' | 'paid' | 'rejected';
+  gross?: number; commission?: number; commissionPct?: number;
+  method?: 'upi' | 'bank'; destination?: string; reference?: string; payoutStatus?: string; note?: string; createdAt: string;
+}
+export const sellerWallet = async (): Promise<SellerWallet> => (await api.get('/seller/wallet')).data.data;
+export const sellerWalletTxns = (params: { page?: number; limit?: number; kind?: string }) => paged<SellerTxnRow>('/seller/wallet/txns', params);
+export const sellerSaveWalletAccount = async (body: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string }): Promise<void> => {
+  await api.post('/seller/wallet/account', body);
+};
+export const sellerRequestWithdraw = async (amount: number, method: 'upi' | 'bank'): Promise<void> => {
+  await api.post('/seller/wallet/withdraw', { amount, method });
+};
+
+/* ---------- seller payouts (super admin) ---------- */
+export interface SellerWithdrawal {
+  _id: string;
+  seller?: { _id: string; name: string; phone: string; sellerId?: string; payout?: { upi?: string; bankNumber?: string; bankIfsc?: string; bankHolder?: string } } | string;
+  amount: number;
+  status: 'pending' | 'paid' | 'rejected';
+  method?: 'upi' | 'bank';
+  destination?: string;
+  reference?: string;
+  payoutId?: string;
+  payoutStatus?: string;
+  createdAt: string;
+}
+export const fetchSellerWithdrawals = async (status = 'pending', page = 1): Promise<{ items: SellerWithdrawal[]; meta: { total: number; totalPages: number; hasNext: boolean; pendingTotal: number } }> => {
+  const { data } = await api.get('/admin/seller-withdrawals', { params: { status, page, limit: 20 } });
+  return { items: data.data, meta: data.meta };
+};
+export const markSellerWithdrawal = async (id: string, status: 'paid' | 'rejected', reference?: string): Promise<void> => {
+  await api.post(`/admin/seller-withdrawals/${id}/mark`, { status, reference });
+};
+export const paySellerWithdrawal = async (id: string): Promise<void> => {
+  await api.post(`/admin/seller-withdrawals/${id}/pay`);
+};
+
 /* ---------- assigning a free rider ---------- */
 export interface FreeRider { _id: string; name: string; phone: string; lastSeenAt?: string }
 export const adminFreeRiders = async (orderId: string): Promise<FreeRider[]> => (await api.get(`/admin/orders/${orderId}/free-riders`)).data.data;

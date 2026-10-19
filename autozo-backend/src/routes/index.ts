@@ -106,6 +106,10 @@ router.get('/seller/orders/:id/riders', ...sellerOnly, validate({ params: v.idPa
 router.get('/seller/orders/:id/free-riders', ...sellerOnly, validate({ params: v.idParam }), seller.myOrderFreeRiders);
 router.post('/seller/orders/:id/assign-rider', ...sellerOnly, validate({ params: v.idParam, body: v.assignRiderBody }), seller.assignRiderMyOrder);
 router.post('/seller/orders/:id/assign-shiprocket', ...sellerOnly, validate({ params: v.idParam }), seller.assignShiprocketMyOrder);
+router.get('/seller/wallet', ...sellerOnly, seller.getMyWallet);
+router.get('/seller/wallet/txns', ...sellerOnly, validate({ query: v.walletTxnsQuery }), seller.listMyWalletTxns);
+router.post('/seller/wallet/account', ...sellerOnly, validate({ body: v.walletAccountBody }), seller.saveMyAccount);
+router.post('/seller/wallet/withdraw', ...sellerOnly, validate({ body: v.withdrawBody }), seller.requestMyWithdraw);
 router.patch('/seller/products/:id', ...sellerOnly, invalidateOnWrite, validate({ params: v.idParam, body: v.sellerProductUpdateBody }), seller.updateMyProduct);
 
 /* ============ Reviews (login) ============ */

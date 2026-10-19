@@ -448,6 +448,12 @@ export const adminSettingsBody = z
         minWithdraw: z.coerce.number().min(0).max(100_000),
       })
       .partial(),
+    sellerPay: z
+      .object({
+        commissionPct: z.coerce.number().min(0).max(100),
+        minWithdraw: z.coerce.number().min(0).max(1_000_000),
+      })
+      .partial(),
     appLinks: z
       .object({ android: z.string().trim().max(500), ios: z.string().trim().max(500), rider: z.string().trim().max(500), warehouse: z.string().trim().max(500) })
       .partial(),

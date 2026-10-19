@@ -13,6 +13,9 @@ import { created, ok, pageMeta } from '../utils/response';
 import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus, ridersForOrder } from '../services/orderFlow.service';
 import { ONLINE_WINDOW_MS } from '../services/rider.service';
 import { signAccessToken, signRefreshToken, sha256 } from '../utils/jwt';
+import { SellerTxn } from '../models/SellerTxn';
+import { loadSettings } from '../services/settings.service';
+import { sellerMinWithdraw, sellerWalletSummary, syncSellerPayout } from '../services/sellerPay.service';
 
 const escapeRegex = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -215,6 +218,59 @@ export const assignRiderMyOrder = asyncHandler(async (req, res) => {
 export const assignShiprocketMyOrder = asyncHandler(async (req, res) => {
   await assertMyOrder(req.user!.id, String(req.params.id));
   ok(res, await assignToShiprocket(String(req.params.id), 'seller'));
+});
+
+/* ============ Seller earnings wallet ============ */
+
+/** Top of the earnings screen: gross sales, commission, net balance and the saved payout account. */
+export const getMyWallet = asyncHandler(async (req, res) => {
+  const id = req.user!.id;
+  // Refresh any in-flight payout so the balance is current.
+  const inflight = await SellerTxn.findOne({ seller: id, kind: 'withdrawal', status: 'pending', payoutId: { $exists: true } }).select('_id').lean();
+  if (inflight) await syncSellerPayout(inflight._id).catch(() => undefined);
+  const { settings } = await loadSettings();
+  const [sum, me] = await Promise.all([sellerWalletSummary(id), User.findById(id).select('payout').lean()]);
+  ok(res, { ...sum, minWithdraw: sellerMinWithdraw(settings), commissionPct: settings.sellerPay?.commissionPct ?? 10, account: me?.payout ?? null });
+});
+
+/** The seller's earnings passbook. */
+export const listMyWalletTxns = asyncHandler(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const filter: Record<string, unknown> = { seller: req.user!.id };
+  if (typeof req.query.kind === 'string') filter.kind = req.query.kind;
+  const [rows, total] = await Promise.all([
+    SellerTxn.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    SellerTxn.countDocuments(filter),
+  ]);
+  ok(res, rows, pageMeta(page, limit, total));
+});
+
+/** Save or update where the seller gets paid (shared with the user's payout fields). */
+export const saveMyAccount = asyncHandler(async (req, res) => {
+  const { upi, bankHolder, bankNumber, bankIfsc } = req.body as { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string };
+  if (!upi && !(bankHolder && bankNumber && bankIfsc)) throw new ApiError(400, 'Add a UPI id, or the full bank account (holder name, number and IFSC).');
+  const payout = { upi: upi || undefined, bankHolder: bankHolder || undefined, bankNumber: bankNumber || undefined, bankIfsc: bankIfsc || undefined };
+  await User.updateOne({ _id: req.user!.id }, { $set: { payout } });
+  ok(res, payout);
+});
+
+/** The seller asks to withdraw part of their balance; the super admin verifies and pays it. */
+export const requestMyWithdraw = asyncHandler(async (req, res) => {
+  const { amount, method } = req.body as { amount: number; method: 'upi' | 'bank' };
+  const { settings } = await loadSettings();
+  const me = await User.findById(req.user!.id).select('payout').lean();
+  const payout = me?.payout;
+  const destination = method === 'upi' ? payout?.upi : payout?.bankNumber ? `${payout.bankHolder ?? ''} · ${payout.bankNumber} · ${payout.bankIfsc ?? ''}` : undefined;
+  if (!destination) throw new ApiError(400, method === 'upi' ? 'Add your UPI id first.' : 'Add your bank account first.');
+  const open = await SellerTxn.exists({ seller: req.user!.id, kind: 'withdrawal', status: 'pending' });
+  if (open) throw new ApiError(409, 'You already have a withdrawal waiting for approval.');
+  const min = sellerMinWithdraw(settings);
+  const sum = await sellerWalletSummary(req.user!.id);
+  if (amount < min) throw new ApiError(400, `The smallest withdrawal is ₹${min}.`);
+  if (amount > sum.balance) throw new ApiError(400, `You can withdraw up to ₹${Math.floor(sum.balance)}.`);
+  const txn = await SellerTxn.create({ seller: req.user!.id, kind: 'withdrawal', amount: Math.round(amount), status: 'pending', method, destination, note: 'Withdrawal request' });
+  ok(res, txn, undefined, 201);
 });
 
 /** The category tree the seller picks from: main → sub → child. */

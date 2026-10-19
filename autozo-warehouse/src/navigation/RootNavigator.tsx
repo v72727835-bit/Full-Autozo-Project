@@ -6,7 +6,7 @@ import { CrossFade, FadeSlide, Pulse } from '../components/anim';
 const LOGO = require('../assets/logo-mark.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
-import { AccountScreen, CategoriesScreen, CustomersScreen, RidersScreen, StoreScreen } from '../screens/MoreScreens';
+import { AccountScreen, CategoriesScreen, CustomersScreen, EarningsScreen, RidersScreen, StoreScreen } from '../screens/MoreScreens';
 import DashboardScreen from '../screens/DashboardScreen';
 import InventoryScreen from '../screens/InventoryScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -16,7 +16,7 @@ import { accents, colors, softShadow } from '../theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 type Tab = 'dashboard' | 'orders' | 'products' | 'inventory' | 'more';
-type MoreKey = 'riders' | 'customers' | 'categories' | 'store' | 'account';
+type MoreKey = 'riders' | 'customers' | 'earnings' | 'categories' | 'store' | 'account';
 
 const TABS: { key: Tab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Home', icon: 'grid-outline' },
@@ -28,6 +28,7 @@ const TABS: { key: Tab; label: string; icon: IconName }[] = [
 const MORE: { key: MoreKey; label: string; icon: IconName }[] = [
   { key: 'riders', label: 'Riders', icon: 'bicycle-outline' },
   { key: 'customers', label: 'Customers', icon: 'people-outline' },
+  { key: 'earnings', label: 'Earnings', icon: 'wallet-outline' },
   { key: 'categories', label: 'Categories', icon: 'layers-outline' },
   { key: 'store', label: 'Store settings', icon: 'storefront-outline' },
   { key: 'account', label: 'My account', icon: 'shield-checkmark-outline' },
@@ -46,6 +47,7 @@ function Shell() {
   else if (tab === 'inventory') body = <InventoryScreen />;
   else if (more === 'riders') body = <RidersScreen />;
   else if (more === 'customers') body = <CustomersScreen />;
+  else if (more === 'earnings') body = <EarningsScreen />;
   else if (more === 'categories') body = <CategoriesScreen />;
   else if (more === 'store') body = <StoreScreen />;
   else if (more === 'account') body = <AccountScreen />;

@@ -44,6 +44,20 @@ export async function uploadImages(files: { uri: string; name: string; type: str
   return data.data.urls;
 }
 
+export interface SellerWallet {
+  balance: number; netEarned: number; grossSales: number; commissionTotal: number; pendingWithdraw: number; paidOut: number;
+  minWithdraw: number; commissionPct: number;
+  account: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string } | null;
+}
+export interface SellerTxnRow {
+  _id: string; kind: 'earning' | 'adjustment' | 'withdrawal'; amount: number; status: string;
+  gross?: number; commission?: number; note?: string; createdAt: string;
+}
+export const sellerWallet = async (): Promise<SellerWallet> => (await api.get('/seller/wallet')).data.data;
+export const walletTxns = (p: { page?: number; limit?: number }) => paged<SellerTxnRow>('/seller/wallet/txns', p);
+export const saveWalletAccount = async (body: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string }): Promise<void> => { await api.post('/seller/wallet/account', body); };
+export const requestWithdraw = async (amount: number, method: 'upi' | 'bank'): Promise<void> => { await api.post('/seller/wallet/withdraw', { amount, method }); };
+
 export const sellerRiders = async (): Promise<WhRider[]> => (await api.get('/seller/riders')).data.data;
 export const createRider = async (body: { name: string; phone: string; password: string; warehouses?: string[] }): Promise<void> => { await api.post('/seller/riders', body); };
 export const sellerCustomers = (p: { page?: number; limit?: number; q?: string }) => paged<Customer>('/seller/customers', p);

@@ -86,6 +86,48 @@ const DONE: Record<string, 'paid' | 'rejected' | null> = {
   failed: 'rejected',
 };
 
+/** How a payout status maps onto our held/settled states, for both rider and seller ledgers. */
+export const payoutSettlement = (status: string): 'paid' | 'rejected' | null => DONE[status] ?? null;
+
+/** Create a RazorpayX payout to any user's saved UPI/bank. Returns the payout id and status. */
+export async function createUserPayout(
+  userId: string | Types.ObjectId,
+  amountRupees: number,
+  method: 'upi' | 'bank',
+  referenceId: string,
+  narration: string,
+): Promise<{ payoutId: string; status: string }> {
+  const cfg = await razorpayxConfig();
+  if (!cfg) throw new ApiError(400, 'RazorpayX payouts are not switched on.');
+  const fundAccountId = await ensureFundAccount(String(userId), method, cfg);
+  const payout = await call<{ id: string; status: string }>(
+    'POST',
+    '/payouts',
+    {
+      account_number: cfg.accountNumber,
+      fund_account_id: fundAccountId,
+      amount: Math.round(amountRupees * 100),
+      currency: 'INR',
+      mode: method === 'upi' ? 'UPI' : 'IMPS',
+      purpose: 'payout',
+      queue_if_low_balance: true,
+      reference_id: referenceId,
+      narration,
+    },
+    cfg,
+    `pay_${referenceId}`,
+  );
+  return { payoutId: payout.id, status: payout.status };
+}
+
+/** Read a payout's current status from RazorpayX (used to settle a held withdrawal). */
+export async function fetchPayoutStatus(payoutId: string): Promise<string | null> {
+  const cfg = await razorpayxConfig();
+  if (!cfg) return null;
+  const payout = await call<{ status: string }>('GET', `/payouts/${payoutId}`, undefined, cfg);
+  return payout.status;
+}
+
 /**
  * Create a RazorpayX payout for a pending withdrawal and record its id/status.
  * Leaves the withdrawal `pending` while the payout is still in flight; a later

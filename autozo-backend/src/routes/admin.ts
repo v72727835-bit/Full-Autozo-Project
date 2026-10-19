@@ -121,6 +121,9 @@ router.get('/riders/:id/profile', validate({ params: v.idParam }), extra.getRide
 router.get('/withdrawals', validate({ query: v.withdrawalsQuery }), extra.listWithdrawals);
 router.post('/withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), extra.markWithdrawal);
 router.post('/withdrawals/:id/pay', validate({ params: v.idParam }), extra.payWithdrawalAdmin);
+router.get('/seller-withdrawals', validate({ query: v.withdrawalsQuery }), extra.listSellerWithdrawals);
+router.post('/seller-withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), extra.markSellerWithdrawal);
+router.post('/seller-withdrawals/:id/pay', validate({ params: v.idParam }), extra.paySellerWithdrawalAdmin);
 router.post('/cash-submits/:id/confirm', validate({ params: v.idParam }), extra.confirmCashSubmit);
 router.post('/riders/:id/bonus', validate({ params: v.idParam, body: v.walletAdjustBody }), extra.adjustRiderWallet);
 

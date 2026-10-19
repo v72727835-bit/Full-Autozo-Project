@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { askNotificationPermission, notifyNewOrders, playChime } from '../lib/alerts';
 import { SellerProfile } from '../types';
 import { CategoriesView, CustomersView, RidersView } from './Views';
+import Earnings from './Earnings';
 import Dashboard from './Dashboard';
 import Inventory from './Inventory';
 import Orders from './Orders';
@@ -89,6 +90,7 @@ export default function SellerApp() {
       items: [
         { to: '/riders', label: 'Riders', icon: <IconRider /> },
         { to: '/customers', label: 'Customers', icon: <IconUsers /> },
+        { to: '/earnings', label: 'Earnings', icon: <IconReceipt /> },
       ],
     },
     {
@@ -123,6 +125,9 @@ export default function SellerApp() {
       break;
     case '/customers':
       page = <CustomersView />;
+      break;
+    case '/earnings':
+      page = <Earnings />;
       break;
     case '/store':
       page = <StoreView />;

@@ -290,6 +290,10 @@ export interface Settings {
     minPerOrder: number;
     minWithdraw: number;
   };
+  sellerPay?: {
+    commissionPct: number;
+    minWithdraw: number;
+  };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   company?: CompanyDetails;
   gst?: { defaultRate: number; deliveryRate: number; homeState: string };
