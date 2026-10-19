@@ -18,6 +18,8 @@ import { getIntegrations, invalidateIntegrations } from '../services/integration
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
 import { testShiprocket } from '../services/shiprocket.service';
 import { payoutForWithdrawal, razorpayxConfig, syncPayout, syncPayoutById, testRazorpayx } from '../services/razorpayx.service';
+import { SellerTxn } from '../models/SellerTxn';
+import { paySellerWithdrawal, syncSellerPayout, syncSellerPayoutById } from '../services/sellerPay.service';
 import { seal } from '../utils/secretBox';
 import { checkServiceAccount, pushToUsers } from '../services/firebase.service';
 import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
@@ -331,8 +333,51 @@ export const testRazorpayxAdmin = asyncHandler(async (_req, res) => {
 /** RazorpayX payout webhook: we re-fetch the payout's real status rather than trusting the body. */
 export const razorpayxWebhook = asyncHandler(async (req, res) => {
   const payoutId = (req.body as { payload?: { payout?: { entity?: { id?: string } } } })?.payload?.payout?.entity?.id;
-  if (payoutId) await syncPayoutById(payoutId).catch(() => undefined);
+  if (payoutId) {
+    await syncPayoutById(payoutId).catch(() => undefined); // a rider payout…
+    await syncSellerPayoutById(payoutId).catch(() => undefined); // …or a seller payout
+  }
   ok(res, { received: true });
+});
+
+/* ============ Seller payouts ============ */
+
+/** Pending and recent seller withdrawal requests across all sellers. */
+export const listSellerWithdrawals = asyncHandler(async (req, res) => {
+  const status = typeof req.query.status === 'string' ? req.query.status : 'pending';
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const filter: Record<string, unknown> = { kind: 'withdrawal' };
+  if (status && status !== 'all') filter.status = status;
+  const inflight = await SellerTxn.find({ kind: 'withdrawal', status: 'pending', payoutId: { $exists: true } }).select('_id').limit(25).lean();
+  if (inflight.length) await Promise.all(inflight.map((t) => syncSellerPayout(t._id).catch(() => undefined)));
+  const [rows, total] = await Promise.all([
+    SellerTxn.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).populate('seller', 'name phone sellerId payout').lean(),
+    SellerTxn.countDocuments(filter),
+  ]);
+  const pendingTotal = (await SellerTxn.aggregate<{ t: number }>([{ $match: { kind: 'withdrawal', status: 'pending' } }, { $group: { _id: null, t: { $sum: '$amount' } } }]))[0]?.t ?? 0;
+  ok(res, rows, { ...pageMeta(page, limit, total), pendingTotal });
+});
+
+/** Verify a seller withdrawal and either mark it paid (paid by hand) or reject it (returns the balance). */
+export const markSellerWithdrawal = asyncHandler(async (req, res) => {
+  const { status, reference } = req.body as { status: 'paid' | 'rejected'; reference?: string };
+  const txn = await SellerTxn.findOne({ _id: req.params.id, kind: 'withdrawal' });
+  if (!txn) throw new ApiError(404, 'Withdrawal not found');
+  if (txn.status !== 'pending') throw new ApiError(409, 'This withdrawal was already handled.');
+  txn.status = status;
+  if (reference) txn.reference = reference;
+  await txn.save();
+  ok(res, txn);
+});
+
+/** Verify a seller withdrawal and pay it out automatically through RazorpayX. */
+export const paySellerWithdrawalAdmin = asyncHandler(async (req, res) => {
+  const cfg = await razorpayxConfig();
+  if (!cfg) throw new ApiError(400, 'RazorpayX payouts are not switched on. Set it up in Integrations, or use “Mark paid” after paying by hand.');
+  await paySellerWithdrawal(String(req.params.id));
+  const txn = await SellerTxn.findById(req.params.id).lean();
+  ok(res, txn);
 });
 
 /** Confirm a rider's cash submission: clear the COD they owe and mark it confirmed. */

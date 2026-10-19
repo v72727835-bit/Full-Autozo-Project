@@ -8,6 +8,7 @@ import { ok, pageMeta } from '../utils/response';
 import { RequestHandler } from 'express';
 import { autoPauseIfOverLimit, codSummary } from '../services/rider.service';
 import { creditDeliveryEarning } from '../services/riderPay.service';
+import { creditSellerEarnings } from '../services/sellerPay.service';
 import { loadSettings } from '../services/settings.service';
 
 /** Every rider request marks them online (green dot in the admin panel). */
@@ -101,6 +102,8 @@ export const deliverOrder = asyncHandler(async (req, res) => {
   await order.save();
   // The rider earns their delivery pay the moment the order is handed over.
   await creditDeliveryEarning(order._id).catch(() => undefined);
+  // Sellers earn their net (item sales minus commission) on the same delivery.
+  await creditSellerEarnings(order._id).catch(() => undefined);
   const result = await Order.findById(order._id).select('-statusHistory -deliveryOtp').populate('shop', 'name').populate('user', 'name phone').lean();
   // Cash on delivery: pause the rider once their unsubmitted cash crosses the limit.
   if (order.paymentMethod === 'cod') await autoPauseIfOverLimit(req.user!.id);

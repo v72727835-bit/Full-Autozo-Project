@@ -42,6 +42,13 @@ export interface ISettings {
     /** Smallest amount a rider may withdraw at once. */
     minWithdraw: number;
   };
+  /** How much a seller earns: their item sales minus the super admin's commission. */
+  sellerPay: {
+    /** Commission the super admin keeps, as a percent of item sales (not delivery fee). */
+    commissionPct: number;
+    /** Smallest amount a seller may withdraw at once. */
+    minWithdraw: number;
+  };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   /** Company details printed on every bill (logo, signature, seal, GSTIN, declaration...). */
   company: {
@@ -113,6 +120,10 @@ const settingsSchema = new Schema<ISettings>(
       perKmBeyond: { type: Number, default: 6, min: 0 },
       minPerOrder: { type: Number, default: 15, min: 0 },
       minWithdraw: { type: Number, default: 100, min: 0 },
+    },
+    sellerPay: {
+      commissionPct: { type: Number, default: 10, min: 0, max: 100 },
+      minWithdraw: { type: Number, default: 500, min: 0 },
     },
     appLinks: { android: String, ios: String, rider: String, warehouse: String },
     company: {

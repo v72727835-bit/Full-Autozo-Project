@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, ScrollView, Switch, Text, View } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { getErrorMessage } from '../api/client';
-import { changePassword, createRider, sellerCategories, sellerCustomers, sellerRiders, sellerShops, updateShop, uploadImages } from '../api/seller';
+import { changePassword, createRider, requestWithdraw, saveWalletAccount, sellerCategories, sellerCustomers, sellerRiders, sellerShops, sellerWallet, updateShop, uploadImages, walletTxns, SellerTxnRow, SellerWallet } from '../api/seller';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 import { Category, Customer, Shop, WhRider } from '../types';
@@ -213,6 +213,92 @@ function ShopCard({ shop }: { shop: Shop }) {
       <Input label="GSTIN (printed on your bills)" value={f.gstin} onChangeText={(v) => set('gstin', v.toUpperCase().slice(0, 15))} placeholder="09ABCDE1234F1Z5" />
       <Btn title={busy ? 'Saving…' : 'Save store settings'} onPress={save} disabled={busy} />
     </Card>
+  );
+}
+
+/* ---------------- Earnings ---------------- */
+export function EarningsScreen() {
+  const [w, setW] = useState<SellerWallet | null>(null);
+  const [rows, setRows] = useState<SellerTxnRow[]>([]);
+  const [error, setError] = useState('');
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState('');
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState<'upi' | 'bank'>('upi');
+  const [acct, setAcct] = useState({ upi: '', bankHolder: '', bankNumber: '', bankIfsc: '' });
+
+  const load = useCallback(() => {
+    sellerWallet().then((d) => {
+      setW(d);
+      setAcct({ upi: d.account?.upi ?? '', bankHolder: d.account?.bankHolder ?? '', bankNumber: d.account?.bankNumber ?? '', bankIfsc: d.account?.bankIfsc ?? '' });
+      setError('');
+    }).catch((e) => setError(getErrorMessage(e)));
+    walletTxns({ page: 1, limit: 30 }).then(({ items }) => setRows(items)).catch(() => undefined);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const saveAcct = async () => {
+    setBusy('acct'); setMsg(''); setError('');
+    try { await saveWalletAccount({ upi: acct.upi || undefined, bankHolder: acct.bankHolder || undefined, bankNumber: acct.bankNumber || undefined, bankIfsc: acct.bankIfsc || undefined }); setMsg('Payout account saved.'); load(); }
+    catch (e) { setError(getErrorMessage(e)); } finally { setBusy(''); }
+  };
+  const withdraw = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return setError('Enter an amount to withdraw.');
+    setBusy('wd'); setMsg(''); setError('');
+    try { await requestWithdraw(amt, method); setMsg('Withdrawal requested. The Autozo team will verify and pay it.'); setAmount(''); load(); }
+    catch (e) { setError(getErrorMessage(e)); } finally { setBusy(''); }
+  };
+
+  if (!w) return error ? <Center><ErrorText message={error} /></Center> : <Center />;
+  return (
+    <ScrollView keyboardShouldPersistTaps="handled">
+      <H title="Earnings" sub={`Your item sales minus the ${w.commissionPct}% platform commission. Withdraw to your UPI/bank; the Autozo team verifies and pays.`} center />
+      <View style={{ padding: 16, paddingTop: 8, gap: 12 }}>
+        <ErrorText message={error} />
+        {msg ? <Text style={{ color: colors.primary, fontWeight: '700' }}>{msg}</Text> : null}
+
+        <Card>
+          <View style={[row, { justifyContent: 'space-between' }]}><Text style={{ color: colors.muted }}>Balance to withdraw</Text><Text style={{ fontWeight: '800', fontSize: 18 }}>{money(w.balance)}</Text></View>
+          <View style={[row, { justifyContent: 'space-between', marginTop: 6 }]}><Text style={{ color: colors.muted }}>Net earned (all time)</Text><Text style={{ fontWeight: '700' }}>{money(w.netEarned)}</Text></View>
+          <View style={[row, { justifyContent: 'space-between', marginTop: 6 }]}><Text style={{ color: colors.muted }}>Gross sales</Text><Text style={{ fontWeight: '700' }}>{money(w.grossSales)}</Text></View>
+          <View style={[row, { justifyContent: 'space-between', marginTop: 6 }]}><Text style={{ color: colors.muted }}>Commission kept</Text><Text style={{ fontWeight: '700' }}>{money(w.commissionTotal)}</Text></View>
+          <View style={[row, { justifyContent: 'space-between', marginTop: 6 }]}><Text style={{ color: colors.muted }}>Waiting / paid out</Text><Text style={{ fontWeight: '700' }}>{money(w.pendingWithdraw)} / {money(w.paidOut)}</Text></View>
+        </Card>
+
+        <Card>
+          <Text style={{ fontWeight: '800', marginBottom: 8 }}>Withdraw (min {money(w.minWithdraw)})</Text>
+          <Input label="Amount (₹)" value={amount} onChangeText={setAmount} keyboardType="numeric" />
+          <View style={[row, { gap: 8, marginVertical: 8 }]}>
+            <Btn small title={`UPI${acct.upi ? ' ✓' : ''}`} tone={method === 'upi' ? 'primary' : 'outline'} onPress={() => setMethod('upi')} />
+            <Btn small title={`Bank${acct.bankNumber ? ' ✓' : ''}`} tone={method === 'bank' ? 'primary' : 'outline'} onPress={() => setMethod('bank')} />
+          </View>
+          <Btn title={busy === 'wd' ? 'Requesting…' : 'Request withdrawal'} disabled={busy === 'wd' || w.balance < w.minWithdraw} onPress={withdraw} />
+        </Card>
+
+        <Card>
+          <Text style={{ fontWeight: '800', marginBottom: 8 }}>Payout account</Text>
+          <Input label="UPI id (name@bank)" value={acct.upi} onChangeText={(v) => setAcct({ ...acct, upi: v })} />
+          <Input label="Account holder name" value={acct.bankHolder} onChangeText={(v) => setAcct({ ...acct, bankHolder: v })} />
+          <Input label="Account number" value={acct.bankNumber} onChangeText={(v) => setAcct({ ...acct, bankNumber: v })} keyboardType="numeric" />
+          <Input label="IFSC" value={acct.bankIfsc} onChangeText={(v) => setAcct({ ...acct, bankIfsc: v.toUpperCase() })} />
+          <Btn title={busy === 'acct' ? 'Saving…' : 'Save account'} tone="outline" disabled={busy === 'acct'} onPress={saveAcct} />
+        </Card>
+
+        <Text style={{ fontWeight: '800', marginTop: 4 }}>Passbook</Text>
+        {rows.length === 0 ? <Empty text="No entries yet. Earnings appear here when your orders are delivered." /> : rows.map((t) => (
+          <Card key={t._id}>
+            <View style={[row, { justifyContent: 'space-between' }]}>
+              <Text style={{ fontWeight: '700' }}>{t.kind === 'withdrawal' ? 'Withdrawal' : t.kind === 'adjustment' ? 'Adjustment' : 'Sale earning'}</Text>
+              <Text style={{ fontWeight: '800' }}>{t.kind === 'withdrawal' ? '-' : '+'}{money(t.amount)}</Text>
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 12.5, marginTop: 2 }}>
+              {t.note || ''}{t.kind === 'earning' && t.gross != null ? ` · sold ${money(t.gross)}, commission ${money(t.commission ?? 0)}` : ''} · {t.status}
+            </Text>
+          </Card>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 

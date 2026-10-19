@@ -6,6 +6,7 @@ import { ApiError } from '../utils/ApiError';
 import { notifyOrderStatus, notifyRiderAssigned } from './orderNotify.service';
 import { ONLINE_WINDOW_MS } from './rider.service';
 import { createShiprocketOrder } from './shiprocket.service';
+import { creditSellerEarnings } from './sellerPay.service';
 
 /**
  * Where the store side (admin or seller) may move an order next. A rider
@@ -43,6 +44,8 @@ export async function moveOrderStatus(orderId: string, status: IOrder['status'],
   if (ending) {
     await Promise.all(updated.items.map((i) => Product.updateOne({ _id: i.product }, { $inc: { stock: i.quantity, soldCount: -i.quantity } })));
   }
+  // A store-side delivery (e.g. a Shiprocket order marked delivered) still earns the sellers their share.
+  if (status === 'delivered') await creditSellerEarnings(updated._id).catch(() => undefined);
   notifyOrderStatus(updated, status);
   return updated;
 }
