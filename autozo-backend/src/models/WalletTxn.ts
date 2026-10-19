@@ -24,6 +24,9 @@ export interface IWalletTxn {
   destination?: string;
   /** Payment reference an admin enters when marking a withdrawal paid. */
   reference?: string;
+  /** For a RazorpayX payout: the payout id and its latest status from RazorpayX. */
+  payoutId?: string;
+  payoutStatus?: string;
   note?: string;
   km?: number;
   createdAt: Date;

@@ -24,6 +24,13 @@ export interface LiveIntegrations {
     channelId?: string;
     enabled: boolean;
   };
+  razorpayx: {
+    accountNumber?: string;
+    keyId?: string;
+    keySecret?: string;
+    enabled: boolean;
+    autoPayout: boolean;
+  };
 }
 
 function parseServiceAccount(s?: string) {
@@ -75,6 +82,13 @@ export async function getIntegrations(): Promise<LiveIntegrations> {
       pickupLocation: doc?.shiprocket?.pickupLocation || undefined,
       channelId: doc?.shiprocket?.channelId || undefined,
       enabled: !!doc?.shiprocket?.enabled,
+    },
+    razorpayx: {
+      accountNumber: doc?.razorpayx?.accountNumber || undefined,
+      keyId: doc?.razorpayx?.keyId || undefined,
+      keySecret: safeOpen(doc?.razorpayx?.keySecretEnc) || undefined,
+      enabled: !!doc?.razorpayx?.enabled,
+      autoPayout: !!doc?.razorpayx?.autoPayout,
     },
   };
   cache = { at: Date.now(), value };

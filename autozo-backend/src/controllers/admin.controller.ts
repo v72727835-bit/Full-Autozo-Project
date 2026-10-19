@@ -12,6 +12,7 @@ import { Shop } from '../models/Shop';
 import { IUser, User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { importProducts } from '../services/bulkProducts.service';
+import { refundRazorpayPayment } from '../services/razorpay.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { escapeRegex } from '../utils/helpers';
 import { sha256, signAccessToken, signRefreshToken } from '../utils/jwt';
@@ -394,6 +395,19 @@ export const assignRiderAdmin = asyncHandler(async (req, res) => {
 
 export const assignShiprocketAdmin = asyncHandler(async (req, res) => {
   ok(res, await assignToShiprocket(String(req.params.id), 'admin'));
+});
+
+/** Refund an online-paid order back to the customer through Razorpay. */
+export const refundOrderAdmin = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, 'Order not found');
+  if (order.paymentMethod !== 'online' || !order.paymentRef) throw new ApiError(400, 'This order was not paid online, so there is nothing to refund.');
+  if (order.paymentStatus === 'refunded') throw new ApiError(409, 'This order is already refunded.');
+  await refundRazorpayPayment(order.paymentRef, order.total);
+  order.paymentStatus = 'refunded';
+  order.statusHistory.push({ status: order.status, at: new Date(), note: 'Payment refunded by admin' });
+  await order.save();
+  ok(res, order);
 });
 
 /* ============ Shops ============ */

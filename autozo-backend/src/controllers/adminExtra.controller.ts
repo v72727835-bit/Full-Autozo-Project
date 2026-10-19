@@ -17,6 +17,7 @@ import { clearCatalogCache } from '../middleware/cache';
 import { getIntegrations, invalidateIntegrations } from '../services/integrations.service';
 import { razorpayKeys, testRazorpayKeys } from '../services/razorpay.service';
 import { testShiprocket } from '../services/shiprocket.service';
+import { payoutForWithdrawal, razorpayxConfig, syncPayout, syncPayoutById, testRazorpayx } from '../services/razorpayx.service';
 import { seal } from '../utils/secretBox';
 import { checkServiceAccount, pushToUsers } from '../services/firebase.service';
 import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
@@ -290,6 +291,9 @@ export const listWithdrawals = asyncHandler(async (req, res) => {
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const filter: Record<string, unknown> = { kind: 'withdrawal' };
   if (status && status !== 'all') filter.status = status;
+  // Refresh any in-flight RazorpayX payouts so the queue shows their real state.
+  const inflight = await WalletTxn.find({ kind: 'withdrawal', status: 'pending', payoutId: { $exists: true } }).select('_id').limit(25).lean();
+  if (inflight.length) await Promise.all(inflight.map((t) => syncPayout(t._id).catch(() => undefined)));
   const [rows, total] = await Promise.all([
     WalletTxn.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).populate('rider', 'name phone payout').lean(),
     WalletTxn.countDocuments(filter),
@@ -308,6 +312,27 @@ export const markWithdrawal = asyncHandler(async (req, res) => {
   if (reference) txn.reference = reference;
   await txn.save();
   ok(res, txn);
+});
+
+/** Approve a pending withdrawal and pay it out automatically through RazorpayX. */
+export const payWithdrawalAdmin = asyncHandler(async (req, res) => {
+  const cfg = await razorpayxConfig();
+  if (!cfg) throw new ApiError(400, 'RazorpayX payouts are not switched on. Set it up in Integrations, or use “Mark paid” after paying by hand.');
+  await payoutForWithdrawal(String(req.params.id));
+  const txn = await WalletTxn.findById(req.params.id).lean();
+  ok(res, txn);
+});
+
+/** Validates the saved RazorpayX account number and keys against RazorpayX. */
+export const testRazorpayxAdmin = asyncHandler(async (_req, res) => {
+  ok(res, await testRazorpayx());
+});
+
+/** RazorpayX payout webhook: we re-fetch the payout's real status rather than trusting the body. */
+export const razorpayxWebhook = asyncHandler(async (req, res) => {
+  const payoutId = (req.body as { payload?: { payout?: { entity?: { id?: string } } } })?.payload?.payout?.entity?.id;
+  if (payoutId) await syncPayoutById(payoutId).catch(() => undefined);
+  ok(res, { received: true });
 });
 
 /** Confirm a rider's cash submission: clear the COD they owe and mark it confirmed. */
@@ -443,6 +468,11 @@ async function integrationsView() {
     shiprocketPickupLocation: doc?.shiprocket?.pickupLocation ?? '',
     shiprocketChannelId: doc?.shiprocket?.channelId ?? '',
     shiprocketEnabled: !!doc?.shiprocket?.enabled,
+    razorpayxAccountNumber: doc?.razorpayx?.accountNumber ?? '',
+    razorpayxKeyId: doc?.razorpayx?.keyId ?? '',
+    razorpayxSecretSaved: !!doc?.razorpayx?.keySecretEnc,
+    razorpayxEnabled: !!doc?.razorpayx?.enabled,
+    razorpayxAutoPayout: !!doc?.razorpayx?.autoPayout,
     /** Whether each one is actually working for customers right now (the .env file counts too). */
     live: {
       google: !!live.googleClientId,
@@ -451,6 +481,7 @@ async function integrationsView() {
       firebaseOtp: !!(live.firebase.webConfig.apiKey && live.firebase.webConfig.projectId),
       firebasePush: !!live.firebase.serviceAccount,
       shiprocket: !!(live.shiprocket.enabled && live.shiprocket.email && live.shiprocket.password),
+      razorpayx: !!(live.razorpayx.enabled && live.razorpayx.accountNumber && live.razorpayx.keyId && live.razorpayx.keySecret),
     },
   };
 }
@@ -481,6 +512,12 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
     shiprocketPickupLocation?: string;
     shiprocketChannelId?: string;
     shiprocketEnabled?: boolean;
+    razorpayxAccountNumber?: string;
+    razorpayxKeyId?: string;
+    razorpayxKeySecret?: string;
+    clearRazorpayxSecret?: boolean;
+    razorpayxEnabled?: boolean;
+    razorpayxAutoPayout?: boolean;
   };
   const set: Record<string, unknown> = {};
   const unset: Record<string, 1> = {};
@@ -515,6 +552,12 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
   if (b.shiprocketPickupLocation !== undefined) set['shiprocket.pickupLocation'] = b.shiprocketPickupLocation;
   if (b.shiprocketChannelId !== undefined) set['shiprocket.channelId'] = b.shiprocketChannelId;
   if (b.shiprocketEnabled !== undefined) set['shiprocket.enabled'] = b.shiprocketEnabled;
+  if (b.razorpayxAccountNumber !== undefined) set['razorpayx.accountNumber'] = b.razorpayxAccountNumber;
+  if (b.razorpayxKeyId !== undefined) set['razorpayx.keyId'] = b.razorpayxKeyId;
+  if (b.razorpayxKeySecret) set['razorpayx.keySecretEnc'] = seal(b.razorpayxKeySecret);
+  else if (b.clearRazorpayxSecret) unset['razorpayx.keySecretEnc'] = 1;
+  if (b.razorpayxEnabled !== undefined) set['razorpayx.enabled'] = b.razorpayxEnabled;
+  if (b.razorpayxAutoPayout !== undefined) set['razorpayx.autoPayout'] = b.razorpayxAutoPayout;
   await Integrations.updateOne(
     { key: 'global' },
     { ...(Object.keys(set).length ? { $set: set } : {}), ...(Object.keys(unset).length ? { $unset: unset } : {}) },

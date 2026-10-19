@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchWithdrawals, markWithdrawal, Withdrawal } from '../api/admin';
+import { fetchIntegrations, fetchWithdrawals, markWithdrawal, payWithdrawal, Withdrawal } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, money, timeAgo } from '../components/ui';
 
@@ -18,6 +18,11 @@ export default function PayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [autoPay, setAutoPay] = useState(false);
+
+  useEffect(() => {
+    fetchIntegrations().then((d) => setAutoPay(d.live.razorpayx)).catch(() => undefined);
+  }, []);
 
   const load = () => {
     setLoading(true);
@@ -38,6 +43,14 @@ export default function PayoutsPage() {
     }
     setBusy(w._id);
     try { await markWithdrawal(w._id, next, reference || undefined); load(); }
+    catch (e) { setError(getErrorMessage(e)); }
+    finally { setBusy(null); }
+  };
+
+  const pay = async (w: Withdrawal) => {
+    if (!window.confirm(`Pay ₹${Math.round(w.amount)} to ${riderName(w)} now via RazorpayX?\n\nThe money will be sent to ${w.destination || 'their saved account'}.`)) return;
+    setBusy(w._id);
+    try { await payWithdrawal(w._id); load(); }
     catch (e) { setError(getErrorMessage(e)); }
     finally { setBusy(null); }
   };
@@ -93,7 +106,14 @@ export default function PayoutsPage() {
                     <td>
                       {w.status === 'pending' && (
                         <div className="row-flex">
-                          <Button size="sm" disabled={busy === w._id} onClick={() => act(w, 'paid')}>Mark paid</Button>
+                          {autoPay && !w.payoutId && (
+                            <Button size="sm" disabled={busy === w._id} onClick={() => pay(w)}>Approve &amp; Pay</Button>
+                          )}
+                          {w.payoutId ? (
+                            <span className="cell-muted" style={{ fontSize: 12 }}>Payout {w.payoutStatus || 'processing'}…</span>
+                          ) : (
+                            <Button size="sm" variant={autoPay ? 'secondary' : 'primary'} disabled={busy === w._id} onClick={() => act(w, 'paid')}>Mark paid</Button>
+                          )}
                           <Button size="sm" variant="ghost" disabled={busy === w._id} onClick={() => act(w, 'rejected')}>Reject</Button>
                         </div>
                       )}

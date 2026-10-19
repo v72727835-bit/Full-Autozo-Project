@@ -678,6 +678,12 @@ export const integrationsBody = z.object({
   shiprocketPickupLocation: z.string().trim().max(120).optional(),
   shiprocketChannelId: z.string().trim().max(60).optional(),
   shiprocketEnabled: z.boolean().optional(),
+  razorpayxAccountNumber: z.string().trim().max(40).optional(),
+  razorpayxKeyId: z.string().trim().max(100).optional(),
+  razorpayxKeySecret: z.string().trim().max(200).optional(),
+  clearRazorpayxSecret: z.boolean().optional(),
+  razorpayxEnabled: z.boolean().optional(),
+  razorpayxAutoPayout: z.boolean().optional(),
 });
 
 /* ---------- warehouse self-registration ---------- */

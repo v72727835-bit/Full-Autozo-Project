@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchIntegrations, IntegrationsView, saveIntegrations, testFirebase, testRazorpayKeys, testShiprocket } from '../api/admin';
+import { fetchIntegrations, IntegrationsView, saveIntegrations, testFirebase, testRazorpayKeys, testRazorpayx, testShiprocket } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field } from '../components/ui';
 
@@ -30,6 +30,11 @@ export default function IntegrationsPage() {
   const [srPickup, setSrPickup] = useState('');
   const [srChannel, setSrChannel] = useState('');
   const [srOn, setSrOn] = useState(false);
+  const [rxAcct, setRxAcct] = useState('');
+  const [rxKeyId, setRxKeyId] = useState('');
+  const [rxSecret, setRxSecret] = useState('');
+  const [rxOn, setRxOn] = useState(false);
+  const [rxAuto, setRxAuto] = useState(false);
 
   const apply = (d: IntegrationsView) => {
     setData(d);
@@ -45,10 +50,15 @@ export default function IntegrationsPage() {
     setSrPickup(d.shiprocketPickupLocation);
     setSrChannel(d.shiprocketChannelId);
     setSrOn(d.shiprocketEnabled);
+    setRxAcct(d.razorpayxAccountNumber);
+    setRxKeyId(d.razorpayxKeyId);
+    setRxOn(d.razorpayxEnabled);
+    setRxAuto(d.razorpayxAutoPayout);
     setFbSa('');
     setFbSecret('');
     setRzSecret('');
     setSrPass('');
+    setRxSecret('');
   };
 
   useEffect(() => {
@@ -289,6 +299,56 @@ export default function IntegrationsPage() {
             }
           >
             {busy === 'sr' ? 'Saving…' : 'Save Shiprocket'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="card card-pad">
+        <h2 className="card-title">
+          Rider payouts (RazorpayX) {status(data.live.razorpayx)}
+        </h2>
+        <div className="page-subtitle" style={{ marginBottom: 12 }}>
+          x.razorpay.com → Settings → Developer Controls → API Keys (Key Id + Secret), and Banking for your RazorpayX <b>account number</b>. Your RazorpayX account must be KYC-activated for payouts. With this on, a rider withdrawal can be paid to their UPI/bank in one click from the Payouts page.
+        </div>
+        <div className="field-row">
+          <Field label="RazorpayX account number">
+            <input value={rxAcct} onChange={(e) => setRxAcct(e.target.value)} placeholder="2323XXXXXXXXXX" />
+          </Field>
+          <Field label="Key ID">
+            <input value={rxKeyId} onChange={(e) => setRxKeyId(e.target.value)} placeholder="rzp_live_xxxxxxxx" autoComplete="off" />
+          </Field>
+        </div>
+        <Field label={data.razorpayxSecretSaved ? 'Key Secret (saved - type a new one to replace)' : 'Key Secret'}>
+          <input type="password" value={rxSecret} onChange={(e) => setRxSecret(e.target.value)} placeholder={data.razorpayxSecretSaved ? '••••••••••••' : ''} autoComplete="off" />
+        </Field>
+        <label className="checkbox-row" style={{ marginBottom: 6 }}>
+          <input type="checkbox" checked={rxOn} onChange={(e) => setRxOn(e.target.checked)} />
+          <span>Enable RazorpayX payouts (show “Approve &amp; Pay” on the Payouts page)</span>
+        </label>
+        <label className="checkbox-row" style={{ marginBottom: 8 }}>
+          <input type="checkbox" checked={rxAuto} onChange={(e) => setRxAuto(e.target.checked)} />
+          <span>Pay automatically the moment a rider withdraws (no admin approval) — leave off for safer one-click approval</span>
+        </label>
+        <div className="modal-actions">
+          <Button variant="secondary" disabled={busy === 'test'} onClick={() => test(testRazorpayx)}>
+            {busy === 'test' ? 'Checking…' : 'Test connection'}
+          </Button>
+          {data.razorpayxSecretSaved && (
+            <Button variant="ghost" disabled={!!busy} onClick={() => save('rxclear', { clearRazorpayxSecret: true, razorpayxEnabled: false, razorpayxAutoPayout: false }, 'RazorpayX secret removed.')}>
+              Remove saved secret
+            </Button>
+          )}
+          <Button
+            disabled={busy === 'rx'}
+            onClick={() =>
+              save(
+                'rx',
+                { razorpayxAccountNumber: rxAcct, razorpayxKeyId: rxKeyId, razorpayxEnabled: rxOn, razorpayxAutoPayout: rxAuto, ...(rxSecret ? { razorpayxKeySecret: rxSecret } : {}) },
+                'RazorpayX saved. Press “Test connection” to check it.',
+              )
+            }
+          >
+            {busy === 'rx' ? 'Saving…' : 'Save RazorpayX'}
           </Button>
         </div>
       </div>

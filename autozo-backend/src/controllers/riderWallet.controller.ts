@@ -8,12 +8,16 @@ import { ok, pageMeta } from '../utils/response';
 import { codSummary } from '../services/rider.service';
 import { earningsSeries, payRules, walletSummary } from '../services/riderPay.service';
 import { loadSettings } from '../services/settings.service';
+import { payoutForWithdrawal, razorpayxConfig, syncPayout } from '../services/razorpayx.service';
 
 /** Everything the wallet screen shows at the top: balance, earnings, cash owed, saved account. */
 export const getWallet = asyncHandler(async (req, res) => {
   const id = req.user!.id;
   const { settings } = await loadSettings();
   const rules = payRules(settings);
+  // If a RazorpayX payout is in flight for this rider, refresh its real status first.
+  const inflight = await WalletTxn.findOne({ rider: id, kind: 'withdrawal', status: 'pending', payoutId: { $exists: true } }).select('_id').lean();
+  if (inflight) await syncPayout(inflight._id).catch(() => undefined);
   const [sum, cod, me] = await Promise.all([
     walletSummary(id),
     codSummary([new Types.ObjectId(id)]),
@@ -83,7 +87,20 @@ export const requestWithdraw = asyncHandler(async (req, res) => {
   if (amount > sum.balance) throw new ApiError(400, `You can withdraw up to ₹${Math.floor(sum.balance)}.`);
 
   const txn = await WalletTxn.create({ rider: req.user!.id, kind: 'withdrawal', amount: Math.round(amount), status: 'pending', method, destination, note: 'Withdrawal request' });
-  ok(res, txn, undefined, 201);
+
+  // When RazorpayX is on in fully-automatic mode, pay it out at once. If the
+  // payout call fails, the request simply stays pending for an admin to handle,
+  // so the rider never loses the money.
+  const cfg = await razorpayxConfig();
+  if (cfg?.autoPayout) {
+    try {
+      await payoutForWithdrawal(txn._id);
+    } catch {
+      /* leave it pending for the admin */
+    }
+  }
+  const fresh = await WalletTxn.findById(txn._id).lean();
+  ok(res, fresh ?? txn, undefined, 201);
 });
 
 /** The rider records that they handed collected COD cash to the office. */
