@@ -10,7 +10,7 @@ import { ApiError } from '../utils/ApiError';
 import { importProducts } from '../services/bulkProducts.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { created, ok, pageMeta } from '../utils/response';
-import { assignRiderToOrder, freeRidersForOrder, moveOrderStatus, ridersForOrder } from '../services/orderFlow.service';
+import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus, ridersForOrder } from '../services/orderFlow.service';
 import { ONLINE_WINDOW_MS } from '../services/rider.service';
 import { signAccessToken, signRefreshToken, sha256 } from '../utils/jwt';
 
@@ -210,6 +210,11 @@ export const myOrderRiders = asyncHandler(async (req, res) => {
 export const assignRiderMyOrder = asyncHandler(async (req, res) => {
   await assertMyOrder(req.user!.id, String(req.params.id));
   ok(res, await assignRiderToOrder(String(req.params.id), req.body.rider, 'seller'));
+});
+
+export const assignShiprocketMyOrder = asyncHandler(async (req, res) => {
+  await assertMyOrder(req.user!.id, String(req.params.id));
+  ok(res, await assignToShiprocket(String(req.params.id), 'seller'));
 });
 
 /** The category tree the seller picks from: main → sub → child. */

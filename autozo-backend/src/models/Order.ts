@@ -44,6 +44,18 @@ export interface IOrder {
   checkoutId: string; // shared by all shop-orders created from one checkout
   user: Types.ObjectId;
   shop: Types.ObjectId;
+  /** Who delivers this order: our own rider (default) or the Shiprocket courier network. */
+  fulfillment?: 'rider' | 'shiprocket';
+  /** Set when the order is pushed to Shiprocket: their ids and the assigned courier/AWB. */
+  shiprocket?: {
+    orderId?: string;
+    shipmentId?: string;
+    awb?: string;
+    courier?: string;
+    labelUrl?: string;
+    status?: string;
+    syncedAt?: Date;
+  };
   rider?: Types.ObjectId;
   /** Last position the rider's phone reported while out for delivery. */
   riderLocation?: { lat: number; lng: number; at: Date };
@@ -102,6 +114,16 @@ const orderSchema = new Schema<IOrder>(
     checkoutId: { type: String, required: true, index: true },
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     shop: { type: Schema.Types.ObjectId, ref: 'Shop', required: true, index: true },
+    fulfillment: { type: String, enum: ['rider', 'shiprocket'], default: 'rider' },
+    shiprocket: {
+      orderId: String,
+      shipmentId: String,
+      awb: String,
+      courier: String,
+      labelUrl: String,
+      status: String,
+      syncedAt: Date,
+    },
     rider: { type: Schema.Types.ObjectId, ref: 'User' },
     riderLocation: { lat: Number, lng: Number, at: Date },
     codSettled: { type: Boolean, default: false },

@@ -102,6 +102,7 @@ router.patch('/seller/orders/:id/status', ...sellerOnly, validate({ params: v.id
 router.get('/seller/orders/:id/riders', ...sellerOnly, validate({ params: v.idParam }), seller.myOrderRiders);
 router.get('/seller/orders/:id/free-riders', ...sellerOnly, validate({ params: v.idParam }), seller.myOrderFreeRiders);
 router.post('/seller/orders/:id/assign-rider', ...sellerOnly, validate({ params: v.idParam, body: v.assignRiderBody }), seller.assignRiderMyOrder);
+router.post('/seller/orders/:id/assign-shiprocket', ...sellerOnly, validate({ params: v.idParam }), seller.assignShiprocketMyOrder);
 router.patch('/seller/products/:id', ...sellerOnly, invalidateOnWrite, validate({ params: v.idParam, body: v.sellerProductUpdateBody }), seller.updateMyProduct);
 
 /* ============ Reviews (login) ============ */

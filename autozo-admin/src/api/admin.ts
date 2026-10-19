@@ -338,9 +338,15 @@ export const adminFreeRiders = async (orderId: string): Promise<FreeRider[]> => 
 export const adminAssignRider = async (orderId: string, rider: string): Promise<void> => {
   await api.post(`/admin/orders/${orderId}/assign-rider`, { rider });
 };
+export const adminAssignShiprocket = async (orderId: string): Promise<void> => {
+  await api.post(`/admin/orders/${orderId}/assign-shiprocket`);
+};
 export const sellerFreeRiders = async (orderId: string): Promise<FreeRider[]> => (await api.get(`/seller/orders/${orderId}/free-riders`)).data.data;
 export const sellerAssignRider = async (orderId: string, rider: string): Promise<void> => {
   await api.post(`/seller/orders/${orderId}/assign-rider`, { rider });
+};
+export const sellerAssignShiprocket = async (orderId: string): Promise<void> => {
+  await api.post(`/seller/orders/${orderId}/assign-shiprocket`);
 };
 export const sellerOrders = (params: { page?: number; limit?: number; status?: string; q?: string }) => paged<Order>('/seller/orders', params);
 export const sellerSetOrderStatus = async (id: string, status: string): Promise<void> => {
@@ -386,7 +392,12 @@ export interface IntegrationsView {
   firebaseOtpOnSignup: boolean;
   firebaseOtpOnLogin: boolean;
   firebasePushEnabled: boolean;
-  live: { google: boolean; facebook: boolean; razorpay: boolean; firebaseOtp: boolean; firebasePush: boolean };
+  shiprocketEmail: string;
+  shiprocketPasswordSaved: boolean;
+  shiprocketPickupLocation: string;
+  shiprocketChannelId: string;
+  shiprocketEnabled: boolean;
+  live: { google: boolean; facebook: boolean; razorpay: boolean; firebaseOtp: boolean; firebasePush: boolean; shiprocket: boolean };
 }
 export const fetchIntegrations = async (): Promise<IntegrationsView> => (await api.get('/admin/integrations')).data.data;
 export const saveIntegrations = async (body: Record<string, unknown>): Promise<IntegrationsView> =>
@@ -396,6 +407,11 @@ export const testRazorpayKeys = async (): Promise<string> => (await api.post('/a
 export const testFirebase = async (): Promise<string> => {
   const d = (await api.post('/admin/integrations/firebase/test')).data.data;
   return `Firebase project "${d.projectId}" accepted the service account. Test push sent to ${d.sentToYourDevices} of your devices.`;
+};
+export const testShiprocket = async (): Promise<string> => {
+  const d = (await api.post('/admin/integrations/shiprocket/test')).data.data as { pickupLocations: string[] };
+  const list = d.pickupLocations.length ? d.pickupLocations.join(', ') : 'none set up yet';
+  return `Shiprocket accepted these credentials. Pickup locations found: ${list}.`;
 };
 
 /* ---------- warehouse registrations ---------- */

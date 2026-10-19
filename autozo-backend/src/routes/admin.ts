@@ -33,6 +33,7 @@ router.get('/integrations', extra.getIntegrationsAdmin);
 router.put('/integrations', validate({ body: v.integrationsBody }), extra.updateIntegrationsAdmin);
 router.post('/integrations/razorpay/test', extra.testRazorpayAdmin);
 router.post('/integrations/firebase/test', extra.testFirebaseAdmin);
+router.post('/integrations/shiprocket/test', extra.testShiprocketAdmin);
 router.get('/standard-categories', extra.listStandardCategories);
 router.post('/standard-categories', validate({ body: v.standardCategoryBody }), extra.createStandardCategory);
 router.patch('/standard-categories/:id', validate({ params: v.idParam, body: v.standardCategoryUpdateBody }), extra.updateStandardCategory);
@@ -65,6 +66,7 @@ router.get('/orders/:id', validate({ params: v.idParam }), admin.getOrderAdmin);
 router.post('/orders/:id/invoice-link', validate({ params: v.idParam }), invoices.adminInvoiceLink);
 router.get('/orders/:id/free-riders', validate({ params: v.idParam }), admin.freeRidersAdmin);
 router.post('/orders/:id/assign-rider', validate({ params: v.idParam, body: v.assignRiderBody }), admin.assignRiderAdmin);
+router.post('/orders/:id/assign-shiprocket', validate({ params: v.idParam }), admin.assignShiprocketAdmin);
 router.patch('/orders/:id/status', validate({ params: v.idParam, body: v.adminOrderStatusBody }), admin.updateOrderStatus);
 
 router.get('/shops', validate({ query: v.pagination }), admin.listShopsAdmin);

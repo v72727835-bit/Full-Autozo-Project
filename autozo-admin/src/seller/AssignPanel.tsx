@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { NavLink } from '../navigation';
-import { OrderRiders, sellerAssignRider, sellerOrderRiders } from '../api/admin';
+import { OrderRiders, sellerAssignRider, sellerAssignShiprocket, sellerOrderRiders } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, ErrorBanner } from '../components/ui';
 import type { Tone } from '../components/ui';
@@ -47,9 +47,29 @@ export default function AssignPanel({ orderId, onAssigned }: { orderId: string; 
     }
   };
 
+  const sendShiprocket = async () => {
+    setBusy('shiprocket');
+    setError('');
+    try {
+      await sellerAssignShiprocket(orderId);
+      onAssigned();
+    } catch (e) {
+      setError(getErrorMessage(e));
+    } finally {
+      setBusy('');
+    }
+  };
+
   return (
     <div style={{ margin: '12px 0', padding: 12, border: '1px solid var(--border)', borderRadius: 12 }}>
-      <div className="stat-label" style={{ marginBottom: 4 }}>Choose a rider for this order</div>
+      <div className="stat-label" style={{ marginBottom: 6 }}>How should this order be delivered?</div>
+      <div className="row-flex" style={{ justifyContent: 'space-between', padding: '8px 10px', marginBottom: 10, border: '1px solid var(--border)', borderRadius: 10, background: 'rgba(124,108,255,.06)' }}>
+        <span>📦 <b>Shiprocket courier</b> <span className="cell-muted">sync this order for pickup</span></span>
+        <Button size="sm" variant="secondary" disabled={!!busy} onClick={sendShiprocket}>
+          {busy === 'shiprocket' ? 'Sending…' : 'Send to Shiprocket'}
+        </Button>
+      </div>
+      <div className="stat-label" style={{ marginBottom: 4 }}>Or give it to a rider</div>
       {data && (
         <div className="cell-muted" style={{ marginBottom: 8 }}>
           {data.warehouse}

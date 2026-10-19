@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchIntegrations, IntegrationsView, saveIntegrations, testFirebase, testRazorpayKeys } from '../api/admin';
+import { fetchIntegrations, IntegrationsView, saveIntegrations, testFirebase, testRazorpayKeys, testShiprocket } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field } from '../components/ui';
 
@@ -25,6 +25,11 @@ export default function IntegrationsPage() {
   const [otpSignup, setOtpSignup] = useState(false);
   const [otpLogin, setOtpLogin] = useState(false);
   const [pushOn, setPushOn] = useState(false);
+  const [srEmail, setSrEmail] = useState('');
+  const [srPass, setSrPass] = useState('');
+  const [srPickup, setSrPickup] = useState('');
+  const [srChannel, setSrChannel] = useState('');
+  const [srOn, setSrOn] = useState(false);
 
   const apply = (d: IntegrationsView) => {
     setData(d);
@@ -36,9 +41,14 @@ export default function IntegrationsPage() {
     setOtpSignup(d.firebaseOtpOnSignup);
     setOtpLogin(d.firebaseOtpOnLogin);
     setPushOn(d.firebasePushEnabled);
+    setSrEmail(d.shiprocketEmail);
+    setSrPickup(d.shiprocketPickupLocation);
+    setSrChannel(d.shiprocketChannelId);
+    setSrOn(d.shiprocketEnabled);
     setFbSa('');
     setFbSecret('');
     setRzSecret('');
+    setSrPass('');
   };
 
   useEffect(() => {
@@ -228,6 +238,57 @@ export default function IntegrationsPage() {
             onClick={() => save('rz', { razorpayKeyId: rzId, razorpayEnabled: rzOn, ...(rzSecret ? { razorpayKeySecret: rzSecret } : {}) }, 'Razorpay saved. Press “Test saved keys” to check them.')}
           >
             {busy === 'rz' ? 'Saving…' : 'Save Razorpay'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="card card-pad">
+        <h2 className="card-title">
+          Shiprocket courier {status(data.live.shiprocket)}
+        </h2>
+        <div className="page-subtitle" style={{ marginBottom: 12 }}>
+          app.shiprocket.in → Settings → API → Configure → <b>Create an API User</b>. Paste that API user&apos;s email and the password it shows you (it is shown only once). The pickup location name must match exactly the one set in your Shiprocket account (Settings → Company → Pickup Addresses).
+        </div>
+        <div className="field-row">
+          <Field label="API user email">
+            <input value={srEmail} onChange={(e) => setSrEmail(e.target.value)} placeholder="info@autozo.org" autoComplete="off" />
+          </Field>
+          <Field label={data.shiprocketPasswordSaved ? 'API password (saved - type a new one to replace)' : 'API password'}>
+            <input type="password" value={srPass} onChange={(e) => setSrPass(e.target.value)} placeholder={data.shiprocketPasswordSaved ? '••••••••••••' : ''} autoComplete="off" />
+          </Field>
+        </div>
+        <div className="field-row">
+          <Field label="Pickup location name">
+            <input value={srPickup} onChange={(e) => setSrPickup(e.target.value)} placeholder="Primary" />
+          </Field>
+          <Field label="Channel ID (optional)">
+            <input value={srChannel} onChange={(e) => setSrChannel(e.target.value)} placeholder="leave blank for default" />
+          </Field>
+        </div>
+        <label className="checkbox-row" style={{ marginBottom: 8 }}>
+          <input type="checkbox" checked={srOn} onChange={(e) => setSrOn(e.target.checked)} />
+          <span>Show “Send to Shiprocket” when assigning an order</span>
+        </label>
+        <div className="modal-actions">
+          <Button variant="secondary" disabled={busy === 'test'} onClick={() => test(testShiprocket)}>
+            {busy === 'test' ? 'Checking…' : 'Test connection'}
+          </Button>
+          {data.shiprocketPasswordSaved && (
+            <Button variant="ghost" disabled={!!busy} onClick={() => save('srclear', { clearShiprocketPassword: true, shiprocketEnabled: false }, 'Shiprocket password removed.')}>
+              Remove saved password
+            </Button>
+          )}
+          <Button
+            disabled={busy === 'sr'}
+            onClick={() =>
+              save(
+                'sr',
+                { shiprocketEmail: srEmail, shiprocketPickupLocation: srPickup, shiprocketChannelId: srChannel, shiprocketEnabled: srOn, ...(srPass ? { shiprocketPassword: srPass } : {}) },
+                'Shiprocket saved. Press “Test connection” to check it.',
+              )
+            }
+          >
+            {busy === 'sr' ? 'Saving…' : 'Save Shiprocket'}
           </Button>
         </div>
       </div>

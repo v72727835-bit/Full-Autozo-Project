@@ -17,6 +17,13 @@ export interface LiveIntegrations {
     otpOnLogin: boolean;
     pushEnabled: boolean;
   };
+  shiprocket: {
+    email?: string;
+    password?: string;
+    pickupLocation?: string;
+    channelId?: string;
+    enabled: boolean;
+  };
 }
 
 function parseServiceAccount(s?: string) {
@@ -61,6 +68,13 @@ export async function getIntegrations(): Promise<LiveIntegrations> {
       otpOnSignup: !!doc?.firebase?.otpOnSignup,
       otpOnLogin: !!doc?.firebase?.otpOnLogin,
       pushEnabled: !!doc?.firebase?.pushEnabled,
+    },
+    shiprocket: {
+      email: doc?.shiprocket?.email || undefined,
+      password: safeOpen(doc?.shiprocket?.passwordEnc) || undefined,
+      pickupLocation: doc?.shiprocket?.pickupLocation || undefined,
+      channelId: doc?.shiprocket?.channelId || undefined,
+      enabled: !!doc?.shiprocket?.enabled,
     },
   };
   cache = { at: Date.now(), value };

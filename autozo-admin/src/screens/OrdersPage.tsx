@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from '../navigation';
 import AssignRider from '../components/AssignRider';
-import { adminAssignRider, adminFreeRiders, adminInvoiceLink, fetchOrder, fetchOrders, fetchShops, updateOrderStatus } from '../api/admin';
+import { adminAssignRider, adminAssignShiprocket, adminFreeRiders, adminInvoiceLink, fetchOrder, fetchOrders, fetchShops, updateOrderStatus } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { playChime } from '../lib/alerts';
 import { openBill } from '../lib/invoice';
@@ -481,10 +481,22 @@ function OrderDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
         </div>
       </div>
 
-      {['accepted', 'preparing', 'ready_for_pickup'].includes(order.status) && !order.rider && (
+      {order.fulfillment === 'shiprocket' && order.shiprocket && (
+        <div style={{ margin: '14px 0', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 10, background: 'rgba(124,108,255,.06)' }}>
+          <div className="stat-label" style={{ marginBottom: 4 }}>📦 Shipped via Shiprocket</div>
+          <div className="cell-muted">
+            {order.shiprocket.courier ? `Courier: ${order.shiprocket.courier}` : 'Courier being assigned'}
+            {order.shiprocket.awb ? ` · AWB ${order.shiprocket.awb}` : ''}
+            {order.shiprocket.orderId ? ` · Shiprocket #${order.shiprocket.orderId}` : ''}
+          </div>
+        </div>
+      )}
+
+      {['accepted', 'preparing', 'ready_for_pickup'].includes(order.status) && !order.rider && order.fulfillment !== 'shiprocket' && (
         <AssignRider
           load={() => adminFreeRiders(id)}
           assign={(rid) => adminAssignRider(id, rid)}
+          assignShiprocket={() => adminAssignShiprocket(id)}
           onAssigned={() => {
             onChanged();
             load();
