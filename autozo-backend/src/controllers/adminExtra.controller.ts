@@ -570,8 +570,15 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
   if (b.facebookAppId !== undefined) set['facebook.appId'] = b.facebookAppId;
   if (b.facebookAppSecret) set['facebook.appSecretEnc'] = seal(b.facebookAppSecret);
   else if (b.clearFacebookSecret) unset['facebook.appSecretEnc'] = 1;
-  if (b.razorpayKeyId !== undefined) set['razorpay.keyId'] = b.razorpayKeyId;
-  if (b.razorpayKeySecret) set['razorpay.keySecretEnc'] = seal(b.razorpayKeySecret);
+  if (b.razorpayKeyId !== undefined) {
+    b.razorpayKeyId = b.razorpayKeyId.trim();
+    const current = await Integrations.findOne({ key: 'global' }).select('razorpay').lean();
+    if (b.razorpayKeyId && b.razorpayKeyId !== current?.razorpay?.keyId && !b.razorpayKeySecret?.trim()) {
+      throw new ApiError(400, 'When changing the Razorpay Key ID, also enter its matching Key Secret from the same Razorpay account and mode.');
+    }
+    set['razorpay.keyId'] = b.razorpayKeyId;
+  }
+  if (b.razorpayKeySecret?.trim()) set['razorpay.keySecretEnc'] = seal(b.razorpayKeySecret.trim());
   else if (b.clearRazorpaySecret) unset['razorpay.keySecretEnc'] = 1;
   if (b.razorpayEnabled !== undefined) set['razorpay.enabled'] = b.razorpayEnabled;
   for (const [k, v] of Object.entries(b.firebaseWeb ?? {})) if (v !== undefined) set[`firebase.webConfig.${k}`] = v;
@@ -624,7 +631,14 @@ export const testFirebaseAdmin = asyncHandler(async (req, res) => {
 export const testRazorpayAdmin = asyncHandler(async (_req, res) => {
   const keys = await razorpayKeys();
   if (!keys) throw new ApiError(400, 'Save the Razorpay Key ID and Key Secret first.');
-  await testRazorpayKeys(keys);
+  try {
+    await testRazorpayKeys(keys);
+  } catch (error) {
+    if (error instanceof ApiError && (error.details as { code?: string } | undefined)?.code === 'payment_gateway_auth_failed') {
+      throw new ApiError(400, 'Razorpay rejected the saved API keys. Save the matching Key ID and Key Secret from the same Razorpay account and mode, then test again.');
+    }
+    throw error;
+  }
   ok(res, { ok: true, message: 'Razorpay accepted these keys.' });
 });
 

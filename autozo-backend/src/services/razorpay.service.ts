@@ -19,7 +19,12 @@ async function call<T>(method: 'POST' | 'GET', path: string, body?: unknown, key
     body: body ? JSON.stringify(body) : undefined,
   });
   const json = (await r.json().catch(() => ({}))) as { error?: { description?: string } };
-  if (!r.ok) throw new ApiError(502, json.error?.description || 'The payment service did not respond. Please try again.');
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403 || /authentication failed/i.test(json.error?.description ?? '')) {
+      throw new ApiError(503, 'Online payment is temporarily unavailable. Please contact the store or try again later.', { code: 'payment_gateway_auth_failed' });
+    }
+    throw new ApiError(502, json.error?.description || 'The payment service did not respond. Please try again.');
+  }
   return json as T;
 }
 

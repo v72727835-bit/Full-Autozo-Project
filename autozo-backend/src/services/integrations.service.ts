@@ -62,12 +62,15 @@ export function invalidateIntegrations() {
 export async function getIntegrations(): Promise<LiveIntegrations> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
   const doc = await Integrations.findOne({ key: 'global' }).lean();
+  // Credentials are a pair. Never combine an admin key with an unrelated
+  // environment secret (including when the saved secret cannot be decrypted).
+  const savedRazorpay = !!(doc?.razorpay?.keyId || doc?.razorpay?.keySecretEnc);
   const value: LiveIntegrations = {
     googleClientId: doc?.google?.clientId || env.GOOGLE_CLIENT_ID,
     facebookAppId: doc?.facebook?.appId || env.FACEBOOK_APP_ID,
     facebookAppSecret: safeOpen(doc?.facebook?.appSecretEnc) || env.FACEBOOK_APP_SECRET,
-    razorpayKeyId: doc?.razorpay?.keyId || env.RAZORPAY_KEY_ID,
-    razorpayKeySecret: safeOpen(doc?.razorpay?.keySecretEnc) || env.RAZORPAY_KEY_SECRET,
+    razorpayKeyId: (savedRazorpay ? doc?.razorpay?.keyId : env.RAZORPAY_KEY_ID)?.trim(),
+    razorpayKeySecret: (savedRazorpay ? safeOpen(doc?.razorpay?.keySecretEnc) : env.RAZORPAY_KEY_SECRET)?.trim(),
     razorpayEnabled: doc?.razorpay?.enabled ?? true,
     firebase: {
       webConfig: { ...(doc?.firebase?.webConfig ?? {}) },

@@ -16,7 +16,7 @@ import { signAccessToken } from '../src/utils/jwt';
 test('checkout OTP stays the same through customer tracking, rider pickup, wrong attempts and delivery', { timeout: 900000 }, async () => {
   // Core downloads the test database only when this integration suite runs,
   // keeping ordinary installs/builds free of MongoDB binary downloads.
-  const db = await MongoMemoryServer.create({ binary: { version: '8.2.6' } });
+  const db = await MongoMemoryServer.create({ binary: { version: '8.2.6' }, instance: { launchTimeout: 60000 } });
   await mongoose.connect(db.getUri());
   const server = app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
