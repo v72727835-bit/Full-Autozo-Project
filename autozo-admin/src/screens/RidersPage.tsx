@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { setRiderLongDistance, fetchRiders, setRiderPaused, settleRiderCod } from '../api/admin';
+import { deleteUser, setRiderLongDistance, fetchRiders, setRiderPaused, settleRiderCod } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import CreateRiderModal from '../components/CreateRiderModal';
 import { Badge, Button, CenterSpinner, ErrorBanner, money, timeAgo } from '../components/ui';
@@ -29,6 +29,7 @@ export default function RidersPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<RiderRow | undefined>();
 
   const load = () => {
     fetchRiders({ q: q || undefined, online: onlineOnly || undefined })
@@ -143,6 +144,10 @@ export default function RidersPage() {
                     <td className="cell-muted">{r.lastSeenAt ? timeAgo(r.lastSeenAt) : 'Logged out'}</td>
                     <td>
                       <div className="row-flex">
+                        <Button size="sm" variant="secondary" disabled={busy === r._id} onClick={() => setEditing(r)}>Edit</Button>
+                        <Button size="sm" variant="ghost" disabled={busy === r._id} onClick={() => {
+                          if (confirm(`Delete rider "${r.name}"? Their login will be disabled and order/payment history retained. Active deliveries and pending COD must be cleared first.`)) void act(r._id, () => deleteUser(r._id));
+                        }}>Delete</Button>
                         {r.codPending > 0 && (
                           <Button
                             size="sm"
@@ -180,6 +185,7 @@ export default function RidersPage() {
         </div>
       )}
       {adding && <CreateRiderModal onClose={() => setAdding(false)} onDone={() => { setAdding(false); load(); }} />}
+      {editing && <CreateRiderModal rider={editing} onClose={() => setEditing(undefined)} onDone={() => { setEditing(undefined); load(); }} />}
     </>
   );
 }

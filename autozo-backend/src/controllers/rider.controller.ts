@@ -95,7 +95,9 @@ export const acceptOrder = asyncHandler(async (req, res) => {
 export const deliverOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: req.params.id, rider: req.user!.id, status: 'out_for_delivery' });
   if (!order) throw new ApiError(404, 'Active delivery not found');
-  if (order.deliveryOtp !== req.body.otp) throw new ApiError(400, 'Incorrect delivery OTP');
+  if (!order.deliveryOtp || String(order.deliveryOtp).trim() !== req.body.otp.trim()) {
+    throw new ApiError(400, `Incorrect delivery OTP for order ${order.orderNumber}. Ask the customer to open this order and share its 4-digit delivery OTP.`);
+  }
   order.status = 'delivered';
   order.deliveredAt = new Date();
   order.statusHistory.push({ status: 'delivered', at: new Date(), note: 'Delivered by rider' });

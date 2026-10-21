@@ -27,6 +27,7 @@ export interface IUser {
   warehouses?: Types.ObjectId[];
   avatar?: string;
   isActive: boolean;
+  deletedAt?: Date;
   addresses: Types.DocumentArray<IAddress>;
   wishlist: Types.ObjectId[];
   refreshTokens: { hash: string; createdAt: Date }[];
@@ -124,6 +125,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     warehouse: { type: Schema.Types.ObjectId, ref: 'Shop', index: true },
     warehouses: { type: [{ type: Schema.Types.ObjectId, ref: 'Shop' }], default: undefined, index: true },
     isActive: { type: Boolean, default: true },
+    deletedAt: Date,
     addresses: [addressSchema],
     wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
     refreshTokens: {

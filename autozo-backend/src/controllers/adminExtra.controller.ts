@@ -170,7 +170,7 @@ export const deleteStockAlert = asyncHandler(async (req, res) => {
  */
 export const listRidersAdmin = asyncHandler(async (req, res) => {
   const { q, online } = req.query as unknown as { q?: string; online?: boolean };
-  const filter: Record<string, unknown> = { role: 'rider' };
+  const filter: Record<string, unknown> = { role: 'rider', deletedAt: { $exists: false } };
   if (q) {
     const rx = { $regex: escapeRegex(q), $options: 'i' };
     filter.$or = [{ name: rx }, { phone: rx }, { email: rx }];

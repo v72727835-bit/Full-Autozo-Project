@@ -2,6 +2,7 @@ import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderSt
 import { FilterQuery, Types } from 'mongoose';
 import { Banner, IBanner } from '../models/Banner';
 import { riderFilter } from './adminExtra.controller';
+import { codSummary } from '../services/rider.service';
 import { Cart } from '../models/Cart';
 import { Category, ICategory } from '../models/Category';
 import { DeviceToken } from '../models/DeviceToken';
@@ -95,7 +96,7 @@ export const stats = asyncHandler(async (req, res) => {
       .populate('user', 'name phone')
       .populate('shop', 'name')
       .lean(),
-    User.aggregate([{ $group: { _id: { role: '$role', active: '$isActive' }, count: { $sum: 1 } } }]),
+    User.aggregate([{ $match: { deletedAt: { $exists: false } } }, { $group: { _id: { role: '$role', active: '$isActive' }, count: { $sum: 1 } } }]),
     Order.aggregate([
       { $match: { createdAt: { $gte: since } } },
       {
@@ -479,7 +480,7 @@ export const listUsersAdmin = asyncHandler(async (req, res) => {
     limit: number;
   };
 
-  const filter: FilterQuery<IUser> = {};
+  const filter: FilterQuery<IUser> = { deletedAt: { $exists: false } };
   if (role) filter.role = role;
   if (q) {
     const rx = { $regex: escapeRegex(q), $options: 'i' };
@@ -528,6 +529,7 @@ export const updateUserAdmin = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(404, 'User not found');
 
   // A phone number or email can belong to one account of each kind (customer, rider, warehouse...).
+  if (user.deletedAt) throw new ApiError(404, 'User not found');
   if (update.phone && update.phone !== user.phone) {
     if (await User.exists({ phone: update.phone, role: update.role ?? user.role, _id: { $ne: user._id } })) throw new ApiError(409, 'That phone number is already used by another account');
   }
@@ -569,6 +571,19 @@ export const deleteUserAdmin = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(404, 'User not found');
   if (req.user!.id === String(user._id)) throw new ApiError(400, 'You cannot delete your own account');
   if (user.role === 'admin' && (await User.countDocuments({ role: 'admin' })) <= 1) throw new ApiError(400, 'The last admin account cannot be deleted');
+
+  if (user.role === 'rider') {
+    if (await Order.exists({ rider: user._id, status: 'out_for_delivery' })) {
+      throw new ApiError(409, 'Complete or reassign the active deliveries before deleting this rider.');
+    }
+    if (((await codSummary([user._id])).get(String(user._id))?.pending ?? 0) > 0) {
+      throw new ApiError(409, 'Collect and settle this rider’s pending COD cash before deleting the rider.');
+    }
+    // Retain the identity referenced by orders, COD and wallet records.
+    await User.updateOne({ _id: user._id }, { $set: { isActive: false, deletedAt: new Date(), refreshTokens: [], lastSeenAt: null } });
+    await DeviceToken.deleteMany({ user: user._id });
+    return ok(res, { deleted: true });
+  }
 
   const orders = await Order.countDocuments({ $or: [{ user: user._id }, { rider: user._id }] });
   if (orders > 0) {

@@ -24,6 +24,7 @@ export default function OrdersScreen() {
   const [saving, setSaving] = useState<string | null>(null);
   const [delivery, setDelivery] = useState<RiderOrder | null>(null);
   const [otp, setOtp] = useState('');
+  const [deliveryError, setDeliveryError] = useState('');
   const [riderLocation, setRiderLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const [newCount, setNewCount] = useState(0);
@@ -93,7 +94,24 @@ export default function OrdersScreen() {
     catch (err) { setError(getErrorMessage(err)); }
     finally { setSaving(null); }
   };
-  const deliver = async () => { if (!delivery || otp.length !== 4) return; setSaving(delivery._id); try { const updated = await deliverRiderOrder(delivery._id, otp); setOrders((items) => [updated, ...items.filter((item) => item._id !== delivery._id)]); setDelivery(null); setOtp(''); setTab('history'); setError(''); void loadProfile(); } catch (err) { setError(getErrorMessage(err)); } finally { setSaving(null); } };
+  const deliver = async () => {
+    if (!delivery || otp.length !== 4 || saving) return;
+    setDeliveryError('');
+    setSaving(delivery._id);
+    try {
+      const updated = await deliverRiderOrder(delivery._id, otp);
+      setOrders((items) => [updated, ...items.filter((item) => item._id !== delivery._id)]);
+      setDelivery(null);
+      setOtp('');
+      setTab('history');
+      setError('');
+      void loadProfile();
+    } catch (err) {
+      setDeliveryError(getErrorMessage(err));
+    } finally {
+      setSaving(null);
+    }
+  };
 
   return <View style={{ flex: 1 }}>
     {/* Cash in hand is the number a rider is accountable for, so it leads. */}
@@ -111,8 +129,8 @@ export default function OrdersScreen() {
     {newCount > 0 ? <Pressable onPress={() => { setTab('available'); setNewCount(0); }} style={styles.newBanner} accessibilityRole="button"><Ionicons name="notifications" size={18} color="#fff" /><Text style={styles.newBannerText}>{newCount} new order{newCount > 1 ? 's' : ''} ready for pickup</Text></Pressable> : null}
     {error ? <ErrorBanner message={error} /> : null}
     {tab === 'active' && activeOrder ? <DeliveryMap order={activeOrder} riderLocation={riderLocation} /> : null}
-    {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} /> : <FlatList data={visible} keyExtractor={(item) => item._id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />} contentContainerStyle={visible.length ? styles.list : styles.emptyList} ListEmptyComponent={<View style={styles.empty}><Ionicons name={tab === 'history' ? 'checkmark-done-circle-outline' : 'bicycle-outline'} size={50} color={colors.primary} /><Text style={styles.emptyTitle}>{tab === 'available' ? 'No new orders' : tab === 'active' ? 'No active deliveries' : 'No delivery history'}</Text><Text style={styles.emptyText}>New updates will appear here automatically.</Text></View>} renderItem={({ item, index }) => <FadeSlide delay={Math.min(index, 6) * 55}><OrderCard order={item} saving={saving === item._id} riderLocation={riderLocation} onAccept={() => accept(item)} onDeliver={() => { setDelivery(item); setOtp(''); }} onCancel={() => void cancel(item)} /></FadeSlide>} />}
-    <Modal visible={!!delivery} transparent animationType="slide" onRequestClose={() => setDelivery(null)}><View style={styles.modalBackdrop}><View style={styles.modal}><Text style={styles.modalTitle}>Confirm delivery</Text><Text style={styles.modalSub}>Ask the customer for the 4-digit OTP before handing over the order.</Text><TextInput value={otp} onChangeText={(value) => setOtp(value.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" maxLength={4} placeholder="••••" placeholderTextColor="#94A3B8" style={styles.otp} autoFocus /><Button title="Mark as delivered" onPress={() => void deliver()} loading={saving === delivery?._id} disabled={otp.length !== 4} /><Button title="Cancel" variant="outline" onPress={() => setDelivery(null)} style={{ marginTop: 10 }} /></View></View></Modal>
+    {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} /> : <FlatList data={visible} keyExtractor={(item) => item._id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />} contentContainerStyle={visible.length ? styles.list : styles.emptyList} ListEmptyComponent={<View style={styles.empty}><Ionicons name={tab === 'history' ? 'checkmark-done-circle-outline' : 'bicycle-outline'} size={50} color={colors.primary} /><Text style={styles.emptyTitle}>{tab === 'available' ? 'No new orders' : tab === 'active' ? 'No active deliveries' : 'No delivery history'}</Text><Text style={styles.emptyText}>New updates will appear here automatically.</Text></View>} renderItem={({ item, index }) => <FadeSlide delay={Math.min(index, 6) * 55}><OrderCard order={item} saving={saving === item._id} riderLocation={riderLocation} onAccept={() => accept(item)} onDeliver={() => { setDelivery(item); setOtp(''); setDeliveryError(''); }} onCancel={() => void cancel(item)} /></FadeSlide>} />}
+    <Modal visible={!!delivery} transparent animationType="slide" onRequestClose={() => { if (!saving) setDelivery(null); }}><View style={styles.modalBackdrop}><View style={styles.modal}><Text style={styles.modalTitle}>Confirm delivery</Text><Text style={styles.modalSub}>Order #{delivery?.orderNumber} · {delivery?.shop?.name ?? 'Warehouse'}{'\n'}Ask the customer to open this same order and share its 4-digit delivery OTP.</Text>{deliveryError ? <ErrorBanner message={deliveryError} /> : null}<TextInput value={otp} onChangeText={(value) => { setOtp(value.replace(/\D/g, '').slice(0, 4)); setDeliveryError(''); }} editable={!saving} keyboardType="number-pad" placeholder="••••" placeholderTextColor="#94A3B8" style={styles.otp} autoFocus /><Button title="Mark as delivered" onPress={() => void deliver()} loading={saving === delivery?._id} disabled={otp.length !== 4 || !!saving} /><Button title="Cancel" variant="outline" disabled={!!saving} onPress={() => setDelivery(null)} style={{ marginTop: 10 }} /></View></View></Modal>
   </View>;
 }
 

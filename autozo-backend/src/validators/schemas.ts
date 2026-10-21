@@ -208,7 +208,7 @@ export const riderLocationBody = z.object({
   lng: z.number().min(-180).max(180),
 });
 
-export const riderDeliveryBody = z.object({ otp: z.string().regex(/^\d{4}$/, 'Enter the 4-digit delivery OTP') });
+export const riderDeliveryBody = z.object({ otp: z.string().trim().regex(/^\d{4}$/, 'Enter the 4-digit delivery OTP') });
 
 /* ---------- admin ---------- */
 export const adminLoginBody = z.object({
@@ -303,7 +303,7 @@ export const adminShopBody = z.object({
   location: geoPoint.default({ lat: 24.7, lng: 83.07 }), // Robertsganj, Sonbhadra
   isOpen: z.boolean().default(true),
   isActive: z.boolean().default(true),
-  deliveryRadiusKm: z.number().min(1).max(100).default(10),
+  deliveryRadiusKm: z.number().finite().min(1).default(10),
   minOrderAmount: z.number().min(0).default(0),
   deliveryFee: z.number().min(0).default(30),
   gstin: z.string().trim().toUpperCase().max(15).optional().or(z.literal('')),
@@ -724,7 +724,7 @@ export const sellerShopBody = z
     logo: z.string().url().or(z.literal('')),
     banner: z.string().url().or(z.literal('')),
     isOpen: z.boolean(),
-    deliveryRadiusKm: z.number().min(0).max(100),
+    deliveryRadiusKm: z.number().finite().min(0),
     minOrderAmount: z.number().min(0).max(100000),
     deliveryFee: z.number().min(0).max(5000),
     gstin: z.string().trim().toUpperCase().max(15),

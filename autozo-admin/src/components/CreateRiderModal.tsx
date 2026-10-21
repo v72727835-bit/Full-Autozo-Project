@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { createRider, fetchAllShops } from '../api/admin';
+import { createRider, fetchAllShops, updateUser } from '../api/admin';
 import { getErrorMessage } from '../api/client';
-import { Shop } from '../types';
+import { RiderRow, Shop } from '../types';
 import { Button, ErrorBanner, Field, Modal } from './ui';
 import WarehouseChecks from './WarehouseChecks';
 
 /** Creates a rider login: the rider signs in to the rider app with this phone number and password. */
-export default function CreateRiderModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+export default function CreateRiderModal({ rider, onClose, onDone }: { rider?: RiderRow; onClose: () => void; onDone: () => void }) {
   const [shops, setShops] = useState<Shop[]>([]);
-  const [f, setF] = useState({ name: '', phone: '', password: '', warehouses: [] as string[] });
+  const [f, setF] = useState({ name: rider?.name ?? '', phone: rider?.phone ?? '', email: rider?.email ?? '', password: '', isActive: rider?.isActive ?? true, warehouses: rider?.warehouses?.length ? rider.warehouses.map((w) => w._id) : rider?.warehouse ? [typeof rider.warehouse === 'string' ? rider.warehouse : rider.warehouse._id] : [] as string[] });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -28,8 +28,11 @@ export default function CreateRiderModal({ onClose, onDone }: { onClose: () => v
     }
     setBusy(true);
     try {
-      await createRider(f);
-      window.alert(`Rider created.\n\nRider app login (phone): ${f.phone}\nPassword: ${f.password}\n\nShare this with the rider now - the password cannot be shown again.`);
+      if (rider) await updateUser(rider._id, { ...f, password: f.password || undefined });
+      else {
+        await createRider(f);
+        window.alert(`Rider created.\n\nRider app login (phone): ${f.phone}\nPassword: ${f.password}\n\nShare this with the rider now - the password cannot be shown again.`);
+      }
       onDone();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -38,7 +41,7 @@ export default function CreateRiderModal({ onClose, onDone }: { onClose: () => v
     }
   };
   return (
-    <Modal title="New rider" onClose={onClose}>
+    <Modal title={rider ? 'Edit rider' : 'New rider'} onClose={onClose}>
       <form onSubmit={submit}>
         <ErrorBanner message={error} />
         <Field label="Rider name">
@@ -47,9 +50,11 @@ export default function CreateRiderModal({ onClose, onDone }: { onClose: () => v
         <Field label="Phone number (rider app login, 10 digits)">
           <input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} inputMode="numeric" required />
         </Field>
-        <Field label="Password (at least 6 characters)">
+        <Field label="Email (optional)"><input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
+        {rider && <label className="checkbox-row"><input type="checkbox" checked={f.isActive} onChange={(e) => setF({ ...f, isActive: e.target.checked })} />Account active</label>}
+        <Field label={rider ? 'New password (leave blank to keep current)' : 'Password (at least 6 characters)'}>
           <div className="row-flex">
-            <input value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} required style={{ flex: 1 }} />
+            <input value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} required={!rider} minLength={6} maxLength={72} style={{ flex: 1 }} />
             <Button type="button" variant="secondary" onClick={gen}>
               Generate
             </Button>
@@ -63,7 +68,7 @@ export default function CreateRiderModal({ onClose, onDone }: { onClose: () => v
             Cancel
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy ? 'Creating…' : 'Create rider'}
+            {busy ? 'Saving…' : rider ? 'Save rider' : 'Create rider'}
           </Button>
         </div>
       </form>

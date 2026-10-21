@@ -113,7 +113,7 @@ export const fetchUsers = (params: { page?: number; limit?: number; role?: strin
 
 export const updateUser = async (
   id: string,
-  body: { isActive?: boolean; role?: string; warehouse?: string | null; name?: string; phone?: string; email?: string; password?: string },
+  body: { isActive?: boolean; role?: string; warehouse?: string | null; warehouses?: string[]; name?: string; phone?: string; email?: string; password?: string },
 ): Promise<AppUser> => (await api.patch(`/admin/users/${id}`, body)).data.data;
 
 export const deleteUser = async (id: string): Promise<void> => {

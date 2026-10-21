@@ -4,6 +4,7 @@ import { createShop, deleteShop, fetchShops, fetchWarehouseLogins, setWarehouseL
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination } from '../components/ui';
 import { PageMeta, Shop } from '../types';
+import WarehouseCoverageMap from '../components/WarehouseCoverageMap';
 
 type FormState = {
   name: string;
@@ -235,7 +236,7 @@ function ShopForm({ shop, onClose, onSaved }: { shop: Shop | null; onClose: () =
         deliveryFee: Number(form.deliveryFee) || 0,
         gstin: form.gstin.trim().toUpperCase(),
         minOrderAmount: Number(form.minOrderAmount) || 0,
-        deliveryRadiusKm: Number(form.deliveryRadiusKm) || 10,
+        deliveryRadiusKm: Number(form.deliveryRadiusKm),
         isOpen: form.isOpen,
         isActive: form.isActive,
       };
@@ -280,7 +281,7 @@ function ShopForm({ shop, onClose, onSaved }: { shop: Shop | null; onClose: () =
             <input value={form.pincode} onChange={(e) => set('pincode', e.target.value)} />
           </Field>
           <Field label="Delivery radius (km)">
-            <input type="number" value={form.deliveryRadiusKm} onChange={(e) => set('deliveryRadiusKm', e.target.value)} />
+            <input type="number" min={1} step="any" required value={form.deliveryRadiusKm} onChange={(e) => set('deliveryRadiusKm', e.target.value)} />
           </Field>
         </div>
         <div className="field-row">
@@ -299,6 +300,7 @@ function ShopForm({ shop, onClose, onSaved }: { shop: Shop | null; onClose: () =
             {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
           </span>
         </div>
+        <WarehouseCoverageMap lat={form.lat.trim() ? Number(form.lat) : NaN} lng={form.lng.trim() ? Number(form.lng) : NaN} radiusKm={form.deliveryRadiusKm.trim() ? Number(form.deliveryRadiusKm) : NaN} />
         <div className="field-row">
           <Field label="Delivery fee (₹)">
             <input type="number" value={form.deliveryFee} onChange={(e) => set('deliveryFee', e.target.value)} />
