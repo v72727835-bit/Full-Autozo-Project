@@ -12,6 +12,7 @@ import { escapeRegex, idOrSlugFilter } from '../utils/helpers';
 import { ok, pageMeta } from '../utils/response';
 import { haversineKm } from '../utils/helpers';
 import { cachedSettings, loadSettings, productRules } from '../services/settings.service';
+import { mapLimit } from '../utils/mapLimit';
 
 const CARD_FIELDS =
   'name slug brand images icon price mrp unit stock attributes foodType rating ratingCount ratingLabel variantGroup variantLabel nameHi shop category paymentMode';
@@ -194,8 +195,7 @@ export const home = asyncHandler(async (req, res) => {
   /* The admin's "Standard categories": named rows pinned above or below everything else. */
   const standardRows = await StandardCategory.find({ isActive: true }).sort({ sortOrder: 1, name: 1 }).lean();
   const standard = (
-    await Promise.all(
-      standardRows.map(async (row) => {
+    await mapLimit(standardRows, 4, async (row) => {
         const items = await Product.find({ ...scope, standardCategories: row._id })
           .sort({ sortCode: 1, name: 1 })
           .limit(24)
@@ -205,8 +205,7 @@ export const home = asyncHandler(async (req, res) => {
         return items.length
           ? ({ type: 'productRail', id: `std-${row._id}`, style: 'standard', title: row.name, titleHi: row.nameHi, position: row.position, items: items.map(toCard) } as Section & { position: string })
           : null;
-      }),
-    )
+      })
   ).filter(Boolean) as (Section & { position: string })[];
   sections.push(...standard.filter((r) => r.position === 'top'));
 

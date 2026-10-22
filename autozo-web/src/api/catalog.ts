@@ -1,4 +1,7 @@
 import { api } from '../lib/client';
+import axios from 'axios';
+import { createCatalogResource } from '../lib/catalogResource';
+import { pointParams } from '../lib/deliveryPoint';
 import * as n from '../lib/normalize';
 import {
   Category,
@@ -14,10 +17,21 @@ import {
   Shop,
 } from '../lib/types';
 
-export const fetchHome = async (): Promise<Home> => {
-  const { data } = await api.get('/home');
-  return n.home(data.data);
-};
+export const homeLocationKey = () => JSON.stringify(pointParams() ?? {});
+const homeResource = createCatalogResource<Home>(async (key) => {
+  const params = JSON.parse(key) as Record<string, number>;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const { data } = await api.get('/home', { params: { lat: params.lat, lng: params.lng } });
+      return n.home(data.data);
+    } catch (error) {
+      const transient = axios.isAxiosError(error) && (!error.response || [502, 503, 504].includes(error.response.status));
+      if (!transient || attempt >= 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 400 + Math.random() * 400));
+    }
+  }
+});
+export const fetchHome = (key = homeLocationKey(), force = false): Promise<Home> => homeResource(key, force);
 
 export const fetchCategories = async (): Promise<Category[]> => {
   const { data } = await api.get('/categories');

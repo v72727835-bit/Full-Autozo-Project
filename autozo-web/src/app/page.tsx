@@ -21,7 +21,7 @@ export default function HomePage() {
       <div className="page" style={{ paddingTop: 28, maxWidth: 560 }}>
         <Alert tone="bad">{error}</Alert>
         <p className="body-sm" style={{ marginBottom: 16 }}>
-          We couldn&apos;t reach the shop just now. Check your internet and give it another go.
+          The shop is temporarily unavailable. Please try again shortly.
         </p>
         <Button onClick={reload} icon="repeat">
           Try again

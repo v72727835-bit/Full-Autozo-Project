@@ -162,10 +162,18 @@ restart_app autozo-admin
 
 say "Checking the live sites"
 sleep 8
+HEALTH_FAILED=0
 for url in https://app-api.autozo.org/health https://shop.autozo.org https://panel.autozo.org/login; do
-  code=$(curl -s -o /dev/null -m 60 -w '%{http_code}' "$url" || true)
+  code=000
+  for attempt in 1 2 3; do
+    code=$(curl -s -o /dev/null --connect-timeout 8 -m 20 -w '%{http_code}' "$url" || true)
+    [ "$code" = 200 ] && break
+    [ "$attempt" = 3 ] || sleep 5
+  done
   printf '   %-40s %s\n' "$url" "$code"
+  [ "$code" = 200 ] || HEALTH_FAILED=1
 done
+[ "$HEALTH_FAILED" = 0 ] || fail "A live site is still unavailable after restart. Check cPanel Node.js status and the app's stderr.log; deployment is NOT confirmed healthy."
 
 # Old build folders from earlier manual deploys only waste disk.
 rm -rf "$HOME"/node_modules_*_stale_* 2>/dev/null || true

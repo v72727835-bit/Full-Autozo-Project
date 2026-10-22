@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { fetchHome } from '../api/catalog';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { fetchHome, homeLocationKey } from '../api/catalog';
 import { POINT_EVENT } from '../lib/deliveryPoint';
 import { getErrorMessage } from '../lib/client';
 import { Home } from '../lib/types';
@@ -25,25 +25,39 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
   const [home, setHome] = useState<Home | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const request = useRef(0);
+  const currentKey = useRef<string | null>(null);
 
-  const reload = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
+    const version = ++request.current;
+    const key = homeLocationKey();
+    if (currentKey.current !== key) setHome(null);
+    currentKey.current = key;
     setLoading(true);
     setError('');
     try {
-      setHome(await fetchHome());
+      const result = await fetchHome(key, force);
+      if (request.current === version) setHome(result);
     } catch (e) {
-      setError(getErrorMessage(e));
+      if (request.current === version) setError(getErrorMessage(e));
     } finally {
-      setLoading(false);
+      if (request.current === version) setLoading(false);
     }
   }, []);
+  const reload = useCallback(() => load(true), [load]);
 
   useEffect(() => {
-    reload();
+    void load();
+    const refresh = () => { void load(); };
     // A new delivery pin changes which shops (and so which products) apply.
-    window.addEventListener(POINT_EVENT, reload);
-    return () => window.removeEventListener(POINT_EVENT, reload);
-  }, [reload]);
+    window.addEventListener(POINT_EVENT, refresh);
+    window.addEventListener('online', refresh);
+    return () => {
+      request.current++;
+      window.removeEventListener(POINT_EVENT, refresh);
+      window.removeEventListener('online', refresh);
+    };
+  }, [load]);
 
   return <CatalogContext.Provider value={{ home, loading, error, reload }}>{children}</CatalogContext.Provider>;
 }

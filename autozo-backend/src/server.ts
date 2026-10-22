@@ -5,11 +5,11 @@ import { Product } from './models/Product';
 
 async function main() {
   await connectDB();
-  // Products made before sort codes existed fall to the end, so unsorted items stay A-Z.
-  await Product.updateMany({ sortCode: { $exists: false } }, { $set: { sortCode: 1_000_000 } });
-
   const server = app.listen(env.PORT, () => {
     console.log(`Autozo API running on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+    // Legacy backfill must not block Passenger startup or the health route.
+    void Product.updateMany({ sortCode: { $exists: false } }, { $set: { sortCode: 1_000_000 } })
+      .catch((error) => console.error('Product sort-code backfill failed:', error));
   });
 
   const shutdown = async (signal: string) => {

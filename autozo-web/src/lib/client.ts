@@ -136,7 +136,11 @@ function explainProblem(p: Problem): string {
 
 export function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
-    if (!err.response) return 'Could not reach the server. Please check your internet connection.';
+    if (!err.response) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return 'You are offline. Reconnect to the internet and try again.';
+      if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') return 'The store is taking longer to respond. Please try again shortly.';
+      return 'Could not connect to the store. Please try again shortly.';
+    }
     const payload = err.response.data as
       | { message?: string; errors?: Record<string, string[] | string>; details?: unknown }
       | undefined;

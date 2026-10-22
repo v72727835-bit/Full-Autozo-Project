@@ -89,6 +89,8 @@ const productSchema = new Schema<IProduct>(
 
 productSchema.index({ isActive: 1, category: 1, price: 1 });
 productSchema.index({ isActive: 1, soldCount: -1 });
+productSchema.index({ isActive: 1, shop: 1, soldCount: -1, rating: -1 });
+productSchema.index({ isActive: 1, standardCategories: 1, sortCode: 1, name: 1 });
 productSchema.index({ name: 1 });
 productSchema.index({ isActive: 1, brand: 1 });
 
