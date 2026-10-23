@@ -4,7 +4,7 @@ import { afterEach, mock, test } from 'node:test';
 import { Types } from 'mongoose';
 import { deliverOrder, listOrders } from '../src/controllers/rider.controller';
 import { freeRidersForOrder } from '../src/services/orderFlow.service';
-import { deleteUserAdmin } from '../src/controllers/admin.controller';
+import { deleteUserAdmin, listOrdersAdmin } from '../src/controllers/admin.controller';
 import { Order } from '../src/models/Order';
 import { User } from '../src/models/User';
 import { DeviceToken } from '../src/models/DeviceToken';
@@ -132,4 +132,50 @@ test('assignable riders include riders whose second warehouse is the order\'s', 
   mock.method(User, 'find', (f: any) => { filter = f; const q: any = { select: () => q, sort: () => q, lean: async () => [] }; return q; });
   await freeRidersForOrder(String(new Types.ObjectId()));
   assert.deepEqual(filter.$or, [{ warehouse: shop }, { warehouses: shop }]);
+});
+
+test('riders see an order as soon as the warehouse accepts it, until someone takes it', async () => {
+  const warehouse = new Types.ObjectId();
+  mock.method(User, 'findById', () => ({ select: () => ({ lean: async () => ({ warehouses: [warehouse] }) }) }));
+  let open: any;
+  mock.method(Order, 'find', (filter: any) => {
+    if (filter.$or) open = filter;
+    const q: any = { sort: () => q, skip: () => q, limit: () => q, select: () => q, populate: () => q, lean: async () => [] };
+    return q;
+  });
+  mock.method(Order, 'countDocuments', async () => 0);
+  await new Promise<any>((resolve, reject) => listOrders(
+    { query: { page: 1, limit: 50 }, user: { id: '507f1f77bcf86cd799439012' } } as any,
+    { status() { return this; }, json: resolve } as any,
+    reject,
+  ));
+  assert.deepEqual(open.$or[0], { status: { $in: ['accepted', 'preparing', 'ready_for_pickup'] }, rider: { $exists: false } });
+});
+
+test('admin order list says how many riders can see a waiting order', async () => {
+  const shop = new Types.ObjectId();
+  const other = new Types.ObjectId();
+  const now = new Date();
+  const orders = [
+    { _id: 'a', status: 'ready_for_pickup', shop: { _id: shop, name: 'sujata' } },
+    { _id: 'b', status: 'accepted', shop: { _id: other, name: 'ansh' } },
+    { _id: 'c', status: 'ready_for_pickup', shop: { _id: shop }, longDistance: true },
+    { _id: 'd', status: 'out_for_delivery', shop: { _id: shop }, rider: { name: 'Ravi' } },
+  ];
+  mock.method(Order, 'find', () => { const q: any = { sort: () => q, skip: () => q, limit: () => q, select: () => q, populate: () => q, lean: async () => orders }; return q; });
+  mock.method(Order, 'countDocuments', async () => orders.length);
+  mock.method(User, 'find', () => ({ select: () => ({ lean: async () => [
+    { warehouse: shop, lastSeenAt: now },
+    { warehouse: other, warehouses: [shop], riderPaused: true },
+  ] }) }));
+  const body = await new Promise<any>((resolve, reject) => listOrdersAdmin(
+    { query: { page: 1, limit: 50 } } as any,
+    { status() { return this; }, json: resolve } as any,
+    reject,
+  ));
+  const pool = Object.fromEntries(body.data.map((o: any) => [o._id, o.riderPool]));
+  assert.deepEqual(pool.a, { linked: 2, canSee: 1, online: 1 });
+  assert.deepEqual(pool.b, { linked: 0, canSee: 0, online: 0 });
+  assert.deepEqual(pool.c, { linked: 2, canSee: 0, online: 0 });
+  assert.equal(pool.d, undefined);
 });

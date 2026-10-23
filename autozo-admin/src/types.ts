@@ -151,6 +151,9 @@ export interface Order {
   user: { _id: string; name: string; phone: string; email?: string } | string;
   shop: { _id: string; name: string; phone?: string } | string;
   rider?: { _id: string; name: string; phone?: string } | string;
+  /** Orders still waiting for a rider: riders linked to the warehouse, those who see it in the app, and those online. */
+  riderPool?: { linked: number; canSee: number; online: number };
+  longDistance?: boolean;
   fulfillment?: 'rider' | 'shiprocket';
   shiprocket?: { orderId?: string; shipmentId?: string; awb?: string; courier?: string; labelUrl?: string; status?: string; syncedAt?: string };
   items: OrderItem[];

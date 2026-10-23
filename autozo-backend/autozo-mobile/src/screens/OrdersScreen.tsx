@@ -12,8 +12,10 @@ import { RiderOrder, RiderProfile } from '../types';
 import { colors, radius, shadow } from '../theme';
 
 
+/** Shown in New orders: being packed at the warehouse, or ready to take. */
+const isNew = (o: RiderOrder) => o.status === 'accepted' || o.status === 'preparing' || o.status === 'ready_for_pickup';
 const money = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
-const statusLabel: Record<RiderOrder['status'], string> = { ready_for_pickup: 'Ready for pickup', out_for_delivery: 'On the way', delivered: 'Delivered' };
+const statusLabel: Record<RiderOrder['status'], string> = { accepted: 'Being packed', preparing: 'Being packed', ready_for_pickup: 'Ready for pickup', out_for_delivery: 'On the way', delivered: 'Delivered' };
 
 export default function OrdersScreen() {
   const [orders, setOrders] = useState<RiderOrder[]>([]);
@@ -35,8 +37,8 @@ export default function OrdersScreen() {
     refresh ? setRefreshing(true) : setLoading(true);
     try {
       const list = await fetchRiderOrders();
-      // Buzz when an order becomes ready for pickup that we have not seen before.
-      const ready = list.filter((o) => o.status === 'ready_for_pickup').map((o) => o._id);
+      // Buzz for an order we have not seen before: once when the warehouse accepts it, again when it is ready.
+      const ready = list.filter(isNew).map((o) => `${o._id}:${o.status === 'ready_for_pickup' ? 'ready' : 'packing'}`);
       if (seenIds.current) {
         const fresh = ready.filter((id) => !seenIds.current!.has(id));
         if (fresh.length) { Vibration.vibrate([0, 400, 200, 400]); setNewCount(fresh.length); }
@@ -56,7 +58,7 @@ export default function OrdersScreen() {
   }, []);
   useEffect(() => { void loadProfile(); const timer = setInterval(loadProfile, 30000); return () => clearInterval(timer); }, [loadProfile]);
 
-  const visible = useMemo(() => orders.filter((o) => tab === 'available' ? o.status === 'ready_for_pickup' : tab === 'active' ? o.status === 'out_for_delivery' : o.status === 'delivered'), [orders, tab]);  const activeOrder = orders.find((order) => order.status === 'out_for_delivery');
+  const visible = useMemo(() => orders.filter((o) => tab === 'available' ? isNew(o) : tab === 'active' ? o.status === 'out_for_delivery' : o.status === 'delivered'), [orders, tab]);  const activeOrder = orders.find((order) => order.status === 'out_for_delivery');
   const carrying = !!activeOrder;
   useEffect(() => {
     if (tab !== 'active' && !carrying) return;
@@ -124,9 +126,9 @@ export default function OrdersScreen() {
       <Ionicons name="cash-outline" size={44} color="#fff" />
     </View></FadeSlide>
     {profile?.paused ? <View style={styles.pausedBar}><Ionicons name="pause-circle" size={18} color="#fff" /><Text style={styles.newBannerText}>Your delivery service is stopped. Submit the cash to clear it.</Text></View> : null}
-    <FadeSlide delay={70}><View style={styles.stats}><Stat value={String(orders.filter((o) => o.status === 'ready_for_pickup').length)} label="Available" /><Stat value={String(orders.filter((o) => o.status === 'out_for_delivery').length)} label="Active" /><Stat value={String(profile?.deliveredCount ?? orders.filter((o) => o.status === 'delivered').length)} label="Delivered" /><Stat value={String(profile?.cancelledCount ?? 0)} label="Cancelled" last /></View></FadeSlide>
+    <FadeSlide delay={70}><View style={styles.stats}><Stat value={String(orders.filter(isNew).length)} label="Available" /><Stat value={String(orders.filter((o) => o.status === 'out_for_delivery').length)} label="Active" /><Stat value={String(profile?.deliveredCount ?? orders.filter((o) => o.status === 'delivered').length)} label="Delivered" /><Stat value={String(profile?.cancelledCount ?? 0)} label="Cancelled" last /></View></FadeSlide>
     <View style={styles.tabs}>{(['available', 'active', 'history'] as const).map((value) => <Pressable key={value} onPress={() => setTab(value)} style={[styles.tab, tab === value && styles.tabActive]}><Text style={[styles.tabText, tab === value && styles.tabTextActive]}>{value === 'available' ? 'New orders' : value === 'active' ? 'My deliveries' : 'History'}</Text></Pressable>)}</View>
-    {newCount > 0 ? <Pressable onPress={() => { setTab('available'); setNewCount(0); }} style={styles.newBanner} accessibilityRole="button"><Ionicons name="notifications" size={18} color="#fff" /><Text style={styles.newBannerText}>{newCount} new order{newCount > 1 ? 's' : ''} ready for pickup</Text></Pressable> : null}
+    {newCount > 0 ? <Pressable onPress={() => { setTab('available'); setNewCount(0); }} style={styles.newBanner} accessibilityRole="button"><Ionicons name="notifications" size={18} color="#fff" /><Text style={styles.newBannerText}>{newCount} new order update{newCount > 1 ? 's' : ''}</Text></Pressable> : null}
     {error ? <ErrorBanner message={error} /> : null}
     {tab === 'active' && activeOrder ? <DeliveryMap order={activeOrder} riderLocation={riderLocation} /> : null}
     {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} /> : <FlatList data={visible} keyExtractor={(item) => item._id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />} contentContainerStyle={visible.length ? styles.list : styles.emptyList} ListEmptyComponent={<View style={styles.empty}><Ionicons name={tab === 'history' ? 'checkmark-done-circle-outline' : 'bicycle-outline'} size={50} color={colors.primary} /><Text style={styles.emptyTitle}>{tab === 'available' ? 'No new orders' : tab === 'active' ? 'No active deliveries' : 'No delivery history'}</Text><Text style={styles.emptyText}>New updates will appear here automatically.</Text></View>} renderItem={({ item, index }) => <FadeSlide delay={Math.min(index, 6) * 55}><OrderCard order={item} saving={saving === item._id} riderLocation={riderLocation} onAccept={() => accept(item)} onDeliver={() => { setDelivery(item); setOtp(''); setDeliveryError(''); }} onCancel={() => void cancel(item)} /></FadeSlide>} />}
@@ -156,7 +158,7 @@ function kmBetween(a: { latitude: number; longitude: number }, b: { lat: number;
 function OrderCard({ order, saving, riderLocation, onAccept, onDeliver, onCancel }: { order: RiderOrder; saving: boolean; riderLocation: { latitude: number; longitude: number } | null; onAccept: () => void; onDeliver: () => void; onCancel: () => void }) {
   // The distance is not shown before the order is accepted: riders were
   // cherry-picking the short runs and leaving the far ones for nobody.
-  const accepted = order.status !== 'ready_for_pickup';
+  const accepted = !isNew(order);
   const km = accepted && riderLocation && order.address.location ? kmBetween(riderLocation, order.address.location) : null;
 
   const slotText = order.deliveryDays ? `${order.deliveryDays} day${order.deliveryDays > 1 ? 's' : ''} delivery` : order.slot === 'twoHour' ? 'Within 2 hours' : order.slot === 'nextDay' ? 'Next day delivery' : 'Deliver in 19 minutes';
@@ -169,6 +171,7 @@ function OrderCard({ order, saving, riderLocation, onAccept, onDeliver, onCancel
     <Text style={[styles.slotText, order.redOrder ? styles.redText : null]}>{order.redOrder ? 'LONG RUN · ' : order.longDistance ? 'LONG DISTANCE · ' : ''}{slotText} · placed {placed}</Text>
     <Text style={styles.items}>{order.items.length} item{order.items.length === 1 ? '' : 's'} · {order.paymentMethod === 'cod' ? `Collect ${money(order.total)} in cash` : 'Paid online'}{km !== null ? ` · ${km.toFixed(1)} km away` : ''}</Text>
     {order.status === 'ready_for_pickup' ? <Button title={saving ? 'Accepting...' : 'Accept order'} onPress={onAccept} loading={saving} style={{ marginTop: 14 }} />
+      : order.status === 'accepted' || order.status === 'preparing' ? <Button title="Being packed · accept when ready" onPress={onAccept} disabled style={{ marginTop: 14 }} />
       : order.status === 'out_for_delivery' ? <><Button title="Complete delivery" onPress={onDeliver} disabled={saving} style={{ marginTop: 14 }} /><Button title="Cancel this order" variant="outline" onPress={onCancel} disabled={saving} style={{ marginTop: 10 }} /></>
       : null}
   </View>;

@@ -51,6 +51,8 @@ export const getProfile = asyncHandler(async (req, res) => {
 
 /** Most open orders (pickups + the rider's own deliveries) one app screen ever holds. */
 const OPEN_CAP = 100;
+/** Orders the warehouse has accepted are shown to riders straight away; they can take one once it is ready. */
+const UPCOMING = ['accepted', 'preparing', 'ready_for_pickup'];
 
 const findRiderOrders = (filter: FilterQuery<IOrder>, sort: 1 | -1, skip: number, limit: number) =>
   Order.find(filter).sort({ createdAt: sort }).skip(skip).limit(limit)
@@ -71,7 +73,7 @@ export const listOrders = asyncHandler(async (req, res) => {
     // The app's main list. Open work comes first and in full; delivered history is only the latest page.
     // (One list sorted oldest-first used to fill up with old deliveries, so new pickups never showed.)
     // A paused rider sees only their own orders - no new pickups until resumed.
-    const open: FilterQuery<IOrder> = rider.riderPaused ? active : { ...base, $or: [{ status: 'ready_for_pickup' }, { rider: req.user!.id, status: 'out_for_delivery' }] };
+    const open: FilterQuery<IOrder> = rider.riderPaused ? active : { ...base, $or: [{ status: { $in: UPCOMING }, rider: { $exists: false } }, { rider: req.user!.id, status: 'out_for_delivery' }] };
     const [openOrders, doneOrders, doneTotal] = await Promise.all([
       page === 1 ? findRiderOrders(open, 1, 0, OPEN_CAP) : Promise.resolve([]),
       findRiderOrders(delivered, -1, (page - 1) * limit, limit),

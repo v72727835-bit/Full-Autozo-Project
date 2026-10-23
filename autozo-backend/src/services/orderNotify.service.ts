@@ -85,6 +85,7 @@ export function notifyOrderStatus(o: OrderLike, status: string) {
     (async () => {
       const t = CUSTOMER_TEXT[status];
       if (t) await pushToUsers([idOf(o.user)], { title: t[0], body: `Order ${num(o)} ${t[1]}`, data: data(o, `order_${status}`) });
+      if (status === 'accepted') await notifyRidersUpcoming(o);
       if (status === 'ready_for_pickup') await notifyRidersPickup(o);
       if (status === 'cancelled' && o.rider) {
         await pushToUsers([idOf(o.rider)], { title: 'Order cancelled', body: `Order ${num(o)} was cancelled.`, data: data(o, 'order_cancelled', 'rider') });
@@ -99,6 +100,15 @@ export async function notifyRidersPickup(o: OrderLike) {
     title: 'New delivery available',
     body: `Order ${num(o)} is ready for pickup. Open the app to accept it.`,
     data: data(o, 'pickup_available', 'rider'),
+  });
+}
+
+/** The warehouse accepted an order: its riders see it in the app while it is packed. */
+async function notifyRidersUpcoming(o: OrderLike) {
+  await pushToUsers(await warehouseRiders(o), {
+    title: 'New order coming',
+    body: `Order ${num(o)} is being packed. You can accept it once it is ready for pickup.`,
+    data: data(o, 'pickup_upcoming', 'rider'),
   });
 }
 
