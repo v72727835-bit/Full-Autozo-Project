@@ -84,7 +84,8 @@ export interface RiderProfile {
 export interface RiderOrder {
   _id: string;
   orderNumber: string;
-  status: 'ready_for_pickup' | 'out_for_delivery' | 'delivered';
+  /** accepted / preparing: the warehouse is packing it; it can be taken once ready_for_pickup. */
+  status: 'accepted' | 'preparing' | 'ready_for_pickup' | 'out_for_delivery' | 'delivered';
   total: number;
   paymentMethod: 'cod' | 'online';
   createdAt: string;
