@@ -2,7 +2,8 @@ import './env';
 import assert from 'node:assert/strict';
 import { afterEach, mock, test } from 'node:test';
 import { Types } from 'mongoose';
-import { deliverOrder } from '../src/controllers/rider.controller';
+import { deliverOrder, listOrders } from '../src/controllers/rider.controller';
+import { freeRidersForOrder } from '../src/services/orderFlow.service';
 import { deleteUserAdmin } from '../src/controllers/admin.controller';
 import { Order } from '../src/models/Order';
 import { User } from '../src/models/User';
@@ -93,4 +94,42 @@ test('deleting an eligible rider disables login while preserving order and walle
   await invoke(deleteUserAdmin);
   assert.equal(update.mock.callCount(), 1);
   assert.equal(remove.mock.callCount(), 0);
+});
+
+test('rider list keeps new pickups even when the rider has a long delivery history', async () => {
+  const riderId = '507f1f77bcf86cd799439012';
+  const warehouse = new Types.ObjectId();
+  mock.method(User, 'findById', () => ({ select: () => ({ lean: async () => ({ warehouse, warehouses: [warehouse] }) }) }));
+  const calls: { filter: any; sort: any; limit: number }[] = [];
+  mock.method(Order, 'find', (filter: any) => {
+    const call = { filter, sort: undefined as any, limit: 0 };
+    calls.push(call);
+    const q: any = {
+      sort(s: any) { call.sort = s; return q; }, skip() { return q; }, limit(n: number) { call.limit = n; return q; },
+      select() { return q; }, populate() { return q; },
+      lean: async () => (filter.$or ? [{ _id: 'new-pickup', status: 'ready_for_pickup' }] : Array.from({ length: call.limit }, (_, i) => ({ _id: `old-${i}`, status: 'delivered' }))),
+    };
+    return q;
+  });
+  mock.method(Order, 'countDocuments', async () => 500);
+  const body = await new Promise<any>((resolve, reject) => listOrders(
+    { query: { page: 1, limit: 50 }, user: { id: riderId } } as any,
+    { status() { return this; }, json: resolve } as any,
+    reject,
+  ));
+  assert.equal(body.data[0]._id, 'new-pickup');
+  assert.equal(body.data.length, 51);
+  const open = calls.find((c) => c.filter.$or)!;
+  assert.deepEqual(open.filter.shop, { $in: [warehouse] });
+  assert.equal(calls.find((c) => c.filter.status === 'delivered')!.sort.createdAt, -1);
+});
+
+test('assignable riders include riders whose second warehouse is the order\'s', async () => {
+  const shop = new Types.ObjectId();
+  mock.method(Order, 'findById', () => ({ select: () => ({ lean: async () => ({ shop }) }) }));
+  mock.method(Order, 'distinct', async () => []);
+  let filter: any;
+  mock.method(User, 'find', (f: any) => { filter = f; const q: any = { select: () => q, sort: () => q, lean: async () => [] }; return q; });
+  await freeRidersForOrder(String(new Types.ObjectId()));
+  assert.deepEqual(filter.$or, [{ warehouse: shop }, { warehouses: shop }]);
 });
