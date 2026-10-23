@@ -1,8 +1,8 @@
-import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus } from '../services/orderFlow.service';
+import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus, withRiderPool } from '../services/orderFlow.service';
 import { FilterQuery, Types } from 'mongoose';
 import { Banner, IBanner } from '../models/Banner';
 import { riderFilter } from './adminExtra.controller';
-import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
+import { codSummary } from '../services/rider.service';
 import { Cart } from '../models/Cart';
 import { Category, ICategory } from '../models/Category';
 import { DeviceToken } from '../models/DeviceToken';
@@ -10,7 +10,7 @@ import { Coupon, ICoupon } from '../models/Coupon';
 import { IOrder, Order } from '../models/Order';
 import { IProduct, Product } from '../models/Product';
 import { Shop } from '../models/Shop';
-import { IUser, riderWarehouseIds, User } from '../models/User';
+import { IUser, User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { importProducts } from '../services/bulkProducts.service';
 import { refundRazorpayPayment } from '../services/razorpay.service';
@@ -370,35 +370,6 @@ export const listOrdersAdmin = asyncHandler(async (req, res) => {
   ]);
   ok(res, await withRiderPool(orders), pageMeta(page, limit, total));
 });
-
-const WAITING_FOR_RIDER = ['accepted', 'preparing', 'ready_for_pickup'];
-
-/**
- * For each order still waiting for a rider: how many riders can see it in their app right now.
- * Uses the same warehouse and long-distance rules as the rider app, so "0" explains a missing order.
- */
-async function withRiderPool<T extends { shop?: unknown; rider?: unknown; status: string; fulfillment?: string; longDistance?: boolean }>(orders: T[]) {
-  const waiting = orders.filter((o) => !o.rider && o.fulfillment !== 'shiprocket' && WAITING_FOR_RIDER.includes(o.status));
-  if (!waiting.length) return orders;
-  const shopId = (o: T) => String((o.shop as { _id?: unknown } | null)?._id ?? o.shop);
-  const shopIds = [...new Set(waiting.map(shopId))];
-  const riders = await User.find({
-    role: 'rider',
-    isActive: true,
-    deletedAt: { $exists: false },
-    $or: [{ warehouse: { $in: shopIds } }, { warehouses: { $in: shopIds } }],
-  })
-    .select('warehouse warehouses riderPaused riderLongDistance lastSeenAt')
-    .lean();
-  const since = Date.now() - ONLINE_WINDOW_MS;
-  return orders.map((o) => {
-    if (!waiting.includes(o)) return o;
-    const linked = riders.filter((r) => riderWarehouseIds(r).some((w) => String(w) === shopId(o)));
-    const canSee = linked.filter((r) => !r.riderPaused && !!r.riderLongDistance === !!o.longDistance);
-    const online = canSee.filter((r) => r.lastSeenAt && r.lastSeenAt.getTime() >= since);
-    return { ...o, riderPool: { linked: linked.length, canSee: canSee.length, online: online.length } };
-  });
-}
 
 export const getOrderAdmin = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)

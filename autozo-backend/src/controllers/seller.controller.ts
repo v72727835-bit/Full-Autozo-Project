@@ -10,7 +10,7 @@ import { ApiError } from '../utils/ApiError';
 import { importProducts } from '../services/bulkProducts.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { created, ok, pageMeta } from '../utils/response';
-import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus, ridersForOrder } from '../services/orderFlow.service';
+import { assignRiderToOrder, assignToShiprocket, freeRidersForOrder, moveOrderStatus, ridersForOrder, withRiderPool } from '../services/orderFlow.service';
 import { ONLINE_WINDOW_MS } from '../services/rider.service';
 import { signAccessToken, signRefreshToken, sha256 } from '../utils/jwt';
 import { SellerTxn } from '../models/SellerTxn';
@@ -191,7 +191,7 @@ export const listMyOrders = asyncHandler(async (req, res) => {
       .select('-statusHistory -deliveryOtp').populate('user', 'name phone').populate('shop', 'name').populate('rider', 'name phone').lean(),
     Order.countDocuments(filter),
   ]);
-  ok(res, rows, pageMeta(page, limit, total));
+  ok(res, await withRiderPool(rows), pageMeta(page, limit, total));
 });
 
 export const setMyOrderStatus = asyncHandler(async (req, res) => {

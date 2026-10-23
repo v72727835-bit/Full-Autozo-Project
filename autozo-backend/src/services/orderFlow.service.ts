@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { IOrder, Order } from '../models/Order';
 import { Product } from '../models/Product';
-import { User } from '../models/User';
+import { riderWarehouseIds, User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { notifyOrderStatus, notifyRiderAssigned } from './orderNotify.service';
 import { ONLINE_WINDOW_MS } from './rider.service';
@@ -140,4 +140,33 @@ export async function assignToShiprocket(orderId: string, by: string) {
   if (!updated) throw new ApiError(409, 'This order changed a moment ago. Refresh and try again.');
   notifyOrderStatus(updated, 'out_for_delivery');
   return updated;
+}
+
+const WAITING_FOR_RIDER = ['accepted', 'preparing', 'ready_for_pickup'];
+
+/**
+ * For each order still waiting for a rider: how many riders can see it in their app right now.
+ * Uses the same warehouse and long-distance rules as the rider app, so "0" explains a missing order.
+ */
+export async function withRiderPool<T extends { shop?: unknown; rider?: unknown; status: string; fulfillment?: string; longDistance?: boolean }>(orders: T[]) {
+  const waiting = orders.filter((o) => !o.rider && o.fulfillment !== 'shiprocket' && WAITING_FOR_RIDER.includes(o.status));
+  if (!waiting.length) return orders;
+  const shopId = (o: T) => String((o.shop as { _id?: unknown } | null)?._id ?? o.shop);
+  const shopIds = [...new Set(waiting.map(shopId))];
+  const riders = await User.find({
+    role: 'rider',
+    isActive: true,
+    deletedAt: { $exists: false },
+    $or: [{ warehouse: { $in: shopIds } }, { warehouses: { $in: shopIds } }],
+  })
+    .select('warehouse warehouses riderPaused riderLongDistance lastSeenAt')
+    .lean();
+  const since = Date.now() - ONLINE_WINDOW_MS;
+  return orders.map((o) => {
+    if (!waiting.includes(o)) return o;
+    const linked = riders.filter((r) => riderWarehouseIds(r).some((w) => String(w) === shopId(o)));
+    const canSee = linked.filter((r) => !r.riderPaused && !!r.riderLongDistance === !!o.longDistance);
+    const online = canSee.filter((r) => r.lastSeenAt && r.lastSeenAt.getTime() >= since);
+    return { ...o, riderPool: { linked: linked.length, canSee: canSee.length, online: online.length } };
+  });
 }

@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { sellerInvoiceLink, sellerOrders, sellerSetOrderStatus } from '../api/admin';
 import { openBill } from '../lib/invoice';
+import RiderCell from '../components/RiderCell';
 import AssignPanel from './AssignPanel';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Pagination, Tabs, money, formatDate } from '../components/ui';
@@ -108,6 +109,9 @@ export default function Orders({ onChanged }: { onChanged: () => void }) {
               </div>
 
               <div className="cell-muted" style={{ margin: '8px 0' }}>{o.items.map((i) => `${i.name} × ${i.quantity}`).join(', ')}</div>
+              {(rider || o.riderPool) && (
+                <div style={{ marginBottom: 8 }}><b>Rider:</b> <RiderCell order={o} /></div>
+              )}
 
               <div className="row-flex" style={{ flexWrap: 'wrap' }}>
                 {next && <Button size="sm" disabled={busy === o._id} onClick={() => move(o._id, next.to)}>{next.label}</Button>}
@@ -123,7 +127,6 @@ export default function Orders({ onChanged }: { onChanged: () => void }) {
                 <Button size="sm" variant="secondary" onClick={() => openBill(() => sellerInvoiceLink(o._id), 'a4').catch((e) => setError(getErrorMessage(e)))}>Invoice</Button>
                 <Button size="sm" variant="secondary" onClick={() => openBill(() => sellerInvoiceLink(o._id), 'pos').catch((e) => setError(getErrorMessage(e)))}>POS bill</Button>
                 <Button size="sm" variant="ghost" onClick={() => setOpen(expanded ? null : o._id)}>{expanded ? 'Hide details' : 'Details'}</Button>
-                {rider && <span className="cell-muted">Rider: {rider.name}{rider.phone ? ` · ${rider.phone}` : ''}</span>}
                 {o.fulfillment === 'shiprocket' && (
                   <span className="cell-muted">📦 Shiprocket{o.shiprocket?.courier ? ` · ${o.shiprocket.courier}` : ''}{o.shiprocket?.awb ? ` · AWB ${o.shiprocket.awb}` : ''}</span>
                 )}

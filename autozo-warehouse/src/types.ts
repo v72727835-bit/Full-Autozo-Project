@@ -12,6 +12,9 @@ export interface Order {
   user?: { _id: string; name: string; phone: string } | string;
   shop?: { _id: string; name: string } | string;
   rider?: { _id: string; name: string; phone?: string } | string;
+  /** Still waiting for a rider: riders linked to the warehouse, those who see it in their app, and those online. */
+  riderPool?: { linked: number; canSee: number; online: number };
+  longDistance?: boolean;
   fulfillment?: 'rider' | 'shiprocket';
   shiprocket?: { orderId?: string; awb?: string; courier?: string; status?: string };
   items: OrderItem[];

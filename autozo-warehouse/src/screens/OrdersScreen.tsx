@@ -76,7 +76,8 @@ export default function OrdersScreen({ onChanged }: { onChanged: (newCount: numb
           <View style={{ alignItems: 'flex-end', gap: 4 }}><Text style={{ fontWeight: '800' }}>{money(o.total)}</Text><Pill text={STATUS_LABEL[o.status] ?? o.status} tone={statusTone(o.status)} /></View>
         </View>
         <Text style={{ color: colors.muted, marginVertical: 8 }}>{o.items.map((i) => `${i.name} × ${i.quantity}`).join(', ')}</Text>
-        {rider ? <Text style={{ color: colors.muted, marginBottom: 6 }}>Rider: {rider.name}{rider.phone ? ` · ${rider.phone}` : ''}</Text> : null}
+        {rider ? <Text style={{ color: colors.text, fontWeight: '700', marginBottom: 6 }}>Rider: {rider.name}{rider.phone ? ` · ${rider.phone}` : ''}</Text> : null}
+        {!rider && o.riderPool ? <RiderPoolLine order={o} /> : null}
         {o.fulfillment === 'shiprocket' ? <Text style={{ color: colors.muted, marginBottom: 6 }}>📦 Shiprocket{o.shiprocket?.courier ? ` · ${o.shiprocket.courier}` : ''}{o.shiprocket?.awb ? ` · AWB ${o.shiprocket.awb}` : ''}</Text> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {next ? <Btn small title={next.label} disabled={busy === o._id} onPress={() => move(o, next.to)} /> : null}
@@ -164,4 +165,12 @@ function AssignModal({ order, onClose, onDone }: { order: Order; onClose: () => 
       </View>
     </Modal>
   );
+}
+
+/** While an order waits for a rider: how many riders see it in their app, or why nobody can. */
+function RiderPoolLine({ order }: { order: Order }) {
+  const pool = order.riderPool!;
+  const problem = !pool.linked ? 'No rider linked to this warehouse' : !pool.canSee ? (order.longDistance ? 'Long distance: no long-distance rider' : 'All riders paused or long-distance only') : '';
+  if (problem) return <Text style={{ color: colors.danger, fontWeight: '700', marginBottom: 6 }}>Rider: {problem}</Text>;
+  return <Text style={{ color: colors.muted, marginBottom: 6 }}>Rider: not assigned · {pool.canSee} can see it, {pool.online} online</Text>;
 }
