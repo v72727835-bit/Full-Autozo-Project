@@ -48,7 +48,13 @@ export const getProfile = asyncHandler(async (req, res) => {
     notices,
   });
 });
-const visibleStatuses = ['ready_for_pickup', 'out_for_delivery', 'delivered'] as const;
+
+/** Most open orders (pickups + the rider's own deliveries) one app screen ever holds. */
+const OPEN_CAP = 100;
+
+const findRiderOrders = (filter: FilterQuery<IOrder>, sort: 1 | -1, skip: number, limit: number) =>
+  Order.find(filter).sort({ createdAt: sort }).skip(skip).limit(limit)
+    .select('-statusHistory -deliveryOtp').populate('shop', 'name address phone location').populate('user', 'name phone').lean();
 
 export const listOrders = asyncHandler(async (req, res) => {
   const { page, limit, status } = req.query as unknown as { page: number; limit: number; status?: string };
@@ -56,20 +62,30 @@ export const listOrders = asyncHandler(async (req, res) => {
   const shops = rider ? riderWarehouseIds(rider) : [];
   if (!rider || !shops.length) throw new ApiError(400, 'No warehouse is assigned to this rider');
   // Long-distance orders go only to the special rider; everyone else never sees them.
-  const lane = rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } };
-  // A paused rider sees only their own orders - no new pickups until resumed.
-  if (rider.riderPaused && (!status || status === 'ready_for_pickup')) {
-    const own = { ...lane, shop: { $in: shops }, rider: req.user!.id, status: status ? '__none__' : { $in: ['out_for_delivery', 'delivered'] } };
-    const orders = await Order.find(own).sort({ createdAt: 1 }).skip((page - 1) * limit).limit(limit)
-      .select('-statusHistory -deliveryOtp').populate('shop', 'name address phone location').populate('user', 'name phone').lean();
-    return ok(res, orders, pageMeta(page, limit, await Order.countDocuments(own)));
+  const base: FilterQuery<IOrder> = { ...(rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } }), shop: { $in: shops } };
+  const pickups: FilterQuery<IOrder> = { ...base, status: 'ready_for_pickup' };
+  const active: FilterQuery<IOrder> = { ...base, rider: req.user!.id, status: 'out_for_delivery' };
+  const delivered: FilterQuery<IOrder> = { ...base, rider: req.user!.id, status: 'delivered' };
+
+  if (!status) {
+    // The app's main list. Open work comes first and in full; delivered history is only the latest page.
+    // (One list sorted oldest-first used to fill up with old deliveries, so new pickups never showed.)
+    // A paused rider sees only their own orders - no new pickups until resumed.
+    const open: FilterQuery<IOrder> = rider.riderPaused ? active : { ...base, $or: [{ status: 'ready_for_pickup' }, { rider: req.user!.id, status: 'out_for_delivery' }] };
+    const [openOrders, doneOrders, doneTotal] = await Promise.all([
+      page === 1 ? findRiderOrders(open, 1, 0, OPEN_CAP) : Promise.resolve([]),
+      findRiderOrders(delivered, -1, (page - 1) * limit, limit),
+      Order.countDocuments(delivered),
+    ]);
+    return ok(res, [...openOrders, ...doneOrders], { ...pageMeta(page, limit, doneTotal), open: openOrders.length });
   }
-  const filter: FilterQuery<IOrder> = { ...lane, shop: { $in: shops }, status: status ?? { $in: visibleStatuses } };
-  if (!status) filter.$or = [{ status: 'ready_for_pickup' }, { rider: req.user!.id, status: { $in: ['out_for_delivery', 'delivered'] } }];
-  else if (status !== 'ready_for_pickup') filter.rider = req.user!.id;
+
+  if (status === 'ready_for_pickup' && rider.riderPaused) return ok(res, [], pageMeta(page, limit, 0));
+  const filter = status === 'ready_for_pickup' ? pickups : status === 'out_for_delivery' ? active : delivered;
+  // Pickups oldest first (first come, first served); history newest first.
+  const sort = status === 'delivered' ? -1 : 1;
   const [orders, total] = await Promise.all([
-    Order.find(filter).sort({ createdAt: 1 }).skip((page - 1) * limit).limit(limit)
-      .select('-statusHistory -deliveryOtp').populate('shop', 'name address phone location').populate('user', 'name phone').lean(),
+    findRiderOrders(filter, sort, (page - 1) * limit, limit),
     Order.countDocuments(filter),
   ]);
   ok(res, orders, pageMeta(page, limit, total));

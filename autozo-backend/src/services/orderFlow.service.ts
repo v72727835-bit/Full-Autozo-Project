@@ -61,7 +61,8 @@ export async function freeRidersForOrder(orderId: string) {
   return User.find({
     role: 'rider',
     isActive: true,
-    warehouse: order.shop,
+    // Riders can serve several warehouses; `warehouse` is only their first one.
+    $or: [{ warehouse: order.shop }, { warehouses: order.shop }],
     riderPaused: { $ne: true },
     lastSeenAt: { $gte: since },
     _id: { $nin: busy },
