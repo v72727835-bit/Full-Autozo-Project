@@ -111,7 +111,6 @@ async function runPlaceOrder(
     const km = distanceTo(g.shop, address.location);
     const quote = quoteDelivery(settings, { subtotal, distanceKm: km, slot });
     if (!quote.meetsMinOrder) problems.push({ shop: g.shop.name, reason: `min_order_${quote.minOrder}` });
-    if (paymentMethod === 'cod' && !quote.codAllowed) problems.push({ shop: g.shop.name, reason: 'cod_long_distance' });
     owed += subtotal + quote.deliveryFee + quote.twoHourFee + quote.handlingFee;
   }
   if (problems.length) throw new ApiError(409, 'Some items in your cart need attention', problems);

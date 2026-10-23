@@ -21,7 +21,7 @@ export interface Quote {
   /** Delivery days (0 = same day). */
   days: number;
   redOrder: boolean;
-  /** Beyond the last band: routed to the special long-distance rider, COD off. */
+  /** Beyond the last band: routed to the special long-distance rider. */
   longDistance: boolean;
   codAllowed: boolean;
   codMessage?: string;
@@ -100,8 +100,9 @@ export function quoteDelivery(
     days,
     redOrder,
     longDistance,
-    codAllowed: !longDistance,
-    codMessage: longDistance ? 'For long distance delivery, the "COD" option is not available.' : undefined,
+    // Distance controls charges, delivery time and routing, not payment mode.
+    // Product payment permissions are applied by the cart/order controllers.
+    codAllowed: true,
     total: round2(subtotal + deliveryFee + handlingFee + twoHourFee),
   };
 }

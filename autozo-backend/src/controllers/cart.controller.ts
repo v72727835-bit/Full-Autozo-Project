@@ -4,7 +4,7 @@ import { Shop } from '../models/Shop';
 import { User } from '../models/User';
 import { getCartView, lineIssue, resolveCart } from '../services/cart.service';
 import { quoteDelivery, Slot } from '../services/pricing.service';
-import { loadSettings } from '../services/settings.service';
+import { codMessage, loadSettings, productRules } from '../services/settings.service';
 import { haversineKm } from '../utils/helpers';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -90,5 +90,6 @@ export const quote = asyncHandler(async (req, res) => {
   const km = point && c ? haversineKm(point.lat, point.lng, c[1], c[0]) : null;
 
   const { settings } = await loadSettings();
-  ok(res, quoteDelivery(settings, { subtotal, distanceKm: km, slot }));
+  const codAllowed = groups.every((g) => g.lines.every((l) => productRules(l.product.category, l.product.paymentMode).codAvailable));
+  ok(res, { ...quoteDelivery(settings, { subtotal, distanceKm: km, slot }), codAllowed, ...(codAllowed ? {} : { codMessage: codMessage() }) });
 });

@@ -89,11 +89,12 @@ export function productRules(
   const id = idOf(category);
   const mode: PaymentMode = paymentMode === 'cod' || paymentMode === 'online' ? paymentMode : 'both';
   const aisleCod = !cache || !id ? true : !cache.codOff.has(id);
+  const explicitMode = paymentMode === 'cod' || paymentMode === 'online' || paymentMode === 'both';
   return {
     deliveryDays: cache && id && cache.sixDay.has(id) ? cache.settings.sixDay.days : null,
-    // A product set to "COD only" is sold for cash even in an aisle where cash is off by default;
-    // otherwise the aisle rule and the product's own choice both have to allow cash.
-    codAvailable: mode === 'cod' ? true : aisleCod && mode !== 'online',
+    // An explicit product setting wins; category defaults apply to legacy
+    // products without a payment setting.
+    codAvailable: explicitMode ? mode !== 'online' : aisleCod,
     onlineAvailable: mode !== 'cod',
     paymentMode: mode,
   };

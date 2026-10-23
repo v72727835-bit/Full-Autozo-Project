@@ -217,7 +217,7 @@ function PricingCard({ settings, onSave }: { settings: Settings; onSave: Save })
           <input type="number" min={0} value={p.beyondMinOrder} onChange={(e) => setP({ ...p, beyondMinOrder: num(e.target.value) })} />
         </Field>
       </div>
-      <div className="page-subtitle">Beyond the last row, cash on delivery is switched off with the message “for long distance COD is not available”.</div>
+      <div className="page-subtitle">Beyond the last row, long-distance delivery time and minimum shopping apply. Payment options follow each product&apos;s COD / online setting.</div>
       <div className="modal-actions">
         <Button onClick={submit} disabled={busy}>
           {busy ? 'Saving…' : 'Save pricing'}

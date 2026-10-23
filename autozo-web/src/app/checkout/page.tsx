@@ -64,6 +64,16 @@ function CheckoutInner() {
   const [email, setEmail] = useState('');
   const quote = useQuote(slot, cart?.total, picked || undefined);
 
+  // Admin payment-mode edits must be reflected on entering checkout or
+  // returning to it from another tab, even when the cart total is unchanged.
+  useEffect(() => {
+    void refresh();
+    const update = () => { void refresh(); };
+    window.addEventListener('focus', update);
+    return () => window.removeEventListener('focus', update);
+  }, [refresh]);
+  useEffect(() => { setPlaceError(''); }, [pay, picked, cart]);
+
   // Billing details: the landmark of the chosen address and an optional email,
   // each filled in from what we already know.
   useEffect(() => {
@@ -123,7 +133,7 @@ function CheckoutInner() {
     .flatMap((g) => g.items)
     .filter((i) => i.onlineAvailable === false)
     .map((i) => i.name);
-  const farAway = quote?.longDistance === true;
+  const incompatiblePayments = codBlocked.length > 0 && onlineBlocked.length > 0;
   const subtotalShort = quote ? !quote.meetsMinOrder : false;
 
   const place = async () => {
@@ -180,9 +190,9 @@ function CheckoutInner() {
   if (quote && !quote.meetsMinOrder) {
     blockers.push(`The minimum order is ₹${quote.minOrder}. Add ₹${Math.max(1, Math.round(quote.minOrder - quote.subtotal))} more to continue.`);
   }
-  if (pay === 'cod' && farAway) blockers.push('Cash on delivery is not available for this far address. Choose Pay online or use a nearer address.');
-  if (pay === 'cod' && codBlocked.length > 0) blockers.push(`Cash on delivery is not available for: ${codBlocked.join(', ')}.`);
-  if (pay === 'online' && onlineBlocked.length > 0) blockers.push(`Online payment is not available for: ${onlineBlocked.join(', ')}. Choose Cash on Delivery.`);
+  if (incompatiblePayments) blockers.push('This cart contains both COD-only and online-only items. Place separate orders for these items.');
+  else if (pay === 'cod' && codBlocked.length > 0) blockers.push(`Cash on delivery is not available for: ${codBlocked.join(', ')}.`);
+  else if (pay === 'online' && onlineBlocked.length > 0) blockers.push(`Online payment is not available for: ${onlineBlocked.join(', ')}. Choose Cash on Delivery.`);
 
   return (
     <div className="page rise" style={{ paddingTop: 22 }}>
@@ -269,16 +279,7 @@ function CheckoutInner() {
               <h2 className="h3">Delivery time &amp; payment</h2>
             </div>
             <DeliverySlots compact />
-            {/* Some aisles are switched off for cash on delivery, and the
-                admin writes the line the customer reads here. */}
-            {farAway ? (
-              <div style={{ marginBottom: 14 }}>
-                <Alert tone="bad" icon="wallet">
-                  {quote?.codMessage || 'For long distance, the “COD” option is not available.'}
-                </Alert>
-              </div>
-            ) : null}
-            {codBlocked.length > 0 ? (
+            {codBlocked.length > 0 && !incompatiblePayments && pay === 'cod' ? (
               <div style={{ marginBottom: 14 }}>
                 <Alert tone="bad" icon="wallet">
                   {settings?.codMessage ||
@@ -287,7 +288,7 @@ function CheckoutInner() {
                 </Alert>
               </div>
             ) : null}
-            {onlineBlocked.length > 0 ? (
+            {onlineBlocked.length > 0 && !incompatiblePayments && pay === 'online' ? (
               <div style={{ marginBottom: 14 }}>
                 <Alert tone="bad" icon="wallet">
                   Online payment is not available for some items in this order ({onlineBlocked.join(', ')}). Please pay by Cash on Delivery.
