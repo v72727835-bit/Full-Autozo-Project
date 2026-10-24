@@ -11,7 +11,7 @@ import { usePublicSettingsQuery } from '../store/catalogApi';
 import type { TabScreenProps } from '../navigation/TabsContext';
 import { useTabs } from '../navigation/TabsContext';
 import type { AppNav } from '../navigation/types';
-import { colors, glowShadow, gradient, gutter, ms, radius, space, themed, useTheme } from '../theme';
+import { colors, gutter, ms, radius, space, themed, useTheme } from '../theme';
 import type { ThemePreference } from '../theme';
 import type { IconName } from '../ui/Button';
 import { LogoMark } from '../ui/Logo';
@@ -117,27 +117,24 @@ export function ProfileScreen(_props: TabScreenProps) {
                 {initial}
               </Txt>
             </View>
-            <View style={styles.identity}>
-              <Txt variant="h2" tone="onBrand" numberOfLines={2}>
-                {user?.name ?? 'Autozo customer'}
-              </Txt>
-              <Txt variant="bodySm" style={styles.identityMeta} numberOfLines={1}>
-                +91 {user?.phone}
-              </Txt>
-              {user?.email ? (
-                <Txt variant="bodySm" style={styles.identityMeta} numberOfLines={1}>
-                  {user.email}
-                </Txt>
-              ) : null}
-            </View>
+            <Txt variant="h2" tone="onBrand" center numberOfLines={2} style={styles.name}>
+              {user?.name ?? 'Autozo customer'}
+            </Txt>
+            <Txt variant="bodySm" center style={styles.identityMeta} numberOfLines={1}>
+              +91 {user?.phone}
+              {user?.email ? `  ·  ${user.email}` : ''}
+            </Txt>
             <Pressable
               onPress={() => navigation.navigate('EditProfile')}
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Edit profile"
-              style={styles.editBtn}
+              style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.75 }]}
             >
-              <Ionicons name="create-outline" size={ms(19)} color={colors.onBrand} />
+              <Ionicons name="create-outline" size={ms(14)} color={colors.onBrand} />
+              <Txt variant="labelSm" tone="onBrand">
+                Edit profile
+              </Txt>
             </Pressable>
           </View>
 
@@ -325,7 +322,7 @@ function Section({ title, items }: { title: string; items: MenuItem[] }) {
 
 const styles = themed(({ c }) => ({
   appearance: { marginTop: space.xl, paddingHorizontal: gutter },
-  appearanceTitle: { marginBottom: space.sm },
+  appearanceTitle: { marginBottom: space.sm, textAlign: 'center' },
   segment: {
     flexDirection: 'row',
     backgroundColor: c.surface,
@@ -344,14 +341,10 @@ const styles = themed(({ c }) => ({
     paddingVertical: ms(10),
     borderRadius: radius.sm,
   },
-  segmentItemOn: {
-    backgroundColor: c.brand,
-    backgroundImage: gradient.diagonal(c.brandLight, c.brand),
-    boxShadow: glowShadow(c.glow, 4, 12),
-  },
+  segmentItemOn: { backgroundColor: c.brand },
   root: { flex: 1, backgroundColor: c.surfaceSunken },
   follow: { marginTop: space.lg, marginHorizontal: gutter },
-  followRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  followRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
   followBtn: {
     minWidth: ms(74),
     paddingVertical: space.sm,
@@ -365,31 +358,35 @@ const styles = themed(({ c }) => ({
   content: { paddingBottom: space.xxxl },
 
   header: {
-    backgroundColor: c.headerTo,
-    backgroundImage: `${gradient.glow(c.headerGlow, '100% 0%')}, ${gradient.down(c.headerFrom, c.headerTo)}`,
+    backgroundColor: c.headerFrom,
     paddingHorizontal: gutter,
     paddingBottom: space.xl,
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', paddingTop: space.xl },
+  headerRow: { alignItems: 'center', paddingTop: space.xl },
   avatar: {
-    width: ms(62),
-    height: ms(62),
+    width: ms(72),
+    height: ms(72),
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  identity: { flex: 1, marginHorizontal: space.lg },
+  name: { marginTop: space.md },
   identityMeta: { color: 'rgba(255,255,255,0.75)', marginTop: ms(2) },
   editBtn: {
-    width: ms(38),
-    height: ms(38),
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: ms(5),
+    marginTop: space.md,
+    paddingHorizontal: space.md,
+    paddingVertical: ms(6),
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.45)',
   },
 
   stats: {
@@ -405,7 +402,7 @@ const styles = themed(({ c }) => ({
   statDivider: { width: StyleSheet.hairlineWidth, height: ms(28), backgroundColor: 'rgba(255,255,255,0.2)' },
 
   section: { marginTop: space.xxl },
-  sectionTitle: { paddingHorizontal: gutter, marginBottom: space.sm },
+  sectionTitle: { paddingHorizontal: gutter, marginBottom: space.sm, textAlign: 'center' },
   card: {
     marginHorizontal: gutter,
     borderRadius: radius.lg,

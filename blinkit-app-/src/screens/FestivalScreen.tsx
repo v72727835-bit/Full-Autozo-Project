@@ -11,6 +11,7 @@ import { gutter, ms, radius, space, themed, useTheme } from '../theme';
 import { Banner, EmptyState } from '../ui/Feedback';
 import { Screen } from '../ui/Screen';
 import { ProductCardSkeleton, SkeletonBlock } from '../ui/Skeleton';
+import { SectionHeader } from '../ui/Surface';
 import { Txt } from '../ui/Text';
 import { useGrid } from '../utils/layout';
 
@@ -67,7 +68,7 @@ export function FestivalScreen({ active }: TabScreenProps) {
         {data?.banner ? (
           <Image source={{ uri: data.banner }} style={styles.bannerArt} resizeMode="cover" accessibilityIgnoresInvertColors />
         ) : (
-          <Txt variant="display" style={styles.title}>
+          <Txt variant="display" center style={styles.title}>
             {data?.name ?? 'Festival'}
           </Txt>
         )}
@@ -82,9 +83,7 @@ export function FestivalScreen({ active }: TabScreenProps) {
 
         {data?.sections.map((section) => (
           <View key={section.category._id} style={styles.section}>
-            <Txt variant="h2" numberOfLines={2} style={styles.sectionTitle}>
-              {section.title || section.category.name}
-            </Txt>
+            <SectionHeader title={section.title || section.category.name} padded={false} style={styles.sectionTitle} />
 
             <View style={styles.grid}>
               {section.items.map((p) => (
@@ -131,14 +130,14 @@ const styles = themed(({ c }) => ({
   },
   title: { marginBottom: space.lg },
   section: { marginBottom: space.xl },
-  sectionTitle: { marginBottom: space.md },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  sectionTitle: { marginBottom: space.lg },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.md },
   seeAll: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     gap: space.xs,
-    marginTop: space.md,
+    marginTop: space.lg,
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
     borderRadius: radius.pill,

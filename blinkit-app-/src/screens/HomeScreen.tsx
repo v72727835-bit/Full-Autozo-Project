@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import type { AppNav } from '../navigation/types';
 import type { TabScreenProps } from '../navigation/TabsContext';
 import { useTabs } from '../navigation/TabsContext';
-import { gradient, gutter, hitSlop, ms, radius, space, themed, useTheme } from '../theme';
+import { gutter, hitSlop, ms, radius, space, themed, useTheme } from '../theme';
 import { catalogApi, useHomeQuery } from '../store/catalogApi';
 import { useDeliveryPointKey } from '../store/deliveryPoint';
 import type { Category } from '../types';
@@ -20,12 +20,6 @@ import { Txt } from '../ui/Text';
 import { shortDelivery } from '../utils/delivery';
 import { tapConfirm } from '../utils/haptics';
 import { useGrid, useRailCardWidth } from '../utils/layout';
-
-const TRUST = [
-  { icon: 'leaf-outline', label: 'Fresh every day' },
-  { icon: 'pricetag-outline', label: 'Honest prices' },
-  { icon: 'shield-checkmark-outline', label: 'Easy returns' },
-] as const;
 
 const ALL: Category = { _id: 'all', name: 'All', slug: 'all', icon: 'shopping-bags', short: 'All' };
 
@@ -81,8 +75,6 @@ export function HomeScreen({ active }: TabScreenProps) {
 
   const address = user?.addresses?.find((a) => a.isDefault) ?? user?.addresses?.[0];
   const firstName = (user?.name ?? '').split(' ')[0];
-  const hour = new Date().getHours();
-  const greeting = hour < 5 ? 'Up late' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   // Never two tabs with the same label, whatever the data says.
   const tabs = useMemo(() => {
@@ -122,6 +114,8 @@ export function HomeScreen({ active }: TabScreenProps) {
   const hero = (
     <View style={[styles.hero, { paddingTop: insets.top + space.md }]}>
       <View style={styles.heroTop}>
+        <NoticeBell onDark />
+
         {/* The delivery promise answers "how soon?", so a tap buzzes back and
             opens the live order. */}
         <Pressable
@@ -133,18 +127,16 @@ export function HomeScreen({ active }: TabScreenProps) {
           accessibilityLabel="Delivery time, see your orders"
           style={styles.heroTitle}
         >
-          <Txt variant="labelSm" style={styles.kicker}>
-            {firstName ? `${greeting}, ${firstName}! Delivery in` : `${greeting}! Delivery in`}
+          <Txt variant="overline" center style={styles.kicker}>
+            Delivery in
           </Txt>
           <View style={styles.timeRow}>
-            <Icon name="flash" size={ms(24)} color={c.priceMark} />
-            <Txt variant="display" tone="onHeader" numberOfLines={1}>
+            <Icon name="flash" size={ms(20)} color={c.priceMark} />
+            <Txt variant="h1" tone="onHeader" numberOfLines={1}>
               {shortDelivery(data)}
             </Txt>
           </View>
         </Pressable>
-
-        <NoticeBell onDark />
 
         <Pressable
           onPress={() => goToTab('profile')}
@@ -154,11 +146,11 @@ export function HomeScreen({ active }: TabScreenProps) {
           style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.8 }]}
         >
           {firstName ? (
-            <Txt variant="h3" style={styles.avatarText}>
+            <Txt variant="h4" style={styles.avatarText}>
               {firstName[0].toUpperCase()}
             </Txt>
           ) : (
-            <Icon name="person" size={ms(19)} color={c.brand} />
+            <Icon name="person" size={ms(17)} color={c.brand} />
           )}
         </Pressable>
       </View>
@@ -169,27 +161,15 @@ export function HomeScreen({ active }: TabScreenProps) {
         accessibilityLabel="Change delivery address"
         style={({ pressed }) => [styles.addressRow, pressed && { opacity: 0.75 }]}
       >
-        <Icon name="location" size={ms(15)} color={c.onHeader} />
-        <Txt variant="label" tone="onHeader" numberOfLines={1}>
+        <Icon name="location-sharp" size={ms(13)} color={c.priceMark} />
+        <Txt variant="labelSm" tone="onHeader" numberOfLines={1}>
           {address ? address.label.charAt(0).toUpperCase() + address.label.slice(1) : 'Add address'}
         </Txt>
-        <Txt variant="bodySm" numberOfLines={1} style={styles.addressText}>
-          {address ? `· ${address.line1}, ${address.city}` : '· so we can show what delivers to you'}
+        <Txt variant="caption" numberOfLines={1} style={styles.addressText}>
+          {address ? `${address.line1}, ${address.city}` : 'to see what delivers to you'}
         </Txt>
-        <Icon name="chevron-down" size={ms(15)} color={c.onHeader} />
+        <Icon name="chevron-down" size={ms(13)} color={c.onHeader} />
       </Pressable>
-
-      {/* The three promises we keep, small enough not to push products down. */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trustRow}>
-        {TRUST.map((item) => (
-          <View key={item.label} style={styles.trustChip}>
-            <Icon name={item.icon} size={ms(13)} color={c.priceMark} />
-            <Txt variant="caption" tone="onHeader" weight="700">
-              {item.label}
-            </Txt>
-          </View>
-        ))}
-      </ScrollView>
     </View>
   );
 
@@ -353,28 +333,37 @@ const styles = themed(({ c }) => ({
 
   hero: {
     paddingHorizontal: gutter,
-    paddingBottom: space.sm,
-    // The glow sits in the top-right corner, behind the avatar, where there is
-    // no small text to lose contrast against it.
-    backgroundImage: `${gradient.glow(c.headerGlow, '100% 0%')}, ${gradient.down(c.headerFrom, c.headerTo)}`,
+    paddingBottom: space.xs,
+    backgroundColor: c.headerFrom,
   },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  heroTitle: { flex: 1 },
-  kicker: { color: c.onHeaderMuted, letterSpacing: 0.3 },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: ms(2), marginTop: ms(1) },
+  heroTitle: { flex: 1, alignItems: 'center' },
+  kicker: { color: c.onHeaderMuted },
+  timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ms(4), marginTop: ms(2) },
   avatar: {
-    width: ms(42),
-    height: ms(42),
+    width: ms(40),
+    height: ms(40),
     borderRadius: radius.pill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.45)',
-    boxShadow: '0px 4px 14px 0px rgba(0,0,0,0.22)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  avatarText: { color: c.mode === 'dark' ? c.headerTo : c.brand },
-  addressRow: { flexDirection: 'row', alignItems: 'center', gap: ms(5), marginTop: space.sm },
+  avatarText: { color: c.onHeader },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    maxWidth: '100%',
+    gap: ms(5),
+    marginTop: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: ms(5),
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
   addressText: { flexShrink: 1, color: c.onHeaderMuted },
 
   sticky: { backgroundColor: c.headerTo, paddingTop: space.sm },
@@ -390,8 +379,7 @@ const styles = themed(({ c }) => ({
     borderColor: c.borderStrong,
     borderRadius: radius.md,
     paddingHorizontal: space.md,
-    height: ms(48),
-    boxShadow: '0px 6px 18px 0px rgba(0,0,0,0.18)',
+    height: ms(46),
   },
   hint: { flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   searchDivider: { width: StyleSheet.hairlineWidth, height: ms(22), backgroundColor: c.borderStrong },
@@ -410,18 +398,6 @@ const styles = themed(({ c }) => ({
   tabLine: { height: ms(3), width: '70%', borderTopLeftRadius: ms(3), borderTopRightRadius: ms(3), marginTop: ms(4) },
   tabLineOn: { backgroundColor: c.priceMark },
 
-  trustRow: { gap: space.sm, marginTop: space.md, paddingRight: gutter },
-  trustChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ms(5),
-    paddingHorizontal: ms(10),
-    paddingVertical: ms(5),
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 210, 63, 0.16)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 210, 63, 0.55)',
-  },
   sectionWrap: { marginBottom: space.sm },
 
   loading: { padding: gutter, gap: space.md, backgroundColor: c.surface },

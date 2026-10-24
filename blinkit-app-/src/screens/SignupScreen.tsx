@@ -80,10 +80,10 @@ export function SignupScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Txt variant="h1" style={styles.title}>
+          <Txt variant="h1" center style={styles.title}>
             Let&apos;s get you set up
           </Txt>
-          <Txt variant="bodyLg" tone="muted" style={styles.subtitle}>
+          <Txt variant="bodyLg" tone="muted" center style={styles.subtitle}>
             It takes about a minute. Your number is how shops reach you about an order.
           </Txt>
 
