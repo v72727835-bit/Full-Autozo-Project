@@ -159,6 +159,7 @@ export function category(raw: RawCategory): Category {
     parentCategory: raw.parent && typeof raw.parent === 'object' ? category(raw.parent) : undefined,
     siblings: raw.siblings?.map(category),
     children: raw.children?.map(category),
+    banners: raw.banners?.map(banner),
   };
 }
 
