@@ -66,12 +66,18 @@ export default function OrdersScreen() {
     let cancelled = false;
     const startLocation = async () => {
       if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return;
+        // Android 12+ lets the rider pick "Approximate", which grants only COARSE; that is still enough to track.
+        const result = await PermissionsAndroid.requestMultiple([PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION]);
+        const ok = (p: string) => result[p as keyof typeof result] === PermissionsAndroid.RESULTS.GRANTED;
+        if (!ok(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION) && !ok(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION)) return;
       }
-      Geolocation.getCurrentPosition((position) => {
+      const onFix = (position: { coords: { latitude: number; longitude: number } }) => {
         if (!cancelled) setRiderLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-      }, () => undefined, { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 });
+      };
+      // Phones without a quick GPS fix (indoors, cheap chips) time out on high accuracy; fall back to network location.
+      Geolocation.getCurrentPosition(onFix, () => {
+        Geolocation.getCurrentPosition(onFix, () => undefined, { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 });
       watchId = Geolocation.watchPosition((position) => {
         if (!cancelled) setRiderLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
       }, () => undefined, { enableHighAccuracy: true, distanceFilter: 25, interval: 10000, fastestInterval: 5000 });
