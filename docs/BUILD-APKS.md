@@ -75,5 +75,5 @@ runs `update-apks.sh`, which copies them to `autozo-backend/downloads/`, served 
 The website links to these in the footer ("Get the app"), the Seller / Rider menu, the delivery partner page and the
 warehouse registration page. A link set in Admin → Store settings → App links (e.g. a Play Store listing) wins.
 
-After a merge, wait for the "Build APKs" run to finish (about 25 minutes), then deploy, or refresh only the APKs
+With the SSH secrets from `deploy.yml` set, the build also runs `update-apks.sh` on the server by itself. Otherwise, after a merge wait for the "Build APKs" run to finish (about 25 minutes), then deploy, or refresh only the APKs
 any time with `bash ~/bingoor-project/update-apks.sh` (no restart needed).
