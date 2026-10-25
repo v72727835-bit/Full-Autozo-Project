@@ -616,6 +616,7 @@ export const createBanner = asyncHandler(async (req, res) => {
 export const updateBanner = asyncHandler(async (req, res) => {
   const body = req.body as Partial<IBanner> & { category?: string | null };
   await assertBannerCategory(body.category);
+  if (body.placement === 'category' && body.category === null) throw new ApiError(400, 'Choose the category page this banner shows on');
   const banner = await Banner.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
   if (!banner) throw new ApiError(404, 'Banner not found');
   ok(res, banner);

@@ -29,6 +29,8 @@ export interface Category {
   isActive: boolean;
 }
 
+export type BannerPlacement = 'top' | 'between' | 'middle' | 'category';
+
 export interface Banner {
   _id: string;
   title?: string;
@@ -36,8 +38,11 @@ export interface Banner {
   cta?: string;
   image: string;
   category?: { _id: string; name: string; slug: string; isActive?: boolean } | string | null;
-  /** `top`: the hero carousel. `between`: spread between home page sections. Missing on older banners, which are `top`. */
-  placement?: 'top' | 'between';
+  /**
+   * `top`: the hero carousel. `between`: spread between home page sections. `middle`: the centre of the home page,
+   * above a products row. `category`: the top of `category`'s page. Missing on older banners, which are `top`.
+   */
+  placement?: BannerPlacement;
   sortOrder: number;
   isActive: boolean;
 }

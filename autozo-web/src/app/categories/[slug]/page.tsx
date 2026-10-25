@@ -9,6 +9,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { fitClass } from '../../../lib/art';
 import { Category } from '../../../lib/types';
 import { BackButton } from '../../../components/BackButton';
+import { BannerCarousel } from '../../../components/BannerCarousel';
 import { Crumbs } from '../../../components/Crumbs';
 import { Icon } from '../../../components/Icon';
 import { SearchBar } from '../../../components/SearchBar';
@@ -91,6 +92,13 @@ export default function CategoryPage() {
         </div>
         {category ? <ShareButtons title={category.name} compact /> : null}
       </header>
+
+      {/* The admin's banners for this category, above everything else on the page. */}
+      {category?.banners && category.banners.length > 0 ? (
+        <div className={s.catBanner}>
+          <BannerCarousel key={category.id} items={category.banners} promo />
+        </div>
+      ) : null}
 
       {/* Child aisles first, so a deep catalogue stays browsable. */}
       {category?.children && category.children.length > 0 ? (

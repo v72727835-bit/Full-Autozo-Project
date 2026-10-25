@@ -357,16 +357,19 @@ export const adminRiderBody = z
 
 /* ---------- admin: banners ---------- */
 
+// Same list as BANNER_PLACEMENTS in models/Banner.ts.
+const bannerPlacement = z.enum(['top', 'between', 'middle', 'category']);
+
 export const adminBannerBody = z.object({
   title: z.string().trim().max(80).optional(),
   subtitle: z.string().trim().max(140).optional(),
   cta: z.string().trim().max(30).optional(),
   image: z.string().trim().min(1, 'Upload a banner image').max(300),
   category: objectId.nullable().default(null),
-  placement: z.enum(['top', 'between']).default('top'),
+  placement: bannerPlacement.default('top'),
   sortOrder: z.coerce.number().int().default(0),
   isActive: z.boolean().default(true),
-});
+}).refine((v) => v.placement !== 'category' || !!v.category, { message: 'Choose the category page this banner shows on', path: ['category'] });
 export const adminBannerUpdateBody = z
   .object({
     title: z.string().trim().max(80),
@@ -374,7 +377,7 @@ export const adminBannerUpdateBody = z
     cta: z.string().trim().max(30),
     image: z.string().trim().min(1).max(300),
     category: objectId.nullable(),
-    placement: z.enum(['top', 'between']),
+    placement: bannerPlacement,
     sortOrder: z.coerce.number().int(),
     isActive: z.boolean(),
   })
