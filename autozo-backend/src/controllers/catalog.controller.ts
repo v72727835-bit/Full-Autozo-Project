@@ -153,7 +153,7 @@ export const home = asyncHandler(async (req, res) => {
     lat !== undefined && lng !== undefined
       ? nearbyShops(lat, lng, 15, {}, 0, 10)
       : Shop.find({ isActive: true }).sort({ rating: -1 }).limit(10).select(SHOP_CARD_FIELDS).lean(),
-    Banner.find({ isActive: true })
+    Banner.find({ isActive: true, placement: { $ne: 'category' } })
       .sort({ sortOrder: 1, createdAt: -1 })
       .limit(30)
       .populate<{ category: { name: string; slug: string; isActive: boolean } | null }>('category', 'name slug isActive')
@@ -226,8 +226,9 @@ export const home = asyncHandler(async (req, res) => {
     };
   };
   // Banners saved before placement existed have none, and belong at the top.
-  const heroBanners = uploadedBanners.filter((b) => b.placement !== 'between').slice(0, 10);
+  const heroBanners = uploadedBanners.filter((b) => !b.placement || b.placement === 'top').slice(0, 10);
   const betweenBanners = uploadedBanners.filter((b) => b.placement === 'between').map(toSlide);
+  const middleBanners = uploadedBanners.filter((b) => b.placement === 'middle').map(toSlide);
 
   /* Banners uploaded from the admin panel win; the built-in set only fills
      the slot on a fresh install. */
@@ -315,6 +316,17 @@ export const home = asyncHandler(async (req, res) => {
     sections.splice(0, sections.length, ...spread);
   }
 
+  /* "Middle" banners share one slider in the centre of the page, just above
+     the first products row from the halfway point down. */
+  if (middleBanners.length) {
+    const half = Math.floor(sections.length / 2);
+    const isProducts = (sec: Section) => sec.type === 'productRail' || sec.type === 'productGrid';
+    let at = sections.findIndex((sec, i) => i >= half && isProducts(sec));
+    if (at < 0) at = sections.findIndex(isProducts);
+    if (at < 0) at = half;
+    sections.splice(at, 0, { type: 'bannerCarousel', id: 'promo-middle', style: 'promo', items: middleBanners });
+  }
+
   if (shops.length) sections.push({ type: 'storeTiles', id: 'stores', title: 'Stores near you', items: shops });
 
   const instant = (await loadSettings()).settings.deliverySlots?.find((x) => x.key === 'instant');
@@ -396,7 +408,34 @@ export const getCategory = asyncHandler(async (req, res) => {
     ? await Category.find({ isActive: true, parent: parent._id }).sort({ sortOrder: 1, name: 1 }).select(CAT_FIELDS).lean()
     : [];
 
-  ok(res, { ...category, parent, children, siblings });
+  /* Banners the admin pinned to this category, or to the aisle above it, so a
+     banner set on a tile also shows on the aisles inside it. */
+  const banners = await Banner.find({
+    isActive: true,
+    placement: 'category',
+    category: { $in: [category._id, ...(parent ? [parent._id] : [])] },
+  })
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .limit(10)
+    .select('title subtitle cta image category')
+    .populate<{ category: { name: string; slug: string } | null }>('category', 'name slug')
+    .lean();
+
+  ok(res, {
+    ...category,
+    parent,
+    children,
+    siblings,
+    banners: banners.map((b) => ({
+      id: String(b._id),
+      title: b.title,
+      subtitle: b.subtitle,
+      cta: b.cta,
+      image: b.image,
+      slug: b.category?.slug,
+      categoryName: b.category?.name,
+    })),
+  });
 });
 
 /* ---------------- shops ---------------- */
