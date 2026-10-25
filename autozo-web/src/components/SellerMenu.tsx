@@ -6,11 +6,11 @@ import { Icon } from './Icon';
 import s from './SellerMenu.module.css';
 
 const OPTIONS = [
-  { href: '/warehouse-register', icon: 'store', title: 'Become a Seller', note: 'List your products and sell nearby' },
-  { href: '/contact/delivery-partner', icon: 'truck', title: 'Become a Rider', note: 'Deliver orders and earn daily' },
+  { href: '/warehouse-register', icon: 'store', title: 'Register as Seller', note: 'List your products and sell nearby' },
+  { href: '/contact/delivery-partner', icon: 'truck', title: 'Register as Rider', note: 'Deliver orders and earn daily' },
 ] as const;
 
-/** "Become a Seller ▾" beside the cart: sign-up for sellers and for delivery riders. */
+/** "Seller / Rider Signup ▾" beside the cart: registration for sellers and for delivery riders. */
 export function SellerMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -33,8 +33,8 @@ export function SellerMenu() {
     <div className={s.wrap} ref={ref}>
       <button type="button" className={s.btn} onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}>
         <Icon name="store" size={16} />
-        <span className={s.long}>Become a Seller</span>
-        <span className={s.short}>Seller</span>
+        <span className={s.long}>Seller / Rider Signup</span>
+        <span className={s.short}>Join Us</span>
         <Icon name="chevron-down" size={14} />
       </button>
       {open ? (
