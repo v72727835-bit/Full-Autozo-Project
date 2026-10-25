@@ -232,7 +232,7 @@ function BannerForm({
           </select>
         </Field>
 
-        <Field label={placement === 'top' ? 'Banner image (recommended 1600 × 500 px)' : 'Banner image (recommended 1600 × 400 px)'}>
+        <Field label="Banner image (recommended 1600 × 500 px)">
           <div className="banner-preview banner-preview-lg" onClick={() => fileRef.current?.click()} role="button" tabIndex={0}>
             {image ? (
               <img src={image} alt="" />
