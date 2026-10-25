@@ -68,6 +68,14 @@ app.get('/uploads/products/:name', async (req, res, next) => {
   }
 });
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), { maxAge: '30d', immutable: true }));
+// Latest app APKs, refreshed in place by update-apks.sh (deploy runs it), so the names never change.
+app.use(
+  '/downloads',
+  express.static(path.resolve(process.cwd(), 'downloads'), {
+    maxAge: '10m',
+    setHeaders: (res) => res.setHeader('Content-Disposition', 'attachment'),
+  }),
+);
 if (env.NODE_ENV !== 'test') app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 app.use(

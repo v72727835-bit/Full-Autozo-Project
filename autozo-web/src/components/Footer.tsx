@@ -5,6 +5,7 @@ import React from 'react';
 import { useCatalog } from '../context/CatalogContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useSettings } from '../context/SettingsContext';
+import { appDownloads } from '../lib/apps';
 import { DESKTOP_PAGES, FORMS } from '../lib/pages';
 import { Icon } from './Icon';
 import { LanguageMenu } from './LanguageMenu';
@@ -29,7 +30,7 @@ export function Footer() {
   const settings = useSettings();
   const { home } = useCatalog();
   const { name, t } = useLanguage();
-  const apps = settings?.appLinks ?? {};
+  const apps = appDownloads(settings);
   // Social pages are set in the admin panel; only the ones that were filled in show up.
   const socials = [
     ...SOCIALS.filter((x) => settings?.socialLinks?.[x.key]).map((x) => ({ ...x, url: settings!.socialLinks![x.key]! })),
@@ -64,49 +65,41 @@ export function Footer() {
             ) : null}
           </div>
 
-          {apps.android || apps.ios || apps.rider || apps.warehouse ? (
-            <div className={s.apps}>
-              <div className={s.colTitle}>Get the app</div>
-              <div className={s.appRow}>
-                {apps.android ? (
-                  <a href={apps.android} className={s.store} target="_blank" rel="noopener noreferrer">
-                    <Icon name="android" size={20} />
-                    <span>
-                      <small>Get it on</small>
-                      Android
-                    </span>
-                  </a>
-                ) : null}
-                {apps.rider ? (
-                  <a href={apps.rider} className={s.store} target="_blank" rel="noopener noreferrer">
-                    <Icon name="android" size={20} />
-                    <span>
-                      <small>Delivery partners</small>
-                      Rider app
-                    </span>
-                  </a>
-                ) : null}
-                {apps.warehouse ? (
-                  <a href={apps.warehouse} className={s.store} target="_blank" rel="noopener noreferrer">
-                    <Icon name="android" size={20} />
-                    <span>
-                      <small>For sellers</small>
-                      Warehouse app
-                    </span>
-                  </a>
-                ) : null}
-                {apps.ios ? (
-                  <a href={apps.ios} className={s.store} target="_blank" rel="noopener noreferrer">
-                    <Icon name="apple" size={20} />
-                    <span>
-                      <small>Download on</small>
-                      iPhone
-                    </span>
-                  </a>
-                ) : null}
-              </div>
+          <div className={s.apps}>
+            <div className={s.colTitle}>Get the app</div>
+            <div className={s.appRow}>
+              <a href={apps.customer} className={s.store}>
+                <Icon name="android" size={20} />
+                <span>
+                  <small>Get it on</small>
+                  Android
+                </span>
+              </a>
+              <a href={apps.rider} className={s.store}>
+                <Icon name="android" size={20} />
+                <span>
+                  <small>Delivery partners</small>
+                  Rider app
+                </span>
+              </a>
+              <a href={apps.warehouse} className={s.store}>
+                <Icon name="android" size={20} />
+                <span>
+                  <small>For sellers</small>
+                  Warehouse app
+                </span>
+              </a>
+              {apps.ios ? (
+                <a href={apps.ios} className={s.store} target="_blank" rel="noopener noreferrer">
+                  <Icon name="apple" size={20} />
+                  <span>
+                    <small>Download on</small>
+                    iPhone
+                  </span>
+                </a>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
 
         <hr className="divider" />
