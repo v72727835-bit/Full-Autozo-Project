@@ -73,6 +73,8 @@ export interface RawCategory {
   short?: string;
   children?: RawCategory[];
   siblings?: RawCategory[];
+  /** Admin banners pinned to the top of this category page. */
+  banners?: RawBanner[];
 }
 
 /** The shop's address arrives as a structured document, not a line of text. */
@@ -199,6 +201,8 @@ export interface Category {
   parentCategory?: Category | null;
   siblings?: Category[];
   children?: Category[];
+  /** Banners shown at the top of this category page (a category page only). */
+  banners?: Banner[];
 }
 
 export interface Shop {

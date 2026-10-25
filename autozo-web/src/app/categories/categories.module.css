@@ -14,6 +14,15 @@
   margin-left: auto;
 }
 
+/* Category page banners: the shared promo slider, with tighter spacing. */
+.catBanner {
+  margin-top: 12px;
+}
+
+.catBanner > section {
+  margin-bottom: 16px;
+}
+
 .topBar {
   display: flex;
   align-items: center;

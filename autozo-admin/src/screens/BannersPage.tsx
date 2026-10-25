@@ -3,7 +3,14 @@ import { createBanner, deleteBanner, fetchBanners, fetchCategories, updateBanner
 import { getErrorMessage } from '../api/client';
 import { IconArrowDown, IconArrowUp, IconImage, IconPlus } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal } from '../components/ui';
-import { Banner, Category } from '../types';
+import { Banner, BannerPlacement, Category } from '../types';
+
+const PLACEMENT_LABEL: Record<BannerPlacement, string> = {
+  top: 'Top slider',
+  between: 'Between sections',
+  middle: 'Centre, above products',
+  category: 'Category page top',
+};
 
 const categoryId = (b: Banner) => (b.category && typeof b.category === 'object' ? b.category._id : b.category ?? null);
 const categoryName = (b: Banner) => (b.category && typeof b.category === 'object' ? b.category.name : '');
@@ -66,9 +73,10 @@ export default function BannersPage() {
         <div>
           <h1 className="page-title">Home Banners</h1>
           <div className="page-subtitle">
-            Promo slides for the customer home page. "Top" banners make up the big slider under the header; "Between sections" banners are spread out
-            down the page, one after every two sections. The image fills the whole slide; title and button text are optional. Until you add a top
-            banner, the built-in ones are shown.
+            Promo slides for the website. "Top" banners make up the big slider under the header; "Between sections" banners are spread out
+            down the home page, one after every two sections; "Centre" banners share one slider in the middle of the home page, above a products
+            row; "Category page" banners show at the top of the category you pick, above its products. The image fills the whole slide; title and
+            button text are optional. Until you add a top banner, the built-in ones are shown.
           </div>
         </div>
         <Button onClick={() => setForm({})}>
@@ -100,11 +108,21 @@ export default function BannersPage() {
               <div className="banner-meta">
                 <div className="row-flex" style={{ gap: 6, flexWrap: 'wrap' }}>
                   {b.isActive ? <Badge tone="success">Live</Badge> : <Badge tone="muted">Hidden</Badge>}
-                  <Badge tone="muted">{b.placement === 'between' ? 'Between sections' : 'Top slider'}</Badge>
+                  <Badge tone="muted">{PLACEMENT_LABEL[b.placement ?? 'top']}</Badge>
                   <span className="cell-muted" style={{ fontSize: 12 }}>
-                    {categoryName(b) ? `Opens ${categoryName(b)}` : 'Opens all categories'}
+                    {b.placement === 'category'
+                      ? `On the ${categoryName(b) || '?'} page`
+                      : categoryName(b)
+                        ? `Opens ${categoryName(b)}`
+                        : 'Opens all categories'}
                   </span>
-                  {hiddenLink(b) ? <Badge tone="warn">{categoryName(b)} is hidden in Categories, so this opens all categories</Badge> : null}
+                  {hiddenLink(b) ? (
+                    <Badge tone="warn">
+                      {b.placement === 'category'
+                        ? `${categoryName(b)} is hidden in Categories, so nobody sees this banner`
+                        : `${categoryName(b)} is hidden in Categories, so this opens all categories`}
+                    </Badge>
+                  ) : null}
                 </div>
                 <div className="banner-actions">
                   <button className="btn btn-ghost btn-sm" disabled={moving === b._id || i === 0} onClick={() => reorder(b, -1)} aria-label="Move up">
@@ -168,11 +186,12 @@ function BannerForm({
   const [cta, setCta] = useState(banner?.cta ?? '');
   const [category, setCategory] = useState<string | null>(banner ? categoryId(banner) : null);
   const [isActive, setIsActive] = useState(banner?.isActive ?? true);
-  const [placement, setPlacement] = useState<'top' | 'between'>(banner?.placement ?? 'top');
+  const [placement, setPlacement] = useState<BannerPlacement>(banner?.placement ?? 'top');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const onCategoryPage = placement === 'category';
 
   // Banners link to the tiles customers tap (level 2), grouped under their heading.
   const options = useMemo(() => {
@@ -206,6 +225,10 @@ function BannerForm({
       setError('Upload a banner image first.');
       return;
     }
+    if (placement === 'category' && !category) {
+      setError('Choose the category page this banner shows on.');
+      return;
+    }
     setSaving(true);
     setError('');
     const body = { image, title, subtitle, cta, category, placement, isActive, sortOrder: banner?.sortOrder ?? nextSortOrder };
@@ -226,9 +249,11 @@ function BannerForm({
         <ErrorBanner message={error} />
 
         <Field label="Show it">
-          <select value={placement} onChange={(e) => setPlacement(e.target.value as 'top' | 'between')}>
+          <select value={placement} onChange={(e) => setPlacement(e.target.value as BannerPlacement)}>
             <option value="top">Top slider, under the header</option>
             <option value="between">Between home page sections</option>
+            <option value="middle">Centre of the home page, above products</option>
+            <option value="category">Top of a category page (pick the category below)</option>
           </select>
         </Field>
 
@@ -262,9 +287,9 @@ function BannerForm({
           <Field label="Button text (optional)">
             <input value={cta} onChange={(e) => setCta(e.target.value)} maxLength={30} placeholder="Shop now" />
           </Field>
-          <Field label="Opens category">
-            <select value={category ?? ''} onChange={(e) => setCategory(e.target.value || null)}>
-              <option value="">All categories</option>
+          <Field label={onCategoryPage ? 'Show on category page' : 'Opens category'}>
+            <select value={category ?? ''} onChange={(e) => setCategory(e.target.value || null)} required={onCategoryPage}>
+              <option value="">{onCategoryPage ? 'Choose a category' : 'All categories'}</option>
               {options.map(({ group, items }) => (
                 <optgroup key={group._id} label={group.name}>
                   {items.map((c) => (
@@ -281,7 +306,7 @@ function BannerForm({
           <div className="checkbox-row">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} id="banner-active" />
             <label htmlFor="banner-active" style={{ marginBottom: 0 }}>
-              Show on the home page
+              Show on the website
             </label>
           </div>
         </Field>
