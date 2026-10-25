@@ -1,0 +1,71 @@
+# Autozo: deploy the website, admin panel and backend whenever main changes.
+#
+# GitHub logs in to the cPanel server over SSH and runs the same command used
+# by hand: bash ~/bingoor-project/deploy.sh
+#
+# One-time setup (repo Settings > Secrets and variables > Actions):
+#   SSH_HOST         server hostname, e.g. server26.<host>.com or autozo.org
+#   SSH_USER         cPanel username
+#   SSH_PRIVATE_KEY  private key whose public half is authorized in cPanel > SSH Access
+#   SSH_PORT         optional, defaults to 22 (some hosts use another port)
+#   SSH_KNOWN_HOSTS  optional, output of `ssh-keyscan -p <port> <host>`; scanned live if empty
+#
+# Docker is not used: the cPanel account (CloudLinux/CageFS) cannot run it.
+
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+    # Only server code. Mobile apps and docs do not need a redeploy, which
+    # takes the sites down for a few minutes.
+    paths:
+      - 'autozo-backend/**'
+      - '!autozo-backend/autozo-mobile/**'
+      - '!autozo-backend/autozo-app/**'
+      - 'autozo-web/**'
+      - 'autozo-admin/**'
+      - 'deploy.sh'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+# Never two deploys at once (the account's process limit can't take it).
+# A push during a deploy waits, then deploys the newest main.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Set up SSH key
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::Add the SSH_HOST, SSH_USER and SSH_PRIVATE_KEY secrets first (see the top of deploy.yml)."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" > ~/.ssh/known_hosts
+          fi
+
+      - name: Run deploy.sh on the server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" \
+            -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+            "$SSH_USER@$SSH_HOST" 'bash ~/bingoor-project/deploy.sh'
