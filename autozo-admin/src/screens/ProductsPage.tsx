@@ -2,10 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from '../navigation';
 import BulkUpload from '../components/BulkUpload';
 import ProductVideoField from '../components/ProductVideoField';
+import { useEagerUploads } from '../components/useEagerUploads';
 import { bulkCreateProducts, uploadProductVideo, createProduct, deleteProduct, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProduct, uploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
-import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Thumb, money } from '../components/ui';
+import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, ProgressBar, Tabs, Thumb, money } from '../components/ui';
 import { Category, PageMeta, Product, Shop, StandardCategory } from '../types';
 
 type FormState = {
@@ -427,16 +428,18 @@ function ProductForm({
       .catch(() => undefined);
   }, []);
 
-  /** Keeps files within the limit and explains how to shrink the rest. */
+  // Photos are shrunk to the size limit in the browser and start uploading as soon as they are picked.
+  const uploads = useEagerUploads(uploadImages, { maxBytes: maxKb * 1024 });
+
+  /** JPEG, PNG and WebP are shrunk automatically; only animated GIFs must already be within the limit. */
   const acceptFiles = (files: File[]): File[] => {
-    const tooBig = files.filter((f) => f.size > maxKb * 1024);
+    const tooBig = files.filter((f) => f.type === 'image/gif' && f.size > maxKb * 1024);
     if (tooBig.length) {
-      setError(
-        `${tooBig.map((f) => f.name).join(', ')} is over ${maxKb} KB. Reduce the image first — ` +
-          'you can use a free tool such as the pi7 image tool (pi7.org/image-compressor) or any image compressor on Google.',
-      );
+      setError(`${tooBig.map((f) => f.name).join(', ')} is a GIF over ${maxKb} KB. Use a JPEG, PNG or WebP photo instead: those are shrunk automatically.`);
     }
-    return files.filter((f) => f.size <= maxKb * 1024);
+    const ok = files.filter((f) => !tooBig.includes(f));
+    ok.forEach((f) => void uploads.start(f));
+    return ok;
   };
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -451,7 +454,7 @@ function ProductForm({
     setSaving(true);
     try {
       const pendingFiles = [...(mainFile ? [mainFile] : []), ...galleryFiles];
-      const uploaded = pendingFiles.length ? await uploadImages(pendingFiles) : [];
+      const uploaded = await Promise.all(pendingFiles.map(uploads.urlFor));
       let uploadedIndex = 0;
       const mainImage = mainFile ? uploaded[uploadedIndex++] : form.mainImage.trim();
       const existingGallery = form.galleryImages
@@ -667,10 +670,10 @@ function ProductForm({
             />
             <span className="image-upload-title">{mainFile || form.mainImage ? 'Change main image' : 'Choose main image'}</span>
             <span className="image-upload-hint">
-              JPEG, PNG, WebP or GIF, up to {maxKb} KB{' '}
+              JPEG, PNG or WebP of any size: shrunk to {maxKb} KB automatically{' '}
               <span
                 className="help-dot"
-                title={`Keep photos under ${maxKb} KB so listings load fast. You can shrink an image with any free compressor on Google, for example the pi7 image tool (pi7.org/image-compressor).`}
+                title={`Photos are resized and compressed in your browser before upload, so they upload fast and listings load fast. GIFs must already be under ${maxKb} KB.`}
               >
                 ?
               </span>
@@ -680,6 +683,7 @@ function ProductForm({
             <div className="image-preview-grid single">
               <ImagePreview
                 file={mainFile}
+                progress={mainFile ? uploads.progressOf(mainFile) : undefined}
                 url={mainFile ? undefined : form.mainImage}
                 label="Main image"
                 onRemove={() => {
@@ -706,7 +710,7 @@ function ProductForm({
               }}
             />
             <span className="image-upload-title">Add gallery images</span>
-            <span className="image-upload-hint">Select multiple images, up to 9 total — each under {maxKb} KB</span>
+            <span className="image-upload-hint">Select multiple images, up to 9 total — shrunk and uploaded right away</span>
           </label>
           {(form.galleryImages || galleryFiles.length > 0) && (
             <div className="image-preview-grid">
@@ -735,6 +739,7 @@ function ProductForm({
                 <ImagePreview
                   key={file.name + '-' + file.lastModified + '-' + index}
                   file={file}
+                  progress={uploads.progressOf(file)}
                   label={file.name}
                   onRemove={() => setGalleryFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))}
                 />
@@ -759,9 +764,10 @@ function ProductForm({
             Cancel
           </Button>
           <Button type="submit" disabled={saving || optionsLoading || shops.length === 0 || categories.length === 0}>
-            {saving ? 'Saving…' : product ? 'Save changes' : 'Create product'}
+            {saving ? (uploads.overall !== null ? `Uploading photos ${Math.round(uploads.overall * 100)}%…` : 'Saving…') : product ? 'Save changes' : 'Create product'}
           </Button>
         </div>
+        {uploads.overall !== null && <ProgressBar value={uploads.overall} label="Uploading photos" />}
       </form>
     </Modal>
   );
@@ -771,8 +777,10 @@ function ImagePreview({
   url,
   label,
   onRemove,
+  progress,
 }: {
   file?: File | null;
+  progress?: number;
   url?: string;
   label: string;
   onRemove: () => void;
@@ -795,6 +803,8 @@ function ImagePreview({
       <button type="button" className="image-remove" onClick={onRemove} aria-label={'Remove ' + label}>
         ×
       </button>
+      {progress !== undefined && progress >= 0 && progress < 1 && <ProgressBar value={progress} label={progress < 0.15 ? 'Shrinking' : 'Uploading'} />}
+      {progress === -1 && <div className="upload-progress">Upload failed: it will retry when you save</div>}
       <span>{label}</span>
     </div>
   );

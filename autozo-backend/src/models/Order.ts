@@ -196,5 +196,9 @@ const orderSchema = new Schema<IOrder>(
 );
 
 orderSchema.index({ user: 1, createdAt: -1 });
+// Newest-first order lists in the admin and warehouse panels, with and without a status filter.
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ shop: 1, createdAt: -1 });
 
 export const Order = model<IOrder>('Order', orderSchema);

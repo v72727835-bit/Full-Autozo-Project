@@ -4,6 +4,7 @@ import { ms, radius, space, themed, useTheme } from '../theme';
 import { Category } from '../types';
 import { Illustration } from '../ui/Illustration';
 import { Txt } from '../ui/Text';
+import { smallPhoto } from '../ui/SmartImage';
 
 /**
  * An uploaded photo covers the whole tile edge to edge; without one, the
@@ -15,7 +16,7 @@ export function CategoryArt({ category, size }: { category: Pick<Category, 'icon
   if (category.image && !failed) {
     return (
       <Image
-        source={{ uri: category.image }}
+        source={{ uri: smallPhoto(category.image) }}
         style={StyleSheet.absoluteFill}
         resizeMode="cover"
         onError={() => setFailed(true)}

@@ -17,6 +17,7 @@ import { LiveTrackMap } from '../../../components/LiveTrackMap';
 import { RequireAuth } from '../../../components/RequireAuth';
 import { Alert, Badge, Button, PageLoader } from '../../../components/ui';
 import s from '../orders.module.css';
+import { smallPhoto } from '../../../lib/photo';
 
 function OrderInner() {
   const { id } = useParams<{ id: string }>();
@@ -172,7 +173,7 @@ function OrderInner() {
             {o.items.map((it) => (
               <div key={it.productId} className={s.line}>
                 <span className={s.lineArt}>
-                  <Image src={it.image || it.art} alt="" width={60} height={60} className={fitClass(it.image, s.lineArtImg)} unoptimized />
+                  <Image src={smallPhoto(it.image || it.art)} alt="" width={60} height={60} className={fitClass(it.image, s.lineArtImg)} unoptimized />
                 </span>
                 <span className={s.lineBody}>
                   <span className={`${s.lineName} clamp-1`}>{it.name}</span>

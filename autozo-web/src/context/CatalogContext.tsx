@@ -21,6 +21,36 @@ interface CatalogApi {
 
 const CatalogContext = createContext<CatalogApi | undefined>(undefined);
 
+/**
+ * The last home payload is kept in the browser, so a returning visitor sees
+ * the shop instantly while the fresh copy loads (usually a second later).
+ * Prices and stock are always re-checked by the server at checkout.
+ */
+const SAVED_KEY = 'autozo_home_v1';
+const SAVED_MAX_AGE = 24 * 60 * 60 * 1000;
+
+function readSaved(key: string): Home | null {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as { key: string; at: number; home: Home };
+    return saved.key === key && Date.now() - saved.at < SAVED_MAX_AGE ? saved.home : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSaved(key: string, home: Home) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify({ key, at: Date.now(), home }));
+  } catch {
+    /* storage full or blocked: the next visit just loads normally */
+  }
+}
+
+// Start the request while React is still hydrating instead of after it.
+if (typeof window !== 'undefined') void fetchHome().catch(() => undefined);
+
 export function CatalogProvider({ children }: { children: React.ReactNode }) {
   const [home, setHome] = useState<Home | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,15 +61,24 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async (force = false) => {
     const version = ++request.current;
     const key = homeLocationKey();
-    if (currentKey.current !== key) setHome(null);
+    if (currentKey.current !== key) {
+      const saved = readSaved(key);
+      setHome(saved);
+      setLoading(!saved);
+    } else {
+      setLoading(true);
+    }
     currentKey.current = key;
-    setLoading(true);
     setError('');
     try {
       const result = await fetchHome(key, force);
-      if (request.current === version) setHome(result);
+      if (request.current === version) {
+        setHome(result);
+        writeSaved(key, result);
+      }
     } catch (e) {
-      if (request.current === version) setError(getErrorMessage(e));
+      // With a saved copy on screen, a failed refresh stays quiet.
+      if (request.current === version && !readSaved(key)) setError(getErrorMessage(e));
     } finally {
       if (request.current === version) setLoading(false);
     }

@@ -19,6 +19,7 @@ import { QuantityStepper } from '../../components/QuantityStepper';
 import { RequireAuth } from '../../components/RequireAuth';
 import { Alert, Badge, Button, EmptyState, PageLoader } from '../../components/ui';
 import s from './cart.module.css';
+import { smallPhoto } from '../../lib/photo';
 
 function CartInner() {
   const { cart, loading, updateItem, removeItem, clear, addItem } = useCart();
@@ -178,7 +179,7 @@ function CartInner() {
               {g.items.map((it) => (
                 <div key={it.productId} className={s.line}>
                   <Link href={`/products/${it.slug}`} className={s.thumb}>
-                    <Image src={it.image || it.art} alt="" width={96} height={96} className={fitClass(it.image, s.thumbArt)} unoptimized />
+                    <Image src={smallPhoto(it.image || it.art)} alt="" width={96} height={96} className={fitClass(it.image, s.thumbArt)} unoptimized />
                   </Link>
                   <div className={s.lineBody}>
                     <Link href={`/products/${it.slug}`} className={`${s.lineName} clamp-2`}>
@@ -251,7 +252,7 @@ function CartInner() {
               <div className={`rail ${s.topupRail}`}>
                 {cart.points.suggestions.map((sg) => (
                   <button key={sg.productId} type="button" className={s.topupItem} onClick={() => run(() => addItem(sg.productId))}>
-                    <Image src={sg.image || sg.art} alt="" width={64} height={64} className={s.topupImg} unoptimized />
+                    <Image src={smallPhoto(sg.image || sg.art)} alt="" width={64} height={64} className={s.topupImg} unoptimized />
                     <span className={`${s.topupName} clamp-2`}>{sg.name}</span>
                     <span className="num">₹{sg.price}</span>
                     <span className={s.topupAdd}>+ Add</span>

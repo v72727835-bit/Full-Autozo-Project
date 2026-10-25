@@ -85,7 +85,7 @@ export function ShopDetailScreen() {
         ListHeaderComponent={
           <View style={[styles.header, { marginHorizontal: -grid.padding }]}>
             <View style={[styles.banner, { height: width * 0.44 }]}>
-              <SmartImage uri={shop.banner || shop.logo} icon="shopping-cart" style={styles.bannerImage} />
+              <SmartImage full uri={shop.banner || shop.logo} icon="shopping-cart" style={styles.bannerImage} />
               <View style={styles.bannerVeil} />
             </View>
 

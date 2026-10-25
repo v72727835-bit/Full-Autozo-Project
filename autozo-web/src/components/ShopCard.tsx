@@ -8,12 +8,13 @@ import { Shop } from '../lib/types';
 import { Icon } from './Icon';
 import { Badge, Rating } from './ui';
 import s from './ShopCard.module.css';
+import { smallPhoto } from '../lib/photo';
 
 export function ShopCard({ shop }: { shop: Shop }) {
   return (
     <Link href={`/search?shop=${shop.slug}`} className={s.card}>
       <span className={s.logo}>
-        <Image src={shop.logo || shop.art} alt="" width={96} height={96} className={fitClass(shop.logo, s.logoArt)} unoptimized />
+        <Image src={smallPhoto(shop.logo || shop.art)} alt="" width={96} height={96} className={fitClass(shop.logo, s.logoArt)} unoptimized />
       </span>
       <span className={s.body}>
         <span className={s.top}>

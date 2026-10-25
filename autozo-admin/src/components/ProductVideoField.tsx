@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { getErrorMessage } from '../api/client';
-import { Button, Field } from './ui';
+import { Button, Field, ProgressBar } from './ui';
 
 const isFile = (url: string) => /\.(mp4|webm)(\?.*)?$/i.test(url) || /\/uploads\/products\/[^/]+\.(mp4|webm)$/i.test(url);
 const isYoutube = (url: string) => /(youtube\.com|youtu\.be)\//i.test(url);
@@ -20,11 +20,12 @@ export default function ProductVideoField({
 }: {
   value: string;
   onChange: (url: string) => void;
-  upload: (file: File) => Promise<string>;
+  upload: (file: File, onProgress?: (fraction: number) => void) => Promise<string>;
   maxMb: number;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
   const choose = async (file: File | undefined) => {
@@ -35,8 +36,9 @@ export default function ProductVideoField({
       return;
     }
     setBusy(true);
+    setProgress(0);
     try {
-      onChange(await upload(file));
+      onChange(await upload(file, setProgress));
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -68,6 +70,7 @@ export default function ProductVideoField({
         ) : null}
         <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Or paste a YouTube link" style={{ fontSize: 12.5, flex: 1, minWidth: 180 }} />
       </div>
+      {busy && <ProgressBar value={progress} label={progress >= 0.99 ? 'Saving video' : 'Uploading video'} />}
       <input ref={fileRef} type="file" accept="video/mp4,video/webm" hidden onChange={(e) => { void choose(e.target.files?.[0]); e.target.value = ''; }} />
       <div className="page-subtitle">MP4 or WebM up to {maxMb} MB, or a YouTube link. Customers see it on the product page.</div>
       {error ? <div className="error-banner" style={{ marginTop: 8 }}>{error}</div> : null}

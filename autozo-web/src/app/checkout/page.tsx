@@ -25,6 +25,7 @@ import { Icon, IconName } from '../../components/Icon';
 import { RequireAuth } from '../../components/RequireAuth';
 import { Alert, Badge, Button, EmptyState, Field, Input, PageLoader, Textarea } from '../../components/ui';
 import s from './checkout.module.css';
+import { smallPhoto } from '../../lib/photo';
 
 const COD_OPTION: { value: 'cod' | 'online'; title: string; body: string; icon: IconName } = {
   value: 'cod',
@@ -338,7 +339,7 @@ function CheckoutInner() {
                 <div key={it.productId} className={s.item}>
                   <span className={s.itemArt}>
                     <Image
-                      src={it.image || it.art}
+                      src={smallPhoto(it.image || it.art)}
                       alt=""
                       width={30}
                       height={30}

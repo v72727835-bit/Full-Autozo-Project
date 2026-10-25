@@ -15,6 +15,7 @@ import { SearchBar } from '../../../components/SearchBar';
 import { ProductListView } from '../../../components/ProductListView';
 import { ShareButtons } from '../../../components/ShareButtons';
 import s from '../categories.module.css';
+import { smallPhoto } from '../../../lib/photo';
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -72,7 +73,7 @@ export default function CategoryPage() {
       <header className={s.head}>
         <span className={s.art} style={{ ['--tile' as string]: tile }}>
           {category ? (
-            <Image src={category.image || category.art} alt="" width={64} height={64} className={fitClass(category.image, s.artImg)} unoptimized />
+            <Image src={smallPhoto(category.image || category.art)} alt="" width={64} height={64} className={fitClass(category.image, s.artImg)} unoptimized />
           ) : null}
         </span>
         <div style={{ minWidth: 0 }}>
@@ -99,7 +100,7 @@ export default function CategoryPage() {
               {/* A photo fills its frame by absolute position, so the frame must be its own positioned box. */}
               <span className={s.childFrame}>
                 <Image
-                  src={c.image || c.art}
+                  src={smallPhoto(c.image || c.art)}
                   alt=""
                   width={40}
                   height={40}
@@ -119,7 +120,7 @@ export default function CategoryPage() {
             {rail.map((c) => (
               <Link key={c.id} href={`/categories/${c.slug}`} className={s.railItem} data-active={c.slug === slug}>
                 <span className={s.railFrame}>
-                  <Image src={c.image || c.art} alt="" width={56} height={56} className={fitClass(c.image, s.railArt)} unoptimized />
+                  <Image src={smallPhoto(c.image || c.art)} alt="" width={56} height={56} className={fitClass(c.image, s.railArt)} unoptimized />
                 </span>
                 <span className={s.railName}>{name(c)}</span>
               </Link>

@@ -38,15 +38,20 @@ export const fetchCategories = async (): Promise<Category[]> => {
   return (data.data as RawCategory[]).map(n.category);
 };
 
-export const fetchCategoryTree = async (): Promise<Category[]> => {
+/* Pages a shopper moves back and forth between (aisles, product lists and
+   product pages) are kept for a minute, so going back is instant instead of
+   waiting on the network again. */
+const treeResource = createCatalogResource<Category[]>(async () => {
   const { data } = await api.get('/categories/tree');
   return (data.data as RawCategory[]).map(n.category);
-};
+}, 60_000, 1);
+export const fetchCategoryTree = (): Promise<Category[]> => treeResource('tree');
 
-export const fetchCategory = async (idOrSlug: string): Promise<Category> => {
+const categoryResource = createCatalogResource<Category>(async (idOrSlug) => {
   const { data } = await api.get(`/categories/${idOrSlug}`);
   return n.category(data.data);
-};
+}, 60_000, 30);
+export const fetchCategory = (idOrSlug: string): Promise<Category> => categoryResource(idOrSlug);
 
 export interface ListProductsParams {
   q?: string;
@@ -72,12 +77,13 @@ export interface PageMeta {
   hasNext: boolean;
 }
 
-export const listProducts = async (
-  params: ListProductsParams,
-): Promise<{ items: Product[]; meta: PageMeta }> => {
-  const { data } = await api.get('/products', { params });
+// The delivery pin is part of the key: it changes which shops' products are listed.
+const listResource = createCatalogResource<{ items: Product[]; meta: PageMeta }>(async (key) => {
+  const { data } = await api.get('/products', { params: JSON.parse(key).params });
   return { items: (data.data as RawProduct[]).map(n.product), meta: data.meta };
-};
+}, 60_000, 30);
+export const listProducts = (params: ListProductsParams): Promise<{ items: Product[]; meta: PageMeta }> =>
+  listResource(JSON.stringify({ params, point: homeLocationKey() }));
 
 export const suggestProducts = async (q: string): Promise<Product[]> => {
   if (!q.trim()) return [];
@@ -85,9 +91,14 @@ export const suggestProducts = async (q: string): Promise<Product[]> => {
   return (data.data as RawProduct[]).map(n.product);
 };
 
-export const fetchProduct = async (idOrSlug: string): Promise<Product> => {
+const productResource = createCatalogResource<Product>(async (idOrSlug) => {
   const { data } = await api.get(`/products/${idOrSlug}`);
   return n.product(data.data);
+}, 60_000, 40);
+export const fetchProduct = (idOrSlug: string, force = false): Promise<Product> => productResource(idOrSlug, force);
+/** Starts loading a product page as soon as the shopper points at or touches its card. */
+export const prefetchProduct = (idOrSlug: string): void => {
+  productResource(idOrSlug).catch(() => undefined);
 };
 
 export const fetchShops = async (): Promise<Shop[]> => {

@@ -13,6 +13,7 @@ import { Icon } from '../../components/Icon';
 import { RequireAuth } from '../../components/RequireAuth';
 import { Alert, Badge, EmptyState } from '../../components/ui';
 import s from './orders.module.css';
+import { smallPhoto } from '../../lib/photo';
 
 function OrdersInner() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -68,7 +69,7 @@ function OrdersInner() {
               <div className={s.arts}>
                 {o.items.slice(0, 5).map((it) => (
                   <span key={it.productId} className={s.art}>
-                    <Image src={it.image || it.art} alt="" width={52} height={52} className={fitClass(it.image, s.artImg)} unoptimized />
+                    <Image src={smallPhoto(it.image || it.art)} alt="" width={52} height={52} className={fitClass(it.image, s.artImg)} unoptimized />
                   </span>
                 ))}
                 {o.items.length > 5 ? <span className={`num ${s.more}`}>+{o.items.length - 5}</span> : null}

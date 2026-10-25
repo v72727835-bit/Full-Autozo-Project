@@ -7,6 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { fitClass } from '../lib/art';
 import { Category } from '../lib/types';
 import s from './CategoryTile.module.css';
+import { smallPhoto } from '../lib/photo';
 
 const tile = (tint?: string) =>
   tint ? `color-mix(in srgb, ${tint} var(--tint-mix), var(--surface))` : 'var(--brand-tint)';
@@ -21,7 +22,7 @@ export function CategoryTile({ category }: { category: Category }) {
       style={{ ['--tile' as string]: tile(category.tint) }}
     >
       <span className={s.panel}>
-        <Image src={category.image || category.art} alt="" width={200} height={200} className={fitClass(category.image, s.panelArt)} unoptimized />
+        <Image src={smallPhoto(category.image || category.art)} alt="" width={200} height={200} className={fitClass(category.image, s.panelArt)} unoptimized />
       </span>
       <span className={`${s.label} clamp-2`}>{name(category)}</span>
     </Link>
@@ -38,7 +39,7 @@ export function CategoryCircle({ category }: { category: Category }) {
       style={{ ['--tile' as string]: tile(category.tint) }}
     >
       <span className={s.ring}>
-        <Image src={category.image || category.art} alt="" width={140} height={140} className={fitClass(category.image, s.ringArt)} unoptimized />
+        <Image src={smallPhoto(category.image || category.art)} alt="" width={140} height={140} className={fitClass(category.image, s.ringArt)} unoptimized />
       </span>
       <span className={`${s.label} ${s.circleLabel} clamp-2`}>{category.nameHi && name(category) !== category.name ? name(category) : category.short || category.name}</span>
     </Link>
