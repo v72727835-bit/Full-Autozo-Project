@@ -72,6 +72,9 @@ runs `update-apks.sh`, which copies them to `autozo-backend/downloads/`, served 
 - https://app-api.autozo.org/downloads/autozo-warehouse.apk
 - https://app-api.autozo.org/downloads/autozo-rider.apk
 
+The same files are also copied to `~/public_html/downloads/`, so they work on the main domain too:
+https://autozo.org/downloads/autozo-customer.apk, `autozo-warehouse.apk`, `autozo-rider.apk`.
+
 The website links to these in the footer ("Get the app"), the Seller / Rider menu, the delivery partner page and the
 warehouse registration page. A link set in Admin → Store settings → App links (e.g. a Play Store listing) wins.
 
