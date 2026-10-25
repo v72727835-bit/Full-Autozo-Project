@@ -125,6 +125,7 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 18px;
@@ -493,3 +494,23 @@
   color: #fff;
 }
 
+
+/* Each photo of the slideshow slides in from the right. */
+.slideIn {
+  animation: slideIn 0.45s var(--ease);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.buyNow {
+  min-width: 128px;
+}

@@ -108,7 +108,7 @@ function Section({ section }: { section: HomeSection }) {
             />
             <div className="rail">
               {section.items.map((p) => (
-                <ProductCard key={p.id} product={p} width={168} tint={section.tint} />
+                <ProductCard key={p.id} product={p} width={152} tint={section.tint} />
               ))}
             </div>
           </div>
@@ -123,7 +123,7 @@ function Section({ section }: { section: HomeSection }) {
           <SectionHead title={section.title} subtitle={section.subtitle} />
           <div className="rail">
             {section.items.map((p) => (
-              <ProductCard key={p.id} product={p} width={168} />
+              <ProductCard key={p.id} product={p} width={152} />
             ))}
           </div>
         </section>
@@ -159,7 +159,7 @@ function HomeSkeleton() {
       <div className="sk" style={{ height: 22, width: 220, marginBottom: 16 }} />
       <div className="rail">
         {Array.from({ length: 7 }).map((_, i) => (
-          <ProductCardSkeleton key={i} width={168} />
+          <ProductCardSkeleton key={i} width={152} />
         ))}
       </div>
     </div>

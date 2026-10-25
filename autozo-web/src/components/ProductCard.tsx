@@ -172,20 +172,21 @@ export function ProductCard({
         ) : null}
 
         <div className={s.buy}>
-          <div>
-            <Price price={product.price} mrp={product.mrp} size={15} />
+          <div className={s.priceCol}>
+            <Price price={product.price} mrp={product.mrp} size={14} />
             {save > 0 ? <span className={s.save}>Save ₹{save}</span> : null}
           </div>
           {product.inStock ? (
-          <QuantityStepper
-            size="sm"
-            quantity={qty}
-            busy={busy}
-            disabled={!product.inStock}
-            onAdd={() => act(() => addItem(product.id, 1))}
-            onIncrement={() => act(() => updateItem(product.id, qty + 1))}
-            onDecrement={() => act(() => updateItem(product.id, qty - 1))}
-          />
+            <div className={s.addBtn}>
+              <QuantityStepper
+                size="sm"
+                quantity={qty}
+                busy={busy}
+                onAdd={() => act(() => addItem(product.id, 1))}
+                onIncrement={() => act(() => updateItem(product.id, qty + 1))}
+                onDecrement={() => act(() => updateItem(product.id, qty - 1))}
+              />
+            </div>
           ) : (
             <NotifyMeButton productId={product.id} />
           )}
