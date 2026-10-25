@@ -8,7 +8,7 @@ import path from 'path';
 import { env } from './config/env';
 import { errorHandler, notFound } from './middleware/error';
 import { parseRange } from './utils/range';
-import { findImage } from './utils/imageStore';
+import { findImage, isThumbName, thumbName } from './utils/imageStore';
 import routes from './routes';
 import { ensureSettings } from './services/settings.service';
 
@@ -30,13 +30,25 @@ app.use(express.json({ limit: '1mb' }));
    older builds are still served below for as long as they exist. */
 app.get('/uploads/products/:name', async (req, res, next) => {
   try {
-    const image = await findImage(req.params.name);
+    const { name } = req.params;
+    // `?w=480` asks for the small copy made at upload; photos without one get the original.
+    const wantsThumb = req.query.w !== undefined && !isThumbName(name) && !/\.(mp4|webm)$/i.test(name);
+    const thumb = wantsThumb ? await findImage(thumbName(name)) : null;
+    const image = thumb ?? (await findImage(name));
     if (!image) return next();
     const headers: Record<string, string> = {
       'Content-Type': image.contentType,
       'Accept-Ranges': 'bytes',
-      'Cache-Control': 'public, max-age=2592000, immutable',
+      // A stand-in original is cached for a day only, so the small copy is picked up once it is made.
+      'Cache-Control': wantsThumb && !thumb ? 'public, max-age=86400' : 'public, max-age=2592000, immutable',
     };
+    if (!req.headers.range) {
+      const whole = await image.buffer();
+      if (whole) {
+        res.set({ ...headers, 'Content-Length': String(whole.length) }).end(whole);
+        return;
+      }
+    }
     // Videos are played and skipped through with Range requests (Safari insists on them).
     const range = parseRange(req.headers.range, image.length);
     if (range === 'unsatisfiable') {

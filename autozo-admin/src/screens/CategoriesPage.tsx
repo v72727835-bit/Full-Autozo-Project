@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createCategory, deleteCategory, fetchCategories, updateCategory, uploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconArrowDown, IconArrowUp, IconBox } from '../components/icons';
-import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal } from '../components/ui';
+import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, smallPhoto } from '../components/ui';
 import { Category } from '../types';
 
 const LEVEL_LABEL: Record<number, string> = { 1: 'Group', 2: 'Category', 3: 'Child' };
@@ -229,7 +229,7 @@ function CategoryRow({
         <span className="tree-toggle-spacer" />
       )}
       {c.image ? (
-        <img src={c.image} alt="" className="thumb" style={{ width: 26, height: 26, borderRadius: 8 }} />
+        <img src={smallPhoto(c.image)} loading="lazy" alt="" className="thumb" style={{ width: 26, height: 26, borderRadius: 8 }} />
       ) : (
         <div className="tree-swatch" style={{ background: c.tint || '#eee' }} />
       )}

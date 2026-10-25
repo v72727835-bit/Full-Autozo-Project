@@ -10,6 +10,7 @@ import { Product } from '../lib/types';
 import { Icon } from './Icon';
 import { Spinner } from './ui';
 import s from './SearchBar.module.css';
+import { smallPhoto } from '../lib/photo';
 
 const PLACEHOLDERS = ['milk', 'bread', 'rice', 'snacks', 'soap', 'tea'];
 
@@ -126,7 +127,7 @@ export function SearchBar({
               }}
             >
               <span className={s.thumb}>
-                <Image src={p.photo} alt="" width={68} height={68} className={fitClass(p.photo, s.thumbArt)} unoptimized />
+                <Image src={smallPhoto(p.photo)} alt="" width={68} height={68} className={fitClass(p.photo, s.thumbArt)} unoptimized />
               </span>
               <span className={s.text}>
                 <span className={`${s.rowName} clamp-1`}>{p.name}</span>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import { IconArrowDown, IconArrowUp } from './icons';
 
 export function Spinner() {
@@ -245,8 +244,11 @@ export function StatCard({
 
 /* ---------- product/shop thumbnail ---------- */
 
+/** Uploaded photos have a 480 px copy; lists ask for it instead of the full photo. */
+export const smallPhoto = (src: string) => (/\/uploads\/products\/[^/?]+\.(jpe?g|png|webp)$/i.test(src) ? `${src}?w=480` : src);
+
 export function Thumb({ src, fallback }: { src?: string; fallback?: string }) {
-  if (src) return <img className="thumb" src={src} alt="" />;
+  if (src) return <img className="thumb" src={smallPhoto(src)} alt="" loading="lazy" decoding="async" />;
   return (
     <div className="thumb thumb-fallback" aria-hidden>
       {fallback ?? '📦'}
@@ -284,4 +286,17 @@ export function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
   const days = Math.floor(hrs / 24);
   return `${days} day${days > 1 ? 's' : ''} ago`;
+}
+
+/** A thin progress bar with a label, used while photos and videos upload. */
+export function ProgressBar({ value, label }: { value: number; label?: string }) {
+  const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
+  return (
+    <div className="upload-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+      <div className="upload-progress-track">
+        <div className="upload-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="upload-progress-label">{label ? `${label} ` : ''}{pct}%</span>
+    </div>
+  );
 }

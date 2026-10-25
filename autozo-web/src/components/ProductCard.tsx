@@ -19,6 +19,8 @@ import { NotifyMeButton } from './NotifyMe';
 import { QuantityStepper } from './QuantityStepper';
 import { FoodMark, Price, Rating } from './ui';
 import s from './ProductCard.module.css';
+import { smallPhoto } from '../lib/photo';
+import { prefetchProduct } from '../api/catalog';
 
 /** Blend the section's pastel into the surface so dark mode stays dark. */
 const tile = (tint?: string) =>
@@ -54,6 +56,11 @@ export function ProductCard({
   const [busy, setBusy] = useState(false);
 
   const qty = quantityOf(product.id);
+  // On a computer the product page's data starts loading on hover, before the click
+  // lands. Not on touch: a scroll would fetch every card the finger passes over.
+  const warm = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse') prefetchProduct(product.slug);
+  };
 
   const act = async (fn: () => Promise<void>) => {
     if (!user) {
@@ -72,9 +79,9 @@ export function ProductCard({
 
   if (compact) {
     return (
-      <article className={s.cCard}>
+      <article className={s.cCard} onPointerEnter={warm}>
         <Link href={`/products/${product.slug}`} className={s.cArt} aria-label={product.name} style={{ ['--tile' as string]: tile(tint) }}>
-          <Image src={product.photo} alt="" width={240} height={240} className={fitClass(product.photo, s.cImg)} unoptimized />
+          <Image src={smallPhoto(product.photo)} alt="" width={240} height={240} className={fitClass(product.photo, s.cImg)} unoptimized />
           {!product.inStock ? <span className={s.cOos}>Out of stock</span> : null}
         </Link>
         <button type="button" className={s.heart} data-on={wished} onClick={toggleWish} aria-label={wished ? 'Remove from wishlist' : 'Save to wishlist'}>
@@ -126,11 +133,12 @@ export function ProductCard({
   return (
     <article
       className={s.card}
+      onPointerEnter={warm}
       style={{ width: width ?? '100%', ['--tile' as string]: tile(tint) }}
     >
       <Link href={`/products/${product.slug}`} className={s.art} aria-label={product.name}>
         <span className={s.artBg} />
-        <Image src={product.photo} alt="" width={240} height={240} className={fitClass(product.photo, s.artImg)} unoptimized />
+        <Image src={smallPhoto(product.photo)} alt="" width={240} height={240} className={fitClass(product.photo, s.artImg)} unoptimized />
         {product.discountPercent > 0 ? (
           <span className={`num ${s.off}`}>{product.discountPercent}% OFF</span>
         ) : null}

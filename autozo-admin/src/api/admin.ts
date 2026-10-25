@@ -1,4 +1,5 @@
 import { api } from './client';
+import { CompressOptions, prepareImage, runLimited } from '../lib/imageCompress';
 import { WarehouseApplication, StandardCategory, Enquiry, SellerRow, SellerStats, SellerProfile, AdminAlert, AdminUser, AppUser, Banner, Category, Notice, RiderRow, RiderTotals, Settings, StockAlert, Ticket, Coupon, DashboardStats, Order, OrderStatus, PageMeta, Product, Shop } from '../types';
 
 interface Paged<T> {
@@ -37,16 +38,62 @@ export const deleteProduct = async (id: string): Promise<void> => {
   await api.delete(`/admin/products/${id}`);
 };
 
-export const uploadImages = async (files: File[]): Promise<string[]> => {
-  const body = new FormData();
-  files.forEach((file) => body.append('images', file));
-  const { data } = await api.post('/admin/uploads/images', body);
-  return data.data.urls;
-};
-export const uploadProductVideo = async (file: File): Promise<string> => {
+export interface UploadOptions extends CompressOptions {
+  /** 0..1 across every file: shrinking first, then sending. */
+  onProgress?: (fraction: number) => void;
+}
+
+/**
+ * Shrinks each photo in the browser, then sends up to three at once, one
+ * request each, so a slow photo never holds up the rest and the bar moves
+ * smoothly. URLs come back in the order the files were given.
+ */
+async function sendImages(path: string, files: File[], opts: UploadOptions = {}): Promise<string[]> {
+  const share = files.map(() => 0);
+  const report = () => opts.onProgress?.(share.reduce((a, b) => a + b, 0) / Math.max(files.length, 1));
+  report();
+  return runLimited(files, 3, async (original, i) => {
+    const { file, thumb } = await prepareImage(original, opts);
+    share[i] = 0.15;
+    report();
+    const body = new FormData();
+    body.append('images', file);
+    if (thumb) body.append('thumbs', thumb);
+    const { data } = await api.post(path, body, {
+      timeout: 120000,
+      onUploadProgress: (e) => {
+        share[i] = 0.15 + 0.85 * (e.total ? e.loaded / e.total : 0);
+        report();
+      },
+    });
+    share[i] = 1;
+    report();
+    return (data.data.urls as string[])[0];
+  });
+}
+
+/** Sends a video with progress (videos are not re-encoded in the browser). */
+async function sendVideo(path: string, file: File, onProgress?: (fraction: number) => void): Promise<string> {
   const body = new FormData();
   body.append('video', file);
-  return (await api.post('/admin/uploads/video', body, { timeout: 180000 })).data.data.url;
+  const { data } = await api.post(path, body, {
+    timeout: 600000,
+    onUploadProgress: (e) => onProgress?.(e.total ? e.loaded / e.total : 0),
+  });
+  return data.data.url;
+}
+
+export const uploadImages = (files: File[], opts?: UploadOptions): Promise<string[]> => sendImages('/admin/uploads/images', files, opts);
+export const uploadProductVideo = (file: File, onProgress?: (fraction: number) => void): Promise<string> =>
+  sendVideo('/admin/uploads/video', file, onProgress);
+
+/** Older photos without a card-sized copy, a page at a time. */
+export const fetchThumbless = async (after?: string): Promise<{ items: { name: string; url: string; length: number }[]; next: string | null }> =>
+  (await api.get('/admin/uploads/thumbless', { params: { after } })).data.data;
+export const saveThumb = async (name: string, thumb: File): Promise<void> => {
+  const body = new FormData();
+  body.append('thumb', thumb);
+  await api.post(`/admin/uploads/thumbs/${encodeURIComponent(name)}`, body, { timeout: 60000 });
 };
 /* ---------- categories ---------- */
 export const fetchCategories = async (): Promise<Category[]> => (await api.get('/admin/categories')).data.data;
@@ -329,16 +376,11 @@ export const sellerBulkProducts = async (rows: Record<string, string>[], dryRun:
   (await api.post('/seller/products/bulk', { rows, dryRun })).data.data;
 export const sellerCreateProduct = async (body: Record<string, unknown>) => (await api.post('/seller/products', body)).data.data;
 export const sellerUpdateProduct = async (id: string, body: Record<string, unknown>) => (await api.patch(`/seller/products/${id}`, body)).data.data;
-export const sellerUploadVideo = async (file: File): Promise<string> => {
-  const body = new FormData();
-  body.append('video', file);
-  return (await api.post('/seller/uploads/video', body, { timeout: 180000 })).data.data.url;
-};
-export const sellerUploadImages = async (files: File[]): Promise<string[]> => {
-  const body = new FormData();
-  files.forEach((f) => body.append('images', f));
-  return (await api.post('/seller/uploads/images', body)).data.data.urls;
-};
+export const sellerUploadVideo = (file: File, onProgress?: (fraction: number) => void): Promise<string> =>
+  sendVideo('/seller/uploads/video', file, onProgress);
+/** Sellers are capped at 200 KB a photo on the server, so photos are shrunk to fit. */
+export const sellerUploadImages = (files: File[], opts?: UploadOptions): Promise<string[]> =>
+  sendImages('/seller/uploads/images', files, { maxBytes: 190 * 1024, ...opts });
 
 /* ---------- seller earnings wallet (seller's own session) ---------- */
 export interface SellerWallet {

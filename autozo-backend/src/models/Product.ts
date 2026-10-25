@@ -92,6 +92,9 @@ productSchema.index({ isActive: 1, soldCount: -1 });
 productSchema.index({ isActive: 1, shop: 1, soldCount: -1, rating: -1 });
 productSchema.index({ isActive: 1, standardCategories: 1, sortCode: 1, name: 1 });
 productSchema.index({ name: 1 });
+// Newest-first product lists in the admin and warehouse panels.
+productSchema.index({ createdAt: -1 });
+productSchema.index({ shop: 1, createdAt: -1 });
 productSchema.index({ isActive: 1, brand: 1 });
 
 productSchema.pre('validate', function (next) {

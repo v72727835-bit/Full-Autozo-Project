@@ -156,7 +156,7 @@ export function ProductDetailScreen() {
                 accessibilityRole="imagebutton"
                 accessibilityLabel={`${product.name}, tap to zoom`}
               >
-                <SmartImage uri={uri} icon={product.icon} artScale={0.62} style={{ width, height: width * 0.92 }} />
+                <SmartImage full uri={uri} icon={product.icon} artScale={0.62} style={{ width, height: width * 0.92 }} />
               </Pressable>
             ))}
           </ScrollView>

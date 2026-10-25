@@ -1779,3 +1779,43 @@ select option {
   .wh-chip.active { background: var(--brand); border-color: var(--brand); color: #fff; }
   .topbar .user-chip { display: none; }
 }
+
+/* upload progress (product photos and videos) */
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.upload-progress-track {
+  flex: 1;
+  min-width: 80px;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.18);
+  overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--brand, #22c55e);
+  transition: width 0.2s ease;
+}
+.upload-progress-label {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.image-preview .upload-progress {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 26px;
+  margin: 0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+}

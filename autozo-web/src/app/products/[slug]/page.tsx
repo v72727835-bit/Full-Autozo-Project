@@ -34,6 +34,7 @@ import {
   compact,
 } from '../../../components/ui';
 import s from './product.module.css';
+import { smallPhoto } from '../../../lib/photo';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -57,9 +58,9 @@ export default function ProductPage() {
   const [comment, setComment] = useState('');
   const [posting, setPosting] = useState(false);
 
-  const load = useCallback(() => {
+  const load = useCallback((force = false) => {
     setError('');
-    fetchProduct(slug)
+    fetchProduct(slug, force)
       .then((data) => {
         setP(data);
         setShot(0);
@@ -99,7 +100,7 @@ export default function ProductPage() {
     return (
       <div className="page" style={{ paddingTop: 24, maxWidth: 560 }}>
         <Alert tone="bad">{error}</Alert>
-        <Button variant="outline" onClick={load} icon="repeat">
+        <Button variant="outline" onClick={() => load(true)} icon="repeat">
           Try again
         </Button>
       </div>
@@ -150,7 +151,7 @@ export default function ProductPage() {
       await submitReview(p.id, stars, comment.trim() || undefined);
       setComment('');
       show('Thank you — your review has been added', 'success');
-      load();
+      load(true);
     } catch (e) {
       show(getErrorMessage(e), 'error');
     } finally {
@@ -211,7 +212,7 @@ export default function ProductPage() {
                   }}
                   aria-label={`View image ${i + 1}`}
                 >
-                  <Image src={src} alt="" width={112} height={112} className={fitClass(src, s.thumbArt)} unoptimized />
+                  <Image src={smallPhoto(src)} alt="" width={112} height={112} className={fitClass(src, s.thumbArt)} unoptimized />
                 </button>
               ))}
               {video ? (

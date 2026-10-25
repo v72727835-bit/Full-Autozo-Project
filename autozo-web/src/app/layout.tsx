@@ -19,6 +19,16 @@ import { OrderProgressToast } from '../components/OrderProgressToast';
 import { PushRegister } from '../components/PushRegister';
 import { PwaRegister } from '../components/PwaRegister';
 import { RateOrderPrompt } from '../components/RateOrderPrompt';
+import { API_URL } from '../lib/config';
+
+/** The API (and its photos) live on another host; opening that connection early saves a round trip. */
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_URL).origin;
+  } catch {
+    return null;
+  }
+})();
 
 /**
  * Plus Jakarta Sans, served from our own origin rather than Google's. It
@@ -70,6 +80,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={sans.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} crossOrigin="anonymous" /> : null}
+        {/* Photos load without CORS, which browsers send over a separate connection. */}
+        {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} /> : null}
       </head>
       <body>
         <a href="#main" className="sr-only">

@@ -6,7 +6,7 @@ import ProductVideoField from '../components/ProductVideoField';
 import { sellerBulkProducts, sellerUploadVideo, sellerCategories, sellerCreateProduct, sellerDeleteProduct, sellerProducts, sellerUpdateProduct, sellerUploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
-import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Thumb, money } from '../components/ui';
+import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, ProgressBar, Tabs, Thumb, money, smallPhoto } from '../components/ui';
 import { PageMeta, Product } from '../types';
 import type { Wh } from './SellerApp';
 
@@ -177,6 +177,7 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [video, setVideo] = useState(product?.video ?? '');
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -192,11 +193,12 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
     if (!files.length) return;
-    if (files.some((x) => x.size > 200 * 1024)) return setError('Each image must be 200 KB or smaller. Reduce it with a free tool (for example the “pi7 image tool” site) and upload again.');
     setUploading(true);
+    setProgress(0);
     setError('');
     try {
-      const urls = await sellerUploadImages(files);
+      // Photos of any size are shrunk under the 200 KB limit in the browser, then sent three at a time.
+      const urls = await sellerUploadImages(files.slice(0, 6 - images.length), { onProgress: setProgress });
       setImages((cur) => [...cur, ...urls].slice(0, 6));
     } catch (err) {
       setError(getErrorMessage(err));
@@ -314,19 +316,19 @@ function ProductForm({ product, cats, warehouses, onClose, onSaved }: { product:
           <Field label="Size group (same text on all sizes)"><input value={f.variantGroup} onChange={(e) => set('variantGroup', e.target.value)} placeholder="e.g. aashirvaad-atta" /></Field>
           <Field label="This size's label"><input value={f.variantLabel} onChange={(e) => set('variantLabel', e.target.value)} placeholder="e.g. 5 kg" /></Field>
         </div>
-        <Field label="Photos (up to 6, each up to 200 KB)">
+        <Field label="Photos (up to 6)">
           <input type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={pick} disabled={uploading || images.length >= 6} />
           <div className="row-flex" style={{ marginTop: 8, flexWrap: 'wrap' }}>
             {images.map((src, i) => (
               <span key={src} style={{ position: 'relative' }}>
-                <img src={src} alt="" width={64} height={64} style={{ objectFit: 'cover', borderRadius: 8 }} />
+                <img src={smallPhoto(src)} alt="" width={64} height={64} style={{ objectFit: 'cover', borderRadius: 8 }} />
                 {i === 0 && <span className="badge badge-brand" style={{ position: 'absolute', bottom: 2, left: 2 }}>Main</span>}
                 <button type="button" aria-label="Remove photo" onClick={() => setImages((cur) => cur.filter((x) => x !== src))} style={{ position: 'absolute', top: -6, right: -6 }}>×</button>
               </span>
             ))}
-            {uploading && <span className="cell-muted">Uploading…</span>}
           </div>
-          <div className="page-subtitle">The first photo is the main one. Bring a photo down to about 100 KB with any free image tool (for example the “pi7 image tool” site).</div>
+          {uploading && <ProgressBar value={progress} label={progress < 0.15 ? 'Shrinking photos' : 'Uploading photos'} />}
+          <div className="page-subtitle">The first photo is the main one. Any phone photo works: it is shrunk automatically before upload.</div>
         </Field>
         <ProductVideoField value={video} onChange={setVideo} upload={sellerUploadVideo} maxMb={15} />
         <div className="modal-actions">

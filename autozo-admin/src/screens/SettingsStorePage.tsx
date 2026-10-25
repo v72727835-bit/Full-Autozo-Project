@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchCategories, fetchSettings, saveSettings, uploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconImage } from '../components/icons';
+import SpeedUpPhotos from '../components/SpeedUpPhotos';
 import { Button, CenterSpinner, ErrorBanner, Field } from '../components/ui';
 import { Category, CategoryRef, Settings } from '../types';
 
@@ -71,6 +72,7 @@ export default function SettingsStorePage() {
       <DeliveryCard settings={settings} subCategories={subCategories} onSave={save} />
       <CodCard settings={settings} subCategories={subCategories} onSave={save} />
       <RiderCard settings={settings} onSave={save} />
+      <SpeedUpPhotos />
       <RiderPayCard settings={settings} onSave={save} />
       <SellerPayCard settings={settings} onSave={save} />
       <CompanyCard settings={settings} onSave={save} />
