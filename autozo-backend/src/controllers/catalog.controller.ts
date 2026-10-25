@@ -213,7 +213,8 @@ export const home = asyncHandler(async (req, res) => {
   if (circles.length) sections.push({ type: 'circleRail', id: 'quick', items: circles });
 
   const toSlide = (b: (typeof uploadedBanners)[number]) => {
-    const cat = b.category?.isActive ? b.category : null;
+    // Only a category the admin has hidden drops the link; one saved without the flag still opens.
+    const cat = b.category && b.category.isActive !== false && b.category.slug ? b.category : null;
     return {
       id: String(b._id),
       title: b.title,
