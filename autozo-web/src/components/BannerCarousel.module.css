@@ -269,7 +269,7 @@
 
 /* ---------------------------------- promo --------------------------------- */
 
-/* A banner between home page sections: a little shorter than the hero. */
+/* A banner between home page sections: the same 16:5 shape as the hero. */
 .promo {
   margin-bottom: 32px;
 }
@@ -279,6 +279,13 @@
 }
 
 .promo .banner[data-photo] {
-  /* 1600 × 400 artwork, the size the admin panel asks for. */
-  aspect-ratio: 4 / 1;
+  /* 1600 × 500 artwork, the size the admin panel asks for. */
+  aspect-ratio: 16 / 5;
+}
+
+/* Taller on a phone, like the hero, so the artwork stays readable. */
+@media (max-width: 640px) {
+  .promo .banner[data-photo] {
+    aspect-ratio: 16 / 7;
+  }
 }
