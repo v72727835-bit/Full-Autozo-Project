@@ -49,6 +49,8 @@ export default function ProductPage() {
   const [shot, setShot] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [playing, setPlaying] = useState(false);
+  // Hovering or touching the gallery holds the slideshow on the photo being looked at.
+  const [holding, setHolding] = useState(false);
   const [wished, setWished] = useState(false);
   const [busy, setBusy] = useState(false);
   const [stars, setStars] = useState(5);
@@ -83,6 +85,14 @@ export default function ProductPage() {
     return () => document.removeEventListener('keydown', onKey);
   }, [zoom]);
 
+  // The gallery walks through every photo on its own, like a store's display.
+  const shotCount = p ? (p.images.length > 0 ? p.images.length : 1) : 0;
+  useEffect(() => {
+    if (shotCount < 2 || zoom || playing || holding) return;
+    const id = window.setInterval(() => setShot((i) => (i + 1) % shotCount), 3000);
+    return () => window.clearInterval(id);
+  }, [shotCount, zoom, playing, holding, shot]);
+
   const needLogin = () => router.push(`/login?next=${encodeURIComponent(`/products/${slug}`)}`);
 
   if (error)
@@ -113,6 +123,13 @@ export default function ProductPage() {
       setBusy(false);
     }
   };
+
+  // Buy now puts one in the cart when it isn't there yet and goes straight to checkout.
+  const buyNow = () =>
+    act(async () => {
+      if (qty === 0) await addItem(p.id, 1);
+      router.push('/checkout');
+    });
 
   const toggleWish = async () => {
     if (!user) return needLogin();
@@ -151,7 +168,13 @@ export default function ProductPage() {
       />
 
       <div className={s.top}>
-        <div className={s.gallery}>
+        <div
+          className={s.gallery}
+          onMouseEnter={() => setHolding(true)}
+          onMouseLeave={() => setHolding(false)}
+          onTouchStart={() => setHolding(true)}
+          onTouchEnd={() => setHolding(false)}
+        >
           {video && playing ? (
             <div className={s.stage} style={{ cursor: 'default', aspectRatio: '16 / 10', background: '#000' }}>
               {video.kind === 'file' ? (
@@ -168,7 +191,7 @@ export default function ProductPage() {
             </div>
           ) : (
           <button className={s.stage} onClick={() => setZoom(true)} aria-label="Zoom in on this photo">
-            <Image src={shots[shot]} alt={p.name} width={420} height={420} className={fitClass(shots[shot], s.shot)} unoptimized priority />
+            <Image key={shots[shot]} src={shots[shot]} alt={p.name} width={420} height={420} className={`${fitClass(shots[shot], s.shot)} ${s.slideIn}`} unoptimized priority />
             {p.discountPercent > 0 ? <span className={`num ${s.off}`}>{p.discountPercent}% OFF</span> : null}
             <span className={s.zoomHint}>
               <Icon name="zoom-in" size={16} />
@@ -269,10 +292,15 @@ export default function ProductPage() {
               onIncrement={() => act(() => updateItem(p.id, qty + 1))}
               onDecrement={() => act(() => updateItem(p.id, qty - 1))}
             />
-            {qty > 0 ? (
-              <Link href="/cart" className="btn btn-md btn-dark">
-                View cart
+            {p.inStock ? (
+              <button type="button" className={`btn btn-md btn-dark ${s.buyNow}`} onClick={buyNow} disabled={busy}>
+                Buy now
                 <Icon name="arrow-right" size={16} />
+              </button>
+            ) : null}
+            {qty > 0 ? (
+              <Link href="/cart" className="btn btn-md btn-outline">
+                View cart
               </Link>
             ) : null}
             <button className={s.wish} data-on={wished} onClick={toggleWish} aria-label="Toggle wishlist">
@@ -434,7 +462,7 @@ export default function ProductPage() {
           <SectionHead title="Similar products" subtitle="You might also like these" />
           <div className="rail">
             {p.related.map((r) => (
-              <ProductCard key={r.id} product={r} width={168} />
+              <ProductCard key={r.id} product={r} width={152} />
             ))}
           </div>
         </section>
