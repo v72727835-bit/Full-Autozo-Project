@@ -34,7 +34,8 @@ If one app fails, the others still build and the script says which one failed at
    - `com.bingoor.warehouse` → `autozo-warehouse\android\app\google-services.json`
    - `com.bingoor.rider` → `autozo-backend\autozo-mobile\android\app\google-services.json`
 
-   These files are not in git. Without them the APKs still build and work, but OTP and push do not.
+   They are committed (the repo is private; one file from the `autozo-app` Firebase project covers all three apps).
+   Re-download and replace them if you add or change an app in Firebase.
 4. **SHA-1 in Firebase**. All three apps are signed with the same `debug.keystore` (in each `android\app` folder).
    Add these fingerprints to each of the three Android apps in Firebase (Project settings → your app → Add fingerprint):
    - SHA-1: `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`
