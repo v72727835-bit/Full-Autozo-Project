@@ -7,6 +7,8 @@ import { Banner, Category } from '../types';
 
 const categoryId = (b: Banner) => (b.category && typeof b.category === 'object' ? b.category._id : b.category ?? null);
 const categoryName = (b: Banner) => (b.category && typeof b.category === 'object' ? b.category.name : '');
+/** A linked category the website cannot open, because it is hidden in Categories. */
+const hiddenLink = (b: Banner) => !!b.category && typeof b.category === 'object' && b.category.isActive === false;
 
 export default function BannersPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -102,6 +104,7 @@ export default function BannersPage() {
                   <span className="cell-muted" style={{ fontSize: 12 }}>
                     {categoryName(b) ? `Opens ${categoryName(b)}` : 'Opens all categories'}
                   </span>
+                  {hiddenLink(b) ? <Badge tone="warn">{categoryName(b)} is hidden in Categories, so this opens all categories</Badge> : null}
                 </div>
                 <div className="banner-actions">
                   <button className="btn btn-ghost btn-sm" disabled={moving === b._id || i === 0} onClick={() => reorder(b, -1)} aria-label="Move up">
@@ -266,7 +269,7 @@ function BannerForm({
                 <optgroup key={group._id} label={group.name}>
                   {items.map((c) => (
                     <option key={c._id} value={c._id}>
-                      {c.name}
+                      {c.isActive ? c.name : `${c.name} (hidden)`}
                     </option>
                   ))}
                 </optgroup>

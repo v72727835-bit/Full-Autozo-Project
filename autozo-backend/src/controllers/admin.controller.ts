@@ -596,7 +596,7 @@ export const deleteUserAdmin = asyncHandler(async (req, res) => {
 /* ============ Banners ============ */
 
 export const listBannersAdmin = asyncHandler(async (_req, res) => {
-  const banners = await Banner.find().sort({ sortOrder: 1, createdAt: -1 }).populate('category', 'name slug').lean();
+  const banners = await Banner.find().sort({ sortOrder: 1, createdAt: -1 }).populate('category', 'name slug isActive').lean();
   ok(res, banners);
 });
 

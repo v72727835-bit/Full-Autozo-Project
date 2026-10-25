@@ -241,9 +241,16 @@
 
 .hero .banner[data-photo] {
   min-height: 0;
-  /* 1600 × 500 artwork, the size the admin panel asks for, at every width:
-     a different shape on phones would crop the text out of the design. */
+  /* 1600 × 500 artwork, the size the admin panel asks for. */
   aspect-ratio: 16 / 5;
+}
+
+/* On a phone 16:5 is only about 130px tall, so the slide is made taller and
+   the artwork is cropped a little at the sides (keep text near the middle). */
+@media (max-width: 640px) {
+  .hero .banner[data-photo] {
+    aspect-ratio: 16 / 7;
+  }
 }
 
 .hero .dots {
