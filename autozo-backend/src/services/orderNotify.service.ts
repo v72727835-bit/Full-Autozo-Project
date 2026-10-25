@@ -1,5 +1,6 @@
 import { User } from '../models/User';
 import { pushToUsers } from './firebase.service';
+import { riderPlanFilter } from './subscription.service';
 
 /**
  * Push messages for the order journey. Everything here is fire-and-forget:
@@ -38,6 +39,7 @@ async function warehouseRiders(o: OrderLike): Promise<string[]> {
     isActive: true,
     $or: [{ warehouse: idOf(o.shop) }, { warehouses: idOf(o.shop) }],
     riderPaused: { $ne: true },
+    ...(await riderPlanFilter()),
     ...(o.longDistance ? { riderLongDistance: true } : { riderLongDistance: { $ne: true } }),
   })
     .select('_id')

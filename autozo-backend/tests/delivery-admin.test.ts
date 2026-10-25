@@ -1,6 +1,6 @@
 import './env';
 import assert from 'node:assert/strict';
-import { afterEach, mock, test } from 'node:test';
+import { afterEach, beforeEach, mock, test } from 'node:test';
 import { Types } from 'mongoose';
 import { deliverOrder, listOrders } from '../src/controllers/rider.controller';
 import { freeRidersForOrder } from '../src/services/orderFlow.service';
@@ -8,8 +8,15 @@ import { deleteUserAdmin, listOrdersAdmin } from '../src/controllers/admin.contr
 import { Order } from '../src/models/Order';
 import { User } from '../src/models/User';
 import { DeviceToken } from '../src/models/DeviceToken';
+import { Settings } from '../src/models/Settings';
+import { clearSettingsCache } from '../src/services/settings.service';
 import { adminShopBody, adminShopUpdateBody, riderDeliveryBody } from '../src/validators/schemas';
 
+// Rider and warehouse plans are switched off here, as they are by default.
+beforeEach(() => {
+  clearSettingsCache();
+  mock.method(Settings, 'findOne', () => ({ lean: async () => ({ key: 'global' }) }));
+});
 afterEach(() => mock.restoreAll());
 const invoke = (handler: any, body = {}) => new Promise<any>((resolve) => {
   handler({ body, params: { id: '507f1f77bcf86cd799439011' }, user: { id: '507f1f77bcf86cd799439012' } }, {

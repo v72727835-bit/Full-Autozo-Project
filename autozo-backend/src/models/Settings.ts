@@ -49,6 +49,8 @@ export interface ISettings {
     /** Smallest amount a seller may withdraw at once. */
     minWithdraw: number;
   };
+  /** Paid plans: when switched on, riders get no new orders and warehouses cannot add products or see orders without one. */
+  subscriptions: { rider: boolean; seller: boolean };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   /** Company details printed on every bill (logo, signature, seal, GSTIN, declaration...). */
   company: {
@@ -124,6 +126,10 @@ const settingsSchema = new Schema<ISettings>(
     sellerPay: {
       commissionPct: { type: Number, default: 10, min: 0, max: 100 },
       minWithdraw: { type: Number, default: 500, min: 0 },
+    },
+    subscriptions: {
+      rider: { type: Boolean, default: false },
+      seller: { type: Boolean, default: false },
     },
     appLinks: { android: String, ios: String, rider: String, warehouse: String },
     company: {

@@ -6,6 +6,7 @@ import { ApiError } from '../utils/ApiError';
 import { notifyOrderStatus, notifyRiderAssigned } from './orderNotify.service';
 import { ONLINE_WINDOW_MS } from './rider.service';
 import { createShiprocketOrder } from './shiprocket.service';
+import { planActive, riderPlanFilter, subscriptionSwitches } from './subscription.service';
 import { creditSellerEarnings } from './sellerPay.service';
 
 /**
@@ -64,6 +65,7 @@ export async function freeRidersForOrder(orderId: string) {
     // Riders can serve several warehouses; `warehouse` is only their first one.
     $or: [{ warehouse: order.shop }, { warehouses: order.shop }],
     riderPaused: { $ne: true },
+    ...(await riderPlanFilter()),
     lastSeenAt: { $gte: since },
     _id: { $nin: busy },
     ...(order.longDistance ? { riderLongDistance: true } : { riderLongDistance: { $ne: true } }),
@@ -83,18 +85,19 @@ export async function ridersForOrder(orderId: string) {
   if (!order) throw new ApiError(404, 'Order not found');
   const shop = order.shop as unknown as { _id: Types.ObjectId; name: string; deliveryRadiusKm?: number };
   const since = new Date(Date.now() - ONLINE_WINDOW_MS);
-  const [riders, busy] = await Promise.all([
-    User.find({ role: 'rider', isActive: true, $or: [{ warehouse: shop._id }, { warehouses: shop._id }] }).select('name phone riderLongDistance riderPaused lastSeenAt').sort({ name: 1 }).lean(),
+  const [riders, busy, plansOn] = await Promise.all([
+    User.find({ role: 'rider', isActive: true, $or: [{ warehouse: shop._id }, { warehouses: shop._id }] }).select('name phone riderLongDistance riderPaused lastSeenAt subscriptionUntil').sort({ name: 1 }).lean(),
     Order.distinct('rider', { status: 'out_for_delivery', rider: { $exists: true } }),
+    subscriptionSwitches().then((s) => s.rider),
   ]);
   const busyIds = new Set(busy.map(String));
   const rows = riders.map((r) => {
     const online = !!r.lastSeenAt && r.lastSeenAt >= since;
     const laneOk = order.longDistance ? !!r.riderLongDistance : !r.riderLongDistance;
-    const state = r.riderPaused ? 'paused' : !online ? 'offline' : busyIds.has(String(r._id)) ? 'busy' : !laneOk ? (order.longDistance ? 'not_long_distance' : 'long_distance_only') : 'free';
+    const state = r.riderPaused ? 'paused' : plansOn && !planActive(r.subscriptionUntil) ? 'no_plan' : !online ? 'offline' : busyIds.has(String(r._id)) ? 'busy' : !laneOk ? (order.longDistance ? 'not_long_distance' : 'long_distance_only') : 'free';
     return { _id: r._id, name: r.name, phone: r.phone, lastSeenAt: r.lastSeenAt, state, free: state === 'free' };
   });
-  const rank = { free: 0, busy: 1, offline: 2, paused: 3, long_distance_only: 4, not_long_distance: 4 } as Record<string, number>;
+  const rank = { free: 0, busy: 1, offline: 2, paused: 3, no_plan: 3, long_distance_only: 4, not_long_distance: 4 } as Record<string, number>;
   rows.sort((a, b) => rank[a.state] - rank[b.state] || a.name.localeCompare(b.name));
   return { warehouse: shop.name, radiusKm: shop.deliveryRadiusKm ?? null, distanceKm: order.distanceKm ?? null, longDistance: !!order.longDistance, riders: rows };
 }
@@ -159,13 +162,14 @@ export async function withRiderPool<T extends { shop?: unknown; rider?: unknown;
     deletedAt: { $exists: false },
     $or: [{ warehouse: { $in: shopIds } }, { warehouses: { $in: shopIds } }],
   })
-    .select('warehouse warehouses riderPaused riderLongDistance lastSeenAt')
+    .select('warehouse warehouses riderPaused riderLongDistance lastSeenAt subscriptionUntil')
     .lean();
+  const plansOn = (await subscriptionSwitches()).rider;
   const since = Date.now() - ONLINE_WINDOW_MS;
   return orders.map((o) => {
     if (!waiting.includes(o)) return o;
     const linked = riders.filter((r) => riderWarehouseIds(r).some((w) => String(w) === shopId(o)));
-    const canSee = linked.filter((r) => !r.riderPaused && !!r.riderLongDistance === !!o.longDistance);
+    const canSee = linked.filter((r) => !r.riderPaused && (!plansOn || planActive(r.subscriptionUntil)) && !!r.riderLongDistance === !!o.longDistance);
     const online = canSee.filter((r) => r.lastSeenAt && r.lastSeenAt.getTime() >= since);
     return { ...o, riderPool: { linked: linked.length, canSee: canSee.length, online: online.length } };
   });

@@ -14,6 +14,8 @@ import * as wallet from '../controllers/riderWallet.controller';
 import * as extra from '../controllers/adminExtra.controller';
 import * as support from '../controllers/support.controller';
 import * as seller from '../controllers/seller.controller';
+import * as plans from '../controllers/subscription.controller';
+import { requirePlan } from '../services/subscription.service';
 import { authorize, customerOnly, protect } from '../middleware/auth';
 
 import { catalogCache, invalidateOnWrite } from '../middleware/cache';
@@ -80,9 +82,18 @@ router.post('/me/tickets/:id/messages', ...customerOnly, validate({ params: v.id
 
 /* ============ Seller panel ============ */
 const sellerOnly = [protect, authorize('seller')];
+/** Orders and new products need a running plan while warehouse plans are switched on. */
+const sellerWithPlan = [...sellerOnly, requirePlan('seller')];
 router.post('/seller/register', authLimiter, validate({ body: v.warehouseRegisterBody }), seller.registerWarehouse);
 router.post('/seller/auth/login', authLimiter, validate({ body: v.loginBody }), seller.sellerLogin);
 router.get('/seller/me', ...sellerOnly, seller.getMe);
+
+/* Rider and warehouse plans: see the plan, pay for it with Razorpay, confirm the payment */
+const planUser = [protect, authorize('rider', 'seller')];
+router.get('/subscription', ...planUser, plans.myPlan);
+router.get('/subscription/payments', ...planUser, plans.myPlanPayments);
+router.post('/subscription/pay', ...planUser, validate({ body: v.startPlanBody }), plans.startPlanPayment);
+router.post('/subscription/confirm', ...planUser, validate({ body: v.confirmPaymentBody }), plans.confirmPlanPayment);
 router.post('/seller/ack-orders', ...sellerOnly, seller.ackOrders);
 router.put('/seller/profile', ...sellerOnly, validate({ body: v.sellerProfileBody }), seller.saveProfile);
 router.post('/seller/uploads/images', ...sellerOnly, uploadSellerImages, uploads.uploadImages);
@@ -94,18 +105,18 @@ router.get('/seller/shops', ...sellerOnly, seller.listMyShops);
 router.patch('/seller/shops/:id', ...sellerOnly, validate({ params: v.idParam, body: v.sellerShopBody }), seller.updateMyShop);
 router.get('/seller/customers', ...sellerOnly, validate({ query: v.sellerCustomersQuery }), seller.listMyCustomers);
 router.post('/seller/change-password', ...sellerOnly, validate({ body: v.changePasswordBody }), seller.changeMyPassword);
-router.post('/seller/products/bulk', ...sellerOnly, invalidateOnWrite, validate({ body: v.bulkProductsBody }), seller.bulkCreateMyProducts);
-router.post('/seller/products', ...sellerOnly, invalidateOnWrite, validate({ body: v.sellerProductBody }), seller.createMyProduct);
+router.post('/seller/products/bulk', ...sellerWithPlan, invalidateOnWrite, validate({ body: v.bulkProductsBody }), seller.bulkCreateMyProducts);
+router.post('/seller/products', ...sellerWithPlan, invalidateOnWrite, validate({ body: v.sellerProductBody }), seller.createMyProduct);
 router.delete('/seller/products/:id', ...sellerOnly, invalidateOnWrite, validate({ params: v.idParam }), seller.deleteMyProduct);
 router.get('/seller/riders', ...sellerOnly, seller.listMyRiders);
 router.post('/seller/riders', ...sellerOnly, validate({ body: v.sellerRiderBody }), seller.createMyRider);
-router.post('/seller/orders/:id/invoice-link', ...sellerOnly, validate({ params: v.idParam }), invoices.sellerInvoiceLink);
-router.get('/seller/orders', ...sellerOnly, validate({ query: v.sellerOrdersQuery }), seller.listMyOrders);
-router.patch('/seller/orders/:id/status', ...sellerOnly, validate({ params: v.idParam, body: v.sellerOrderStatusBody }), seller.setMyOrderStatus);
-router.get('/seller/orders/:id/riders', ...sellerOnly, validate({ params: v.idParam }), seller.myOrderRiders);
-router.get('/seller/orders/:id/free-riders', ...sellerOnly, validate({ params: v.idParam }), seller.myOrderFreeRiders);
-router.post('/seller/orders/:id/assign-rider', ...sellerOnly, validate({ params: v.idParam, body: v.assignRiderBody }), seller.assignRiderMyOrder);
-router.post('/seller/orders/:id/assign-shiprocket', ...sellerOnly, validate({ params: v.idParam }), seller.assignShiprocketMyOrder);
+router.post('/seller/orders/:id/invoice-link', ...sellerWithPlan, validate({ params: v.idParam }), invoices.sellerInvoiceLink);
+router.get('/seller/orders', ...sellerWithPlan, validate({ query: v.sellerOrdersQuery }), seller.listMyOrders);
+router.patch('/seller/orders/:id/status', ...sellerWithPlan, validate({ params: v.idParam, body: v.sellerOrderStatusBody }), seller.setMyOrderStatus);
+router.get('/seller/orders/:id/riders', ...sellerWithPlan, validate({ params: v.idParam }), seller.myOrderRiders);
+router.get('/seller/orders/:id/free-riders', ...sellerWithPlan, validate({ params: v.idParam }), seller.myOrderFreeRiders);
+router.post('/seller/orders/:id/assign-rider', ...sellerWithPlan, validate({ params: v.idParam, body: v.assignRiderBody }), seller.assignRiderMyOrder);
+router.post('/seller/orders/:id/assign-shiprocket', ...sellerWithPlan, validate({ params: v.idParam }), seller.assignShiprocketMyOrder);
 router.get('/seller/wallet', ...sellerOnly, seller.getMyWallet);
 router.get('/seller/wallet/txns', ...sellerOnly, validate({ query: v.walletTxnsQuery }), seller.listMyWalletTxns);
 router.post('/seller/wallet/account', ...sellerOnly, validate({ body: v.walletAccountBody }), seller.saveMyAccount);

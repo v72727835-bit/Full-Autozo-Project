@@ -46,6 +46,10 @@ export interface IUser {
   phoneVerified?: boolean;
   /** Where a rider is paid their earnings. */
   payout?: { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string; rzpContactId?: string; rzpFundAccountId?: string; rzpFundFingerprint?: string };
+  /** Riders and sellers: their paid plan runs until this moment (see subscription.service). */
+  subscriptionUntil?: Date | null;
+  /** The expiry the "plan ends soon" reminder was last sent for, so it goes out once. */
+  subscriptionRemindedFor?: Date | null;
   googleId?: string;
   facebookId?: string;
   /** Sellers: unique id shown on their dashboard and in the admin panel. */
@@ -150,6 +154,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       rzpFundAccountId: { type: String, trim: true },
       rzpFundFingerprint: { type: String, trim: true },
     },
+    subscriptionUntil: { type: Date, default: null },
+    subscriptionRemindedFor: { type: Date, default: null },
     googleId: { type: String, unique: true, sparse: true },
     facebookId: { type: String, unique: true, sparse: true },
     sellerId: { type: String, unique: true, sparse: true },

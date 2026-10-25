@@ -1,6 +1,6 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
-import React, { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, AppState, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CrossFade, FadeSlide, Pulse } from '../components/anim';
 
 const LOGO = require('../assets/logo-mark.png');
@@ -12,11 +12,13 @@ import InventoryScreen from '../screens/InventoryScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ProductsScreen from '../screens/ProductsScreen';
+import PlanScreen, { planLocked } from '../screens/PlanScreen';
+import { fetchMyPlan, MyPlan } from '../api/seller';
 import { accents, colors, softShadow } from '../theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 type Tab = 'dashboard' | 'orders' | 'products' | 'inventory' | 'more';
-type MoreKey = 'riders' | 'customers' | 'earnings' | 'categories' | 'store' | 'account';
+type MoreKey = 'plan' | 'riders' | 'customers' | 'earnings' | 'categories' | 'store' | 'account';
 
 const TABS: { key: Tab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Home', icon: 'grid-outline' },
@@ -26,6 +28,7 @@ const TABS: { key: Tab; label: string; icon: IconName }[] = [
   { key: 'more', label: 'More', icon: 'menu-outline' },
 ];
 const MORE: { key: MoreKey; label: string; icon: IconName }[] = [
+  { key: 'plan', label: 'My plan', icon: 'card-outline' },
   { key: 'riders', label: 'Riders', icon: 'bicycle-outline' },
   { key: 'customers', label: 'Customers', icon: 'people-outline' },
   { key: 'earnings', label: 'Earnings', icon: 'wallet-outline' },
@@ -38,13 +41,27 @@ function Shell() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [more, setMore] = useState<MoreKey | null>(null);
   const [newOrders, setNewOrders] = useState(0);
+  const [plan, setPlan] = useState<MyPlan | null>(null);
   const { me } = useAuth();
+
+  // The plan is read on start and whenever the app comes back (e.g. from the payment page).
+  const loadPlan = useCallback(async () => {
+    try { setPlan(await fetchMyPlan()); } catch { /* keep the last known plan */ }
+  }, []);
+  useEffect(() => {
+    loadPlan();
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') loadPlan(); });
+    return () => sub.remove();
+  }, [loadPlan]);
+  const locked = planLocked(plan);
 
   let body: React.ReactNode;
   if (tab === 'dashboard') body = <DashboardScreen />;
-  else if (tab === 'orders') body = <OrdersScreen onChanged={setNewOrders} />;
+  // Without a running plan (while plans are on) the orders stay hidden until one is bought.
+  else if (tab === 'orders') body = locked ? <PlanScreen plan={plan} onReload={loadPlan} /> : <OrdersScreen onChanged={setNewOrders} />;
   else if (tab === 'products') body = <ProductsScreen />;
   else if (tab === 'inventory') body = <InventoryScreen />;
+  else if (more === 'plan') body = <PlanScreen plan={plan} onReload={loadPlan} />;
   else if (more === 'riders') body = <RidersScreen />;
   else if (more === 'customers') body = <CustomersScreen />;
   else if (more === 'earnings') body = <EarningsScreen />;
@@ -86,6 +103,13 @@ function Shell() {
           {newOrders > 0 ? <View style={styles.dot}><Text style={styles.badgeText}>{newOrders}</Text></View> : null}
         </Pressable>
       </View>
+
+      {locked && !(tab === 'orders' || (tab === 'more' && more === 'plan')) ? (
+        <Pressable style={styles.planBar} onPress={() => { setTab('more'); setMore('plan'); }}>
+          <Text style={styles.planBarText}>Your plan is not active. Buy a plan to see orders and add products.</Text>
+          <Text style={styles.planBarCta}>Buy plan</Text>
+        </Pressable>
+      ) : null}
 
       <CrossFade dep={`${tab}:${more ?? ''}`} style={{ flex: 1 }}>{body}</CrossFade>
 
@@ -142,5 +166,8 @@ const styles = StyleSheet.create({
   sub: { color: colors.muted, marginBottom: 16, marginTop: 2 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, padding: 16, borderRadius: 14, marginBottom: 10 },
   itemText: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.text },
+  planBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginBottom: 6, padding: 12, borderRadius: 12, backgroundColor: colors.dangerSoft },
+  planBarText: { flex: 1, color: colors.danger, fontWeight: '600', fontSize: 13 },
+  planBarCta: { color: colors.danger, fontWeight: '800' },
   back: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10 },
 });

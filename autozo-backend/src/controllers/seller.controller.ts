@@ -15,6 +15,7 @@ import { ONLINE_WINDOW_MS } from '../services/rider.service';
 import { signAccessToken, signRefreshToken, sha256 } from '../utils/jwt';
 import { SellerTxn } from '../models/SellerTxn';
 import { loadSettings } from '../services/settings.service';
+import { needsPlan } from '../services/subscription.service';
 import { sellerMinWithdraw, sellerWalletSummary, syncSellerPayout } from '../services/sellerPay.service';
 
 const escapeRegex = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -473,7 +474,10 @@ export const warehouseDashboard = asyncHandler(async (req, res) => {
     Product.find({ shop: { $in: shops }, isActive: true, stock: { $gt: 0, $lte: LOW_STOCK } }).sort({ stock: 1 }).limit(8).select('name stock unit images').lean(),
     Product.countDocuments({ shop: { $in: shops }, stock: 0 }),
     Product.aggregate<{ _id: boolean; n: number }>([{ $match: { shop: { $in: shops } } }, { $group: { _id: '$isActive', n: { $sum: 1 } } }]),
-    Order.find({ shop: { $in: shops } }).sort({ createdAt: -1 }).limit(6).select('orderNumber status total createdAt paymentMethod').lean(),
+    // Without a running plan (while plans are on) the recent orders stay hidden like the Orders page.
+    User.findById(req.user!.id).select('subscriptionUntil').lean().then(async (me) =>
+      me && (await needsPlan('seller', me)) ? [] : Order.find({ shop: { $in: shops } }).sort({ createdAt: -1 }).limit(6).select('orderNumber status total createdAt paymentMethod').lean(),
+    ),
   ]);
   const statusCounts = Object.fromEntries(byStatus.map((r) => [r._id, r.n]));
   const trend = Array.from({ length: 7 }, (_, i) => {

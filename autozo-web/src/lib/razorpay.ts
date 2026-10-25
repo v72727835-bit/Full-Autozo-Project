@@ -31,6 +31,7 @@ export async function payWithRazorpay(opts: {
   name: string;
   phone?: string;
   email?: string;
+  description?: string;
 }): Promise<RazorpayResponse> {
   await loadScript();
   return new Promise((resolve, reject) => {
@@ -40,7 +41,7 @@ export async function payWithRazorpay(opts: {
       amount: opts.amountPaise,
       currency: 'INR',
       name: 'Autozo',
-      description: 'Your Autozo order',
+      description: opts.description ?? 'Your Autozo order',
       prefill: { name: opts.name, contact: opts.phone, email: opts.email },
       theme: { color: '#B8005F' },
       handler: (r: RazorpayResponse) => resolve(r),

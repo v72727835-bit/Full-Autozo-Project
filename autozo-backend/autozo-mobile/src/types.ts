@@ -78,7 +78,18 @@ export interface RiderProfile {
   deliveredCount: number;
   cancelledCount: number;
   paused: boolean;
+  /** Rider plans are on and this rider has no running plan: no new orders until one is bought. */
+  planNeeded?: boolean;
   notices: string[];
+}
+
+export interface MyPlan {
+  required: boolean;
+  active: boolean;
+  until: string | null;
+  daysLeft: number;
+  plans: { _id: string; name: string; price: number; days: number; description?: string }[];
+  canPayOnline: boolean;
 }
 
 export interface RiderOrder {

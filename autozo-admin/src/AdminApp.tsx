@@ -33,6 +33,7 @@ const EnquiriesPage = dynamic(() => import('./screens/EnquiriesPage'), { ssr: fa
 const StandardCategoriesPage = dynamic(() => import('./screens/StandardCategoriesPage'), { ssr: false });
 const IntegrationsPage = dynamic(() => import('./screens/IntegrationsPage'), { ssr: false });
 const SellerApp = dynamic(() => import('./seller/SellerApp'), { ssr: false });
+const SubscriptionsPage = dynamic(() => import('./screens/SubscriptionsPage'), { ssr: false });
 const UsersPage = dynamic(() => import('./screens/UsersPage'), { ssr: false });
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -77,6 +78,8 @@ function CurrentPage({ pathname }: { pathname: string }) {
       return <RidersPage />;
     case '/payouts':
       return <PayoutsPage />;
+    case '/subscriptions':
+      return <SubscriptionsPage />;
     case '/rider-accounts':
       return <UsersPage fixedRole="rider" title="Riders" subtitle="Delivery partners authorised to collect and deliver Autozo orders." />;
     case '/customers':

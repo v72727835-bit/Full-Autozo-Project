@@ -20,6 +20,7 @@ import {
   IconSearch,
   IconSettings,
   IconVolume,
+  IconRupee,
   IconShield,
   IconStore,
   IconTag,
@@ -150,6 +151,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         { to: '/warehouse-requests', label: 'Warehouse requests', icon: <IconStore />, badge: whPending, badgeTone: 'warn' },
         { to: '/riders', label: 'Riders', icon: <IconRider />, badge: riders, badgeTone: 'brand' },
         { to: '/payouts', label: 'Rider Payouts', icon: <IconTag /> },
+        { to: '/subscriptions', label: 'Subscriptions', icon: <IconRupee /> },
         { to: '/support', label: 'Customer Care', icon: <IconBell />, badge: careUnread, badgeTone: 'brand' },
         { to: '/notifications', label: 'Notifications', icon: <IconVolume /> },
         { to: '/customers', label: 'Customers', icon: <IconUsers /> },
@@ -322,6 +324,7 @@ const PAGES: { label: string; to: string }[] = [
 
   { label: 'Warehouses', to: '/shops' },
   { label: 'Riders', to: '/riders' },
+  { label: 'Subscriptions (rider & warehouse plans)', to: '/subscriptions' },
   { label: 'Customers', to: '/customers' },
   { label: 'Team & Access', to: '/team' },
   { label: 'Settings', to: '/settings' },

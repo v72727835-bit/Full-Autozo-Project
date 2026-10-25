@@ -64,3 +64,16 @@ export const sellerCustomers = (p: { page?: number; limit?: number; q?: string }
 export const sellerShops = async (): Promise<Shop[]> => (await api.get('/seller/shops')).data.data;
 export const updateShop = async (id: string, body: Record<string, unknown>): Promise<Shop> => (await api.patch(`/seller/shops/${id}`, body)).data.data;
 export const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => { await api.post('/seller/change-password', { currentPassword, newPassword }); };
+
+/* ---------- my plan ---------- */
+export interface MyPlan {
+  required: boolean;
+  active: boolean;
+  until: string | null;
+  daysLeft: number;
+  plans: { _id: string; name: string; price: number; days: number; description?: string }[];
+  canPayOnline: boolean;
+}
+export const fetchMyPlan = async (): Promise<MyPlan> => (await api.get('/subscription')).data.data;
+export const startPlanPayment = async (planId: string): Promise<{ razorpayOrderId: string; amount: number; keyId: string; planName: string }> =>
+  (await api.post('/subscription/pay', { planId })).data.data;
