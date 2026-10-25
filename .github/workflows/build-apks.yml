@@ -1,0 +1,98 @@
+# Builds the release APKs of the customer, warehouse and rider apps.
+# Every run keeps the APKs as a downloadable artifact; runs on main also publish a GitHub Release,
+# so the newest APKs are always at  releases/latest/download/autozo-<app>.apk
+# Optional secrets (Settings > Secrets and variables > Actions), pasted as the whole JSON file text:
+#   GOOGLE_SERVICES_CUSTOMER, GOOGLE_SERVICES_WAREHOUSE, GOOGLE_SERVICES_RIDER, and MAPS_API_KEY for the rider map.
+name: Build APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, claude/project-thread-1zpcg2]
+    paths:
+      - blinkit-app-/**
+      - autozo-warehouse/**
+      - autozo-backend/autozo-mobile/**
+      - .github/workflows/build-apks.yml
+
+concurrency:
+  group: build-apks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: customer
+            dir: blinkit-app-
+            firebase: GOOGLE_SERVICES_CUSTOMER
+          - app: warehouse
+            dir: autozo-warehouse
+            firebase: GOOGLE_SERVICES_WAREHOUSE
+          - app: rider
+            dir: autozo-backend/autozo-mobile
+            firebase: GOOGLE_SERVICES_RIDER
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Add google-services.json
+        env:
+          JSON: ${{ secrets[matrix.firebase] }}
+        run: |
+          if [ -n "$JSON" ]; then
+            printf '%s' "$JSON" > "${{ matrix.dir }}/android/app/google-services.json"
+            echo "google-services.json added"
+          else
+            echo "::warning::${{ matrix.firebase }} secret not set - ${{ matrix.app }} APK has no OTP/push"
+          fi
+
+      # npm install, not npm ci: some package-lock.json files are out of sync with package.json.
+      - name: npm install
+        working-directory: ${{ matrix.dir }}
+        run: npm install --no-audit --no-fund
+
+      - name: gradlew assembleRelease
+        working-directory: ${{ matrix.dir }}/android
+        env:
+          ORG_GRADLE_PROJECT_MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/autozo-${{ matrix.app }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: autozo-${{ matrix.app }}
+          path: autozo-${{ matrix.app }}.apk
+          retention-days: 30
+
+  release:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apks-${{ github.run_number }}
+          name: Autozo APKs ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: Customer, warehouse and rider APKs built from ${{ github.sha }}.
+          files: autozo-*.apk

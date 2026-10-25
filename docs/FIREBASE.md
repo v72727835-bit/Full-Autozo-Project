@@ -21,12 +21,13 @@ Works as soon as the keys are saved. Push on the website needs a browser that su
 
 The apps use the native Firebase SDK, so one file is baked into each APK and cannot come from the admin panel:
 
-1. In the Firebase project add two Android apps: `com.bingoor.app` (customer) and `com.bingoor.rider` (rider).
+1. In the Firebase project add three Android apps: `com.bingoor.app` (customer), `com.bingoor.warehouse` (warehouse, push only) and `com.bingoor.rider` (rider).
 2. Download each `google-services.json` and put it in
    - `blinkit-app-/android/app/google-services.json`
    - `autozo-backend/autozo-mobile/android/app/google-services.json`
+   - `autozo-warehouse/android/app/google-services.json`
 3. Add the debug and release **SHA-1 and SHA-256** fingerprints of each app in Firebase (Project settings → your Android app). Phone OTP does not work without them.
-4. `npm install` in each app, then build the APK again.
+4. Build all three APKs with `build-apks.bat` (see [BUILD-APKS.md](BUILD-APKS.md)).
 
 Builds without `google-services.json` still compile and run; they just cannot show the OTP step or receive push.
 

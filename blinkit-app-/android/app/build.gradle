@@ -87,8 +87,20 @@ android {
         applicationId "com.bingoor.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Hash long generated C++ object paths before Ninja hits Windows MAX_PATH.
+        externalNativeBuild {
+            cmake {
+                arguments "-DCMAKE_OBJECT_PATH_MAX=250"
+            }
+        }
+        versionCode 2
+        versionName "1.1"
+    }
+    externalNativeBuild {
+        cmake {
+            // Keep generated native build directories close to the project root.
+            buildStagingDirectory file("../../.cxx")
+        }
     }
     signingConfigs {
         debug {
