@@ -9,6 +9,7 @@ import { useCatalog } from '../context/CatalogContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
+import { fitClass } from '../lib/art';
 import { getDeliveryPoint, POINT_EVENT } from '../lib/deliveryPoint';
 import { OPEN_LOCATION_EVENT } from './LocationGate';
 import { Icon } from './Icon';
@@ -16,6 +17,7 @@ import { shortDelivery } from '../lib/deliveryText';
 import { LanguageMenu } from './LanguageMenu';
 import { NoticeBell } from './NoticeBell';
 import { SearchBar } from './SearchBar';
+import { SellerMenu } from './SellerMenu';
 import s from './Header.module.css';
 
 export function Header() {
@@ -34,6 +36,17 @@ export function Header() {
     sync();
     window.addEventListener(POINT_EVENT, sync);
     return () => window.removeEventListener(POINT_EVENT, sync);
+  }, []);
+
+  // The category pictures fold away once the page scrolls, so the sticky header
+  // stops eating the screen. Two thresholds, further apart than the strip's
+  // change in height, so the fold itself can never flip it back.
+  const [folded, setFolded] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setFolded((cur) => (cur ? window.scrollY > 24 : window.scrollY > 140));
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const count = cart?.itemCount ?? 0;
@@ -74,7 +87,7 @@ export function Header() {
           </div>
 
           <nav className={s.tools} aria-label="Account">
-            <button className={s.tool} onClick={() => window.dispatchEvent(new Event(OPEN_LOCATION_EVENT))} aria-label="Change delivery location">
+            <button className={`${s.tool} ${s.pinTool}`} onClick={() => window.dispatchEvent(new Event(OPEN_LOCATION_EVENT))} aria-label="Change delivery location">
               <Icon name="pin" size={19} />
             </button>
             <NoticeBell />
@@ -86,8 +99,9 @@ export function Header() {
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={19} />
             </button>
-            <Link href="/wishlist" className={`${s.tool} ${s.onlyWide}`} aria-label="Wishlist">
-              <Icon name="heart" size={19} />
+            <Link href="/wishlist" className={`${s.wish} ${s.onlyWide}`} aria-label={t('wishlist')}>
+              <Icon name="heart" size={18} />
+              <span className={s.wishText}>{t('wishlist')}</span>
             </Link>
             <Link href={user ? '/profile' : '/login'} className={s.account}>
               <Icon name="user" size={18} />
@@ -108,6 +122,9 @@ export function Header() {
                 </span>
               )}
             </Link>
+            <div className={s.seller}>
+              <SellerMenu />
+            </div>
           </nav>
         </div>
       </div>
@@ -119,17 +136,22 @@ export function Header() {
         </div>
       </div>
 
+      {/* Each group with its picture above the name, like Subcity; the picture is the group's image from the admin panel. */}
       {tabs.length > 0 ? (
-        <div className={s.strip}>
+        <div className={s.strip} data-folded={folded}>
           <div className={`page rail ${s.stripRow}`}>
             <Link href="/categories" className={s.stripLink} data-on={pathname === '/categories'}>
-              <Icon name="grid" size={15} />
-              All
+              <span className={`${s.stripPic} ${s.stripGlyph}`}>
+                <Icon name="grid" size={22} />
+              </span>
+              <span className={s.stripName}>All</span>
             </Link>
             {settings?.festival?.enabled ? (
               <Link href="/festival" className={s.stripLink} data-on={pathname === '/festival'}>
-                <Icon name="gift" size={15} />
-                {settings.festival?.name || 'Festival'}
+                <span className={`${s.stripPic} ${s.stripGlyph}`}>
+                  <Icon name="gift" size={22} />
+                </span>
+                <span className={s.stripName}>{settings.festival?.name || 'Festival'}</span>
               </Link>
             ) : null}
             {tabs.map((tab) => (
@@ -139,7 +161,10 @@ export function Header() {
                 className={s.stripLink}
                 data-on={pathname === `/categories/${tab.slug}`}
               >
-                {tab.nameHi && name(tab) !== tab.name ? name(tab) : tab.short || tab.name}
+                <span className={s.stripPic}>
+                  <img src={tab.image || tab.art} alt="" width={52} height={52} loading="lazy" className={fitClass(tab.image, s.stripImg)} />
+                </span>
+                <span className={s.stripName}>{tab.nameHi && name(tab) !== tab.name ? name(tab) : tab.short || tab.name}</span>
               </Link>
             ))}
           </div>

@@ -1597,7 +1597,8 @@ select option {
 /* Same 26:9 frame the storefront uses, so the preview crops like the real slide. */
 .banner-preview {
   position: relative;
-  aspect-ratio: 26 / 9;
+  /* The storefront's top slider shape (1600 × 500). */
+  aspect-ratio: 16 / 5;
   background: var(--panel-2);
   overflow: hidden;
 }

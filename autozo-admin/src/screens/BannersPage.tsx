@@ -64,8 +64,9 @@ export default function BannersPage() {
         <div>
           <h1 className="page-title">Home Banners</h1>
           <div className="page-subtitle">
-            Promo slides at the top of the customer home page. The image fills the whole slide; title and button text are optional. Until you add one, the
-            built-in banners are shown.
+            Promo slides for the customer home page. "Top" banners make up the big slider under the header; "Between sections" banners are spread out
+            down the page, one after every two sections. The image fills the whole slide; title and button text are optional. Until you add a top
+            banner, the built-in ones are shown.
           </div>
         </div>
         <Button onClick={() => setForm({})}>
@@ -97,6 +98,7 @@ export default function BannersPage() {
               <div className="banner-meta">
                 <div className="row-flex" style={{ gap: 6, flexWrap: 'wrap' }}>
                   {b.isActive ? <Badge tone="success">Live</Badge> : <Badge tone="muted">Hidden</Badge>}
+                  <Badge tone="muted">{b.placement === 'between' ? 'Between sections' : 'Top slider'}</Badge>
                   <span className="cell-muted" style={{ fontSize: 12 }}>
                     {categoryName(b) ? `Opens ${categoryName(b)}` : 'Opens all categories'}
                   </span>
@@ -163,6 +165,7 @@ function BannerForm({
   const [cta, setCta] = useState(banner?.cta ?? '');
   const [category, setCategory] = useState<string | null>(banner ? categoryId(banner) : null);
   const [isActive, setIsActive] = useState(banner?.isActive ?? true);
+  const [placement, setPlacement] = useState<'top' | 'between'>(banner?.placement ?? 'top');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -202,7 +205,7 @@ function BannerForm({
     }
     setSaving(true);
     setError('');
-    const body = { image, title, subtitle, cta, category, isActive, sortOrder: banner?.sortOrder ?? nextSortOrder };
+    const body = { image, title, subtitle, cta, category, placement, isActive, sortOrder: banner?.sortOrder ?? nextSortOrder };
     try {
       if (banner) await updateBanner(banner._id, body);
       else await createBanner(body);
@@ -219,7 +222,14 @@ function BannerForm({
       <form onSubmit={submit}>
         <ErrorBanner message={error} />
 
-        <Field label="Banner image (recommended 1560 × 300 px, wide and short like Blinkit)">
+        <Field label="Show it">
+          <select value={placement} onChange={(e) => setPlacement(e.target.value as 'top' | 'between')}>
+            <option value="top">Top slider, under the header</option>
+            <option value="between">Between home page sections</option>
+          </select>
+        </Field>
+
+        <Field label={placement === 'top' ? 'Banner image (recommended 1600 × 500 px)' : 'Banner image (recommended 1600 × 400 px)'}>
           <div className="banner-preview banner-preview-lg" onClick={() => fileRef.current?.click()} role="button" tabIndex={0}>
             {image ? (
               <img src={image} alt="" />

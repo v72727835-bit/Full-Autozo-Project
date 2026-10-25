@@ -142,6 +142,36 @@
   background: var(--bar-tool-hover);
 }
 
+/* Wishlist: the heart, with its name beside it once there is room. */
+.wish {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--bar-ink);
+  background: var(--bar-tool);
+  transition: background-color 0.16s var(--ease);
+  flex-shrink: 0;
+}
+
+.wish:hover {
+  background: var(--bar-tool-hover);
+}
+
+.wishText {
+  display: none;
+}
+
+.seller {
+  display: none;
+}
+
 /* The cart is the one action that matters most, so it always wears the brand green. */
 .cart {
   background: var(--brand);
@@ -203,23 +233,26 @@
 
 .stripRow {
   display: flex;
-  gap: 4px;
-  align-items: center;
-  height: 48px;
+  gap: 6px;
+  align-items: flex-start;
+  padding-top: 10px;
+  padding-bottom: 8px;
   overflow-x: auto;
 }
 
 .stripLink {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
-  border-radius: var(--r-pill);
-  font-size: 13px;
+  min-width: 76px;
+  max-width: 96px;
+  padding: 4px 6px 6px;
+  border-radius: var(--r-md);
+  font-size: 12.5px;
   font-weight: 650;
   letter-spacing: -0.01em;
   color: var(--ink-2);
-  white-space: nowrap;
   flex-shrink: 0;
   transition: background-color 0.16s var(--ease), color 0.16s var(--ease);
 }
@@ -229,9 +262,73 @@
   color: var(--ink);
 }
 
+.stripPic {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-3);
+  border: 1.5px solid var(--line);
+  transition: border-color 0.16s var(--ease), transform 0.16s var(--ease);
+}
+
+.stripLink:hover .stripPic {
+  transform: translateY(-1px);
+}
+
+.stripImg {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+}
+
+.stripGlyph {
+  color: var(--ink-2);
+}
+
+.stripName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .stripLink[data-on='true'] {
-  background: var(--sun-tint);
   color: var(--ink);
+}
+
+.stripLink[data-on='true'] .stripPic {
+  border-color: var(--sun-line);
+  box-shadow: 0 0 0 2px var(--sun-tint);
+}
+
+.stripLink[data-on='true'] .stripName {
+  font-weight: 800;
+}
+
+/* Scrolled down: names only, as a slim bar. */
+.strip[data-folded='true'] .stripRow {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.strip[data-folded='true'] .stripPic {
+  display: none;
+}
+
+.strip[data-folded='true'] .stripLink {
+  min-width: 0;
+  max-width: none;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+}
+
+.strip[data-folded='true'] .stripLink[data-on='true'] {
+  background: var(--sun-tint);
   box-shadow: inset 0 0 0 1.5px var(--sun-line);
 }
 
@@ -247,6 +344,10 @@
 @media (min-width: 860px) {
   .searchWide {
     display: block;
+    min-width: 200px;
+  }
+  .seller {
+    display: block;
   }
   .onlyNarrow {
     display: none;
@@ -259,6 +360,13 @@
 @media (min-width: 1100px) {
   .place {
     display: flex;
+  }
+  /* The "Delivering to" button beside the brand does the same job. */
+  .pinTool {
+    display: none;
+  }
+  .wishText {
+    display: inline;
   }
 }
 

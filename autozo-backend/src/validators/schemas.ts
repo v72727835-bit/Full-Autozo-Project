@@ -363,6 +363,7 @@ export const adminBannerBody = z.object({
   cta: z.string().trim().max(30).optional(),
   image: z.string().trim().min(1, 'Upload a banner image').max(300),
   category: objectId.nullable().default(null),
+  placement: z.enum(['top', 'between']).default('top'),
   sortOrder: z.coerce.number().int().default(0),
   isActive: z.boolean().default(true),
 });
@@ -373,6 +374,7 @@ export const adminBannerUpdateBody = z
     cta: z.string().trim().max(30),
     image: z.string().trim().min(1).max(300),
     category: objectId.nullable(),
+    placement: z.enum(['top', 'between']),
     sortOrder: z.coerce.number().int(),
     isActive: z.boolean(),
   })
