@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import React, { useEffect, useRef, useState } from 'react';
+import { useSettings } from '../context/SettingsContext';
+import { appDownloads } from '../lib/apps';
 import { Icon } from './Icon';
 import s from './SellerMenu.module.css';
 
@@ -10,9 +12,10 @@ const OPTIONS = [
   { href: '/contact/delivery-partner', icon: 'truck', title: 'Register as Rider', note: 'Deliver orders and earn daily' },
 ] as const;
 
-/** "Seller / Rider Signup ▾" beside the cart: registration for sellers and for delivery riders. */
+/** "Seller / Rider Signup ▾" beside the cart: registration for sellers and riders, and their app downloads. */
 export function SellerMenu() {
   const [open, setOpen] = useState(false);
+  const apps = appDownloads(useSettings());
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +52,21 @@ export function SellerMenu() {
                 <span className={s.optNote}>{o.note}</span>
               </span>
             </Link>
+          ))}
+          <div className={s.sep} />
+          {[
+            { href: apps.warehouse, title: 'Warehouse app', note: 'Download for sellers (Android)' },
+            { href: apps.rider, title: 'Rider app', note: 'Download for riders (Android)' },
+          ].map((o) => (
+            <a key={o.title} href={o.href} className={s.opt} role="menuitem" onClick={() => setOpen(false)}>
+              <span className={s.optIcon}>
+                <Icon name="android" size={18} />
+              </span>
+              <span className={s.optText}>
+                <span className={s.optTitle}>{o.title}</span>
+                <span className={s.optNote}>{o.note}</span>
+              </span>
+            </a>
           ))}
         </div>
       ) : null}

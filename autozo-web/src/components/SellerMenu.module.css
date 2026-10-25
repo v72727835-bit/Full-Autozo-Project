@@ -68,6 +68,12 @@
   background: var(--brand-tint);
 }
 
+.sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--line);
+}
+
 .optIcon {
   display: grid;
   place-items: center;

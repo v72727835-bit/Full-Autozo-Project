@@ -8,6 +8,8 @@ import { BackButton } from '../../components/BackButton';
 import { LocationPicker, PickedPlace } from '../../components/LocationPicker';
 import { PasswordField } from '../../components/PasswordField';
 import { Alert, Button, Field, Input, Textarea } from '../../components/ui';
+import { useSettings } from '../../context/SettingsContext';
+import { appDownloads } from '../../lib/apps';
 import { getErrorMessage } from '../../lib/client';
 import s from '../contact/contact.module.css';
 
@@ -22,6 +24,7 @@ export default function WarehouseRegisterPage() {
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const set = (k: keyof typeof f, v: string) => setF((cur) => ({ ...cur, [k]: v }));
+  const apps = appDownloads(useSettings());
 
   const picked = (p: PickedPlace) => {
     setLocation({ lat: p.lat, lng: p.lng });
@@ -67,11 +70,13 @@ export default function WarehouseRegisterPage() {
       <h1 className="h1" style={{ margin: '12px 0 4px' }}>Register your warehouse</h1>
       <p className="body-sm" style={{ marginBottom: 20 }}>
         Fill this once. The Autozo team reviews it and, after approval, you can sign in to your own panel to add products and send orders to riders.
+        {' '}Already approved? <a href={apps.warehouse} style={{ fontWeight: 700 }}>Download the warehouse app</a>.
       </p>
 
       {done ? (
         <Alert tone="ok" icon="check-circle">
-          {done} We will review it shortly. <Link href="/" style={{ fontWeight: 700 }}>Back to shopping</Link>
+          {done} We will review it shortly. Meanwhile, <a href={apps.warehouse} style={{ fontWeight: 700 }}>download the warehouse app</a>
+          {' '}to sign in once you are approved. <Link href="/" style={{ fontWeight: 700 }}>Back to shopping</Link>
         </Alert>
       ) : (
         <form className="card card-pad" onSubmit={submit}>

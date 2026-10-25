@@ -121,6 +121,9 @@ run git fetch origin main
 run git reset --hard origin/main
 echo "   now at $(git log -1 --format='%h %s')"
 
+say "Updating app downloads (APKs)"
+bash "$ROOT/update-apks.sh" >>"$LOG" 2>&1 && tail -1 "$LOG" || echo "   APKs not updated (see log); the website keeps the old ones"
+
 # All three live apps are paused for the whole build, so Node gets the threads
 # it needs to start. MongoDB keeps running; sites are down until the restart.
 say "Pausing the live apps"

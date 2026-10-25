@@ -525,7 +525,7 @@ function AppLinksCard({ settings, onSave }: { settings: Settings; onSave: (patch
     <div className="card card-pad" style={{ marginBottom: 18 }}>
       <h2 className="card-title">App download links</h2>
       <div className="page-subtitle" style={{ marginBottom: 14 }}>
-        Shown in the website footer. Point each app at its APK or Play Store listing.
+        Shown on the website (footer, Seller / Rider menu). Leave a box empty to use the latest APK from our own server; fill it only for a Play Store / App Store link.
       </div>
       <Field label="Android (APK or Play Store)">
         <input value={android} onChange={(e) => setAndroid(e.target.value)} placeholder="https://…/autozo.apk" />

@@ -62,3 +62,18 @@ If one app fails, the others still build and the script says which one failed at
 - Firebase: add secrets `GOOGLE_SERVICES_CUSTOMER`, `GOOGLE_SERVICES_WAREHOUSE`, `GOOGLE_SERVICES_RIDER`
   (GitHub → repo Settings → Secrets and variables → Actions → New repository secret; paste the whole
   `google-services.json` text). Optional `MAPS_API_KEY` for the rider map. Without them the APKs still build.
+
+## Public download links on the website
+
+Every build on `main` also force-pushes the three APKs to the `apk-builds` branch. On the server, `deploy.sh`
+runs `update-apks.sh`, which copies them to `autozo-backend/downloads/`, served publicly at:
+
+- https://app-api.autozo.org/downloads/autozo-customer.apk
+- https://app-api.autozo.org/downloads/autozo-warehouse.apk
+- https://app-api.autozo.org/downloads/autozo-rider.apk
+
+The website links to these in the footer ("Get the app"), the Seller / Rider menu, the delivery partner page and the
+warehouse registration page. A link set in Admin → Store settings → App links (e.g. a Play Store listing) wins.
+
+After a merge, wait for the "Build APKs" run to finish (about 25 minutes), then deploy, or refresh only the APKs
+any time with `bash ~/bingoor-project/update-apks.sh` (no restart needed).
