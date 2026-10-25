@@ -12,14 +12,16 @@ import OrdersScreen from './OrdersScreen';
 import EarningsScreen from './EarningsScreen';
 import WalletScreen from './WalletScreen';
 import ProfileScreen from './ProfileScreen';
+import PlanScreen from './PlanScreen';
 
 const LOGO = require('../assets/logo-mark.png');
 
-type Tab = 'orders' | 'earnings' | 'wallet' | 'profile';
+type Tab = 'orders' | 'earnings' | 'wallet' | 'plan' | 'profile';
 const TABS: { key: Tab; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
   { key: 'orders', label: 'Orders', icon: 'bicycle' },
   { key: 'earnings', label: 'Earnings', icon: 'stats-chart' },
   { key: 'wallet', label: 'Wallet', icon: 'wallet' },
+  { key: 'plan', label: 'Plan', icon: 'card' },
   { key: 'profile', label: 'Profile', icon: 'person' },
 ];
 
@@ -42,7 +44,7 @@ export default function RiderHome() {
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const firstName = (profile?.name ?? user?.name ?? 'Rider').split(' ')[0];
-  const title = tab === 'orders' ? `${greet}, ${firstName}` : tab === 'earnings' ? 'My earnings' : tab === 'wallet' ? 'My wallet' : 'My profile';
+  const title = tab === 'orders' ? `${greet}, ${firstName}` : tab === 'earnings' ? 'My earnings' : tab === 'wallet' ? 'My wallet' : tab === 'plan' ? 'My plan' : 'My profile';
   const warehouse = profile?.warehouses?.[0]?.name ?? user?.warehouse?.name ?? 'Delivery partner';
 
   return (
@@ -60,7 +62,7 @@ export default function RiderHome() {
       </View>
 
       <CrossFade dep={tab} style={{ flex: 1 }}>
-        {tab === 'orders' ? <OrdersScreen /> : tab === 'earnings' ? <EarningsScreen /> : tab === 'wallet' ? <WalletScreen /> : <ProfileScreen />}
+        {tab === 'orders' ? <OrdersScreen /> : tab === 'earnings' ? <EarningsScreen /> : tab === 'wallet' ? <WalletScreen /> : tab === 'plan' ? <PlanScreen onChanged={loadProfile} /> : <ProfileScreen />}
       </CrossFade>
 
       {/* Bottom tabs */}
@@ -71,6 +73,7 @@ export default function RiderHome() {
             <Pressable key={t.key} onPress={() => setTab(t.key)} style={styles.tabBtn} accessibilityRole="button" accessibilityState={{ selected: on }}>
               <Ionicons name={on ? t.icon : (`${t.icon}-outline` as React.ComponentProps<typeof Ionicons>['name'])} size={23} color={on ? colors.primary : colors.muted} />
               <Text style={[styles.tabLabel, on && { color: colors.primary }]}>{t.label}</Text>
+              {t.key === 'plan' && profile?.planNeeded ? <View style={styles.tabDot} /> : null}
             </Pressable>
           );
         })}
@@ -103,6 +106,7 @@ const styles = StyleSheet.create({
   bellDotText: { color: '#fff', fontSize: 9.5, fontWeight: '800' },
   tabbar: { flexDirection: 'row', backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 },
   tabBtn: { flex: 1, alignItems: 'center', gap: 2 },
+  tabDot: { position: 'absolute', top: 0, right: '30%', width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger },
   tabLabel: { fontSize: 11, fontWeight: '700', color: colors.muted },
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 22, paddingBottom: 30 },

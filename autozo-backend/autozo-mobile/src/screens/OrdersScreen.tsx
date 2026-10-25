@@ -139,6 +139,7 @@ export default function OrdersScreen() {
       </View>
       <Ionicons name="cash-outline" size={44} color="#fff" />
     </View></FadeSlide>
+    {profile?.planNeeded && !profile.paused ? <View style={styles.pausedBar}><Ionicons name="card" size={18} color="#fff" /><Text style={[styles.newBannerText, { flex: 1 }]}>Your plan is not active. Buy a plan from the Plan tab to get new orders.</Text></View> : null}
     {profile?.paused ? <View style={styles.pausedBar}><Ionicons name="pause-circle" size={18} color="#fff" /><Text style={styles.newBannerText}>Your delivery service is stopped. Submit the cash to clear it.</Text></View> : null}
     <FadeSlide delay={70}><View style={styles.stats}><Stat value={String(orders.filter(isNew).length)} label="Available" /><Stat value={String(orders.filter((o) => o.status === 'out_for_delivery').length)} label="Active" /><Stat value={String(profile?.deliveredCount ?? orders.filter((o) => o.status === 'delivered').length)} label="Delivered" /><Stat value={String(profile?.cancelledCount ?? 0)} label="Cancelled" last /></View></FadeSlide>
     <View style={styles.tabs}>{(['available', 'active', 'history'] as const).map((value) => <Pressable key={value} onPress={() => setTab(value)} style={[styles.tab, tab === value && styles.tabActive]}><Text style={[styles.tabText, tab === value && styles.tabTextActive]}>{value === 'available' ? 'New orders' : value === 'active' ? 'My deliveries' : 'History'}</Text></Pressable>)}</View>

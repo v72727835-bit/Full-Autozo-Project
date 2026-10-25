@@ -1,4 +1,4 @@
-import { ApiEnvelope, EarningsSummary, PayoutAccount, RiderOrder, RiderProfile, RiderWallet, WalletTxn } from '../types';
+import { ApiEnvelope, EarningsSummary, MyPlan, PayoutAccount, RiderOrder, RiderProfile, RiderWallet, WalletTxn } from '../types';
 import { api } from './client';
 
 export async function fetchRiderOrders(status?: 'ready_for_pickup' | 'out_for_delivery' | 'delivered'): Promise<RiderOrder[]> {
@@ -65,5 +65,17 @@ export async function requestWithdraw(amount: number, method: 'upi' | 'bank'): P
 
 export async function submitCash(amount?: number): Promise<WalletTxn> {
   const { data } = await api.post<ApiEnvelope<WalletTxn>>('/rider/wallet/cash-submit', amount ? { amount } : {});
+  return data.data;
+}
+
+/** The rider's plan and the plans on offer. */
+export async function fetchMyPlan(): Promise<MyPlan> {
+  const { data } = await api.get<ApiEnvelope<MyPlan>>('/subscription');
+  return data.data;
+}
+
+/** Prepares a Razorpay payment for a plan; the rider pays on the website's /pay page. */
+export async function startPlanPayment(planId: string): Promise<{ razorpayOrderId: string; amount: number; keyId: string; planName: string }> {
+  const { data } = await api.post('/subscription/pay', { planId });
   return data.data;
 }
