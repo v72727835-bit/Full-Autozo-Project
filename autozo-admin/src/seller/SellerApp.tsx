@@ -3,9 +3,9 @@
 import { usePathname } from 'next/navigation';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, NavLink } from '../navigation';
-import { sellerMe, sellerOrders, sellerProducts } from '../api/admin';
+import { fetchMyPlan, MyPlan, sellerMe, sellerOrders, sellerProducts } from '../api/admin';
 import { getErrorMessage } from '../api/client';
-import { IconAlert, IconBell, IconBox, IconDashboard, IconLayers, IconReceipt, IconRider, IconShield, IconStore, IconUsers } from '../components/icons';
+import { IconAlert, IconBell, IconBox, IconDashboard, IconLayers, IconReceipt, IconRider, IconRupee, IconShield, IconStore, IconUsers } from '../components/icons';
 import { CenterSpinner, ErrorBanner } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { askNotificationPermission, notifyNewOrders, playChime } from '../lib/alerts';
@@ -16,6 +16,7 @@ import Dashboard from './Dashboard';
 import Inventory from './Inventory';
 import Orders from './Orders';
 import Products from './Products';
+import PlanView, { PlanBanner, planLocked } from './Plan';
 import { AccountView, StoreView } from './Settings';
 
 export type Wh = { _id: string; name: string };
@@ -33,10 +34,12 @@ export default function SellerApp() {
   const [error, setError] = useState('');
   const [newOrders, setNewOrders] = useState(0);
   const [lowStock, setLowStock] = useState(0);
+  const [plan, setPlan] = useState<MyPlan | null>(null);
   const seen = useRef<number | null>(null);
 
   useEffect(() => {
     sellerMe().then((m) => setMe(m as Me)).catch((e) => setError(getErrorMessage(e)));
+    fetchMyPlan().then(setPlan).catch(() => undefined);
     askNotificationPermission();
   }, []);
 
@@ -96,6 +99,7 @@ export default function SellerApp() {
     {
       title: 'Warehouse',
       items: [
+        { to: '/plan', label: 'My plan', icon: <IconRupee />, badge: planLocked(plan) ? 1 : 0, warn: true },
         { to: '/store', label: 'Store settings', icon: <IconStore /> },
         { to: '/account', label: 'My account', icon: <IconShield /> },
       ],
@@ -109,7 +113,11 @@ export default function SellerApp() {
       page = <Dashboard />;
       break;
     case '/orders':
-      page = <Orders onChanged={poll} />;
+      // Without a running plan (while plans are on) the orders stay hidden until one is bought.
+      page = planLocked(plan) ? <PlanView plan={plan!} me={me.user} onPaid={setPlan} /> : <Orders onChanged={poll} />;
+      break;
+    case '/plan':
+      page = plan ? <PlanView plan={plan} me={me.user} onPaid={setPlan} /> : <CenterSpinner />;
       break;
     case '/products':
       page = <Products warehouses={warehouses} />;
@@ -201,7 +209,10 @@ export default function SellerApp() {
             </div>
           </div>
         </header>
-        <div className="content">{page}</div>
+        <div className="content">
+          {pathname !== '/plan' && !(pathname === '/orders' && planLocked(plan)) ? <PlanBanner plan={plan} /> : null}
+          {page}
+        </div>
       </main>
     </div>
   );

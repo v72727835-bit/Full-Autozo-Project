@@ -578,3 +578,79 @@ export const sellerChangePassword = async (currentPassword: string, newPassword:
 export interface OrderRider { _id: string; name: string; phone: string; lastSeenAt?: string; state: 'free' | 'busy' | 'offline' | 'paused' | 'long_distance_only' | 'not_long_distance'; free: boolean }
 export interface OrderRiders { warehouse: string; radiusKm: number | null; distanceKm: number | null; longDistance: boolean; riders: OrderRider[] }
 export const sellerOrderRiders = async (orderId: string): Promise<OrderRiders> => (await api.get(`/seller/orders/${orderId}/riders`)).data.data;
+
+/* ---------- rider & warehouse plans ---------- */
+export type PlanAudience = 'rider' | 'seller';
+export interface Plan {
+  _id: string;
+  audience: PlanAudience;
+  name: string;
+  price: number;
+  days: number;
+  description?: string;
+  active: boolean;
+  sort: number;
+}
+export interface PlanOverview {
+  switches: Record<PlanAudience, boolean>;
+  plans: Plan[];
+  rider: { total: number; active: number; revenue: number };
+  seller: { total: number; active: number; revenue: number };
+}
+export interface PlanMember {
+  _id: string;
+  name: string;
+  phone: string;
+  sellerId?: string;
+  isActive: boolean;
+  subscriptionUntil?: string | null;
+  planActive: boolean;
+  warehouses?: { name: string }[];
+  sellerWarehouses?: { name: string }[];
+}
+export interface PlanPayment {
+  _id: string;
+  user?: { _id: string; name: string; phone: string; sellerId?: string; role: string } | null;
+  audience: PlanAudience;
+  source: 'razorpay' | 'admin';
+  planName: string;
+  days: number;
+  amount: number;
+  paymentId?: string;
+  startsAt?: string;
+  endsAt?: string;
+  note?: string;
+  createdAt: string;
+}
+export type PlanInput = Pick<Plan, 'name' | 'price' | 'days'> & { description?: string; active?: boolean; sort?: number };
+
+export const fetchPlanOverview = async (): Promise<PlanOverview> => (await api.get('/admin/subscriptions')).data.data;
+export const setPlanSwitches = async (body: Partial<Record<PlanAudience, boolean>>): Promise<Record<PlanAudience, boolean>> =>
+  (await api.put('/admin/subscriptions/switches', body)).data.data;
+export const createPlan = async (body: PlanInput & { audience: PlanAudience }): Promise<Plan> => (await api.post('/admin/subscriptions/plans', body)).data.data;
+export const updatePlan = async (id: string, body: Partial<PlanInput>): Promise<Plan> => (await api.patch(`/admin/subscriptions/plans/${id}`, body)).data.data;
+export const deletePlan = async (id: string): Promise<{ hidden?: boolean; deleted?: boolean }> => (await api.delete(`/admin/subscriptions/plans/${id}`)).data.data;
+export const fetchPlanMembers = (params: { audience: PlanAudience; status?: string; q?: string; page?: number; limit?: number }) =>
+  paged<PlanMember>('/admin/subscriptions/members', params);
+export const grantPlanDays = async (id: string, days: number, note?: string): Promise<void> => {
+  await api.post(`/admin/subscriptions/members/${id}/grant`, { days, note });
+};
+export const endMemberPlan = async (id: string): Promise<void> => {
+  await api.post(`/admin/subscriptions/members/${id}/end`);
+};
+export const fetchPlanPayments = (params: { audience?: PlanAudience; page?: number; limit?: number }) => paged<PlanPayment>('/admin/subscriptions/payments', params);
+
+/* the warehouse's own plan */
+export interface MyPlan {
+  required: boolean;
+  active: boolean;
+  until: string | null;
+  daysLeft: number;
+  plans: Pick<Plan, '_id' | 'name' | 'price' | 'days' | 'description'>[];
+  canPayOnline: boolean;
+}
+export const fetchMyPlan = async (): Promise<MyPlan> => (await api.get('/subscription')).data.data;
+export const startMyPlanPayment = async (planId: string): Promise<{ razorpayOrderId: string; amount: number; currency: string; keyId: string; planName: string }> =>
+  (await api.post('/subscription/pay', { planId })).data.data;
+export const confirmMyPlanPayment = async (body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): Promise<MyPlan> =>
+  (await api.post('/subscription/confirm', body)).data.data;
