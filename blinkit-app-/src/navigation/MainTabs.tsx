@@ -67,7 +67,7 @@ export function MainTabs() {
         </Pane>
       </View>
       <View onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>
-        <OrderProgressPopup />
+        <OrderProgressPopup hidden={active !== 'home' && active !== 'browse' && active !== 'festival'} />
         <TabBar tabs={tabs} active={active} onSelect={goToTab} />
       </View>
       {/* Positioned against the whole screen rather than hung off the tab bar:

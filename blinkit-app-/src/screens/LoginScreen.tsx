@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePublicSettingsQuery } from '../store/catalogApi';
 import { facebookAccessToken, googleAccessToken, NOT_IN_BUILD } from '../utils/social';
 import type { AuthNav } from '../navigation/types';
-import { gutter, ms, space, themed } from '../theme';
+import { gutter, space, themed } from '../theme';
 import { Button } from '../ui/Button';
 import { Banner } from '../ui/Feedback';
 import { Logo } from '../ui/Logo';
@@ -72,7 +72,7 @@ export function LoginScreen() {
     setFormError(null);
     const id = provider === 'google' ? publicSettings?.social?.googleClientId : publicSettings?.social?.facebookAppId;
     if (!id) {
-      setFormError(`Login with ${provider === 'google' ? 'Gmail' : 'Facebook'} is coming soon. Please continue with your phone number for now.`);
+      setFormError(`Login with ${provider === 'google' ? 'Google' : 'Facebook'} is coming soon. Please continue with your phone number for now.`);
       return;
     }
     setSocial(provider);
@@ -101,19 +101,26 @@ export function LoginScreen() {
         >
           <Logo size={44} style={styles.logo} />
 
-          <Txt variant="h1" style={styles.title}>
+          <Txt variant="h1" center style={styles.title}>
             Welcome back
           </Txt>
-          <Txt variant="bodyLg" tone="muted" style={styles.subtitle}>
+          <Txt variant="bodyLg" tone="muted" center style={styles.subtitle}>
             Sign in to pick up where you left off.
           </Txt>
 
           {formError ? <Banner tone="danger" message={formError} style={styles.banner} /> : null}
 
           <View style={styles.methods}>
-            <Button label="Continue with Gmail" variant="secondary" onPress={() => continueWith('google')} loading={social === 'google'} size="lg" />
-            <Button label="Continue with Facebook" variant="secondary" onPress={() => continueWith('facebook')} loading={social === 'facebook'} size="lg" />
-            <Button label="Continue with Phone number" variant={usePhone ? 'primary' : 'secondary'} onPress={() => setUsePhone((v) => !v)} size="lg" />
+            <Button label="Continue with phone number" icon="call-outline" variant={usePhone ? 'primary' : 'secondary'} onPress={() => setUsePhone((v) => !v)} size="lg" block />
+            <View style={styles.or}>
+              <View style={styles.orLine} />
+              <Txt variant="caption" tone="faint">
+                or
+              </Txt>
+              <View style={styles.orLine} />
+            </View>
+            <Button label="Continue with Google" icon="logo-google" variant="secondary" onPress={() => continueWith('google')} loading={social === 'google'} size="lg" block />
+            <Button label="Continue with Facebook" icon="logo-facebook" variant="secondary" onPress={() => continueWith('facebook')} loading={social === 'facebook'} size="lg" block />
           </View>
 
           {usePhone ? (
@@ -153,7 +160,7 @@ export function LoginScreen() {
             error={errors.password}
           />
 
-          <Button label="Sign in" onPress={submit} loading={busy} size="lg" style={styles.submit} />
+          <Button label="Sign in" onPress={submit} loading={busy} size="lg" block style={styles.submit} />
           <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8} accessibilityRole="button" style={styles.forgot}>
             <Txt variant="label" tone="brand">
               Forgot password?
@@ -199,13 +206,15 @@ const styles = themed(({ c }) => ({
   root: { flex: 1, backgroundColor: c.surface },
   flex: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: gutter, paddingTop: space.xl, paddingBottom: space.xxl },
-  logo: { alignSelf: 'flex-start', marginBottom: space.xxxl },
+  logo: { alignSelf: 'center', marginBottom: space.xxl, marginTop: space.lg },
   title: { marginBottom: space.xs },
   subtitle: { marginBottom: space.xxl },
   banner: { marginBottom: space.lg },
   submit: { marginTop: space.sm },
   forgot: { alignSelf: 'center', marginTop: space.lg },
   methods: { gap: space.sm, marginBottom: space.xl },
+  or: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginVertical: space.xs },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: c.borderStrong },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

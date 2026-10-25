@@ -270,7 +270,7 @@ export function CheckoutScreen() {
               accessibilityLabel="Add a new address"
             >
               <Txt variant="label" tone="brand">
-                + Add new
+                Add new address
               </Txt>
             </Pressable>
           </View>
@@ -525,8 +525,8 @@ const styles = themed(({ c, elevation }) => ({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
   },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: space.md },
-  sectionTitle: { marginBottom: space.md },
+  sectionHead: { alignItems: 'center', gap: ms(2), marginBottom: space.md },
+  sectionTitle: { marginBottom: space.md, textAlign: 'center' },
 
   problemBox: {
     marginHorizontal: gutter,
@@ -627,4 +627,4 @@ const styles = themed(({ c, elevation }) => ({
   },
   barInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter, paddingVertical: space.md },
   barPrice: { flexShrink: 1, marginRight: space.md },
-  barBtn: { flexShrink: 1, paddingHorizontal: space.xl },}));
+  barBtn: { flex: 1 },}));

@@ -37,10 +37,10 @@ export function ForgotPasswordScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Logo size={44} style={styles.logo} />
-          <Txt variant="h1" style={styles.title}>
+          <Txt variant="h1" center style={styles.title}>
             Forgot password?
           </Txt>
-          <Txt variant="bodyLg" tone="muted" style={styles.subtitle}>
+          <Txt variant="bodyLg" tone="muted" center style={styles.subtitle}>
             Enter your mobile number, choose a new password and confirm it with an OTP.
           </Txt>
           {error ? <Banner tone="danger" message={error} style={styles.banner} /> : null}
@@ -81,7 +81,7 @@ const styles = themed(({ c }) => ({
   root: { flex: 1, backgroundColor: c.surface },
   flex: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: gutter, paddingTop: space.xl, paddingBottom: space.xxl },
-  logo: { alignSelf: 'flex-start', marginBottom: space.xxxl },
+  logo: { alignSelf: 'center', marginTop: space.lg, marginBottom: space.xxl },
   title: { marginBottom: space.xs },
   subtitle: { marginBottom: space.xxl },
   banner: { marginBottom: space.lg },

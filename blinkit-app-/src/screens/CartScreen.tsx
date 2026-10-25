@@ -89,9 +89,9 @@ export function CartScreen({ active }: TabScreenProps) {
         {/* The delivery promise is what a customer checks before paying, so it
             leads the page, centred and large rather than tucked in a subtitle. */}
         <View style={styles.eta}>
-          <Ionicons name="flash" size={ms(20)} color={colors.brand} />
-          <Txt variant="h2" numberOfLines={1}>
-            Delivery time: {shortDelivery(home)}
+          <Ionicons name="flash" size={ms(17)} color={colors.brand} />
+          <Txt variant="h3" tone="brand" numberOfLines={1}>
+            Delivery in {shortDelivery(home)}
           </Txt>
         </View>
 
@@ -112,7 +112,7 @@ export function CartScreen({ active }: TabScreenProps) {
         ) : awayFromFree > 0 ? (
           <Banner tone="info" message={`Add ${currency(awayFromFree)} more to get free delivery.`} style={styles.topBanner} />
         ) : (
-          <Banner tone="success" message="Nice - your order qualifies for free delivery." style={styles.topBanner} />
+          <Banner tone="success" message="Your order gets free delivery." style={styles.topBanner} />
         )}
 
         {cart.groups.map((group) => (
@@ -129,7 +129,7 @@ export function CartScreen({ active }: TabScreenProps) {
 
         {/* ------------------------------------------------ bill ------- */}
         <View style={styles.bill}>
-          <Txt variant="h3" style={styles.billTitle}>
+          <Txt variant="overline" tone="muted" center style={styles.billTitle}>
             Bill summary
           </Txt>
 
@@ -180,7 +180,6 @@ export function CartScreen({ active }: TabScreenProps) {
             label={cart.hasIssues ? 'Fix items to continue' : 'Proceed to checkout'}
             iconRight={cart.hasIssues ? undefined : 'arrow-forward'}
             size="lg"
-            block={false}
             disabled={cart.hasIssues}
             onPress={() => navigation.navigate('Checkout')}
             style={styles.barBtn}
@@ -349,11 +348,12 @@ const styles = themed(({ c, elevation }) => ({
     alignItems: 'center',
     justifyContent: 'center',
     gap: space.sm,
+    marginHorizontal: gutter,
     marginBottom: space.md,
     paddingVertical: space.md,
     paddingHorizontal: space.lg,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.brandBorder,
     backgroundColor: c.brandSurface,
   },
@@ -445,4 +445,4 @@ const styles = themed(({ c, elevation }) => ({
   },
   barInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: gutter, paddingVertical: space.md },
   barPrice: { flexShrink: 1, marginRight: space.md },
-  barBtn: { flexShrink: 1, paddingHorizontal: space.lg },}));
+  barBtn: { flex: 1 },}));
