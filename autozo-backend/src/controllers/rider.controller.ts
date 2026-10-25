@@ -9,6 +9,7 @@ import { RequestHandler } from 'express';
 import { autoPauseIfOverLimit, codSummary } from '../services/rider.service';
 import { creditDeliveryEarning } from '../services/riderPay.service';
 import { creditSellerEarnings } from '../services/sellerPay.service';
+import { needsPlan, planRequiredError } from '../services/subscription.service';
 import { loadSettings } from '../services/settings.service';
 
 /** Every rider request marks them online (green dot in the admin panel). */
@@ -21,7 +22,7 @@ export const touchRider: RequestHandler = (req, _res, next) => {
 
 export const getProfile = asyncHandler(async (req, res) => {
   const rider = await User.findById(req.user!.id)
-    .select('name phone email role warehouse warehouses isActive lastLoginAt createdAt riderPaused riderPausedAt riderCancelCount')
+    .select('name phone email role warehouse warehouses isActive lastLoginAt createdAt riderPaused riderPausedAt riderCancelCount subscriptionUntil')
     .populate('warehouse', 'name')
     .populate('warehouses', 'name')
     .lean();
@@ -36,6 +37,8 @@ export const getProfile = asyncHandler(async (req, res) => {
   const notices: string[] = [];
   if (limit && pending >= limit) notices.push('Submit order total payment to Cash department');
   if (rider.riderPaused) notices.push('Your delivery service has been stopped for a short time, so submit orders payment to Cash department');
+  const planNeeded = await needsPlan('rider', rider);
+  if (planNeeded) notices.push('Your plan is not active. Buy a plan from the Plan tab to get new orders.');
 
   ok(res, {
     ...rider,
@@ -45,6 +48,7 @@ export const getProfile = asyncHandler(async (req, res) => {
     deliveredCount: cod?.deliveries ?? 0,
     cancelledCount: rider.riderCancelCount ?? 0,
     paused: !!rider.riderPaused,
+    planNeeded,
     notices,
   });
 });
@@ -60,9 +64,11 @@ const findRiderOrders = (filter: FilterQuery<IOrder>, sort: 1 | -1, skip: number
 
 export const listOrders = asyncHandler(async (req, res) => {
   const { page, limit, status } = req.query as unknown as { page: number; limit: number; status?: string };
-  const rider = await User.findById(req.user!.id).select('warehouse warehouses riderPaused riderLongDistance').lean();
+  const rider = await User.findById(req.user!.id).select('warehouse warehouses riderPaused riderLongDistance subscriptionUntil').lean();
   const shops = rider ? riderWarehouseIds(rider) : [];
   if (!rider || !shops.length) throw new ApiError(400, 'No warehouse is assigned to this rider');
+  // Paused, or no running plan while rider plans are on: no new pickups, only their own delivery.
+  const blocked = !!rider.riderPaused || (await needsPlan('rider', rider));
   // Long-distance orders go only to the special rider; everyone else never sees them.
   const base: FilterQuery<IOrder> = { ...(rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } }), shop: { $in: shops } };
   const pickups: FilterQuery<IOrder> = { ...base, status: 'ready_for_pickup' };
@@ -73,7 +79,7 @@ export const listOrders = asyncHandler(async (req, res) => {
     // The app's main list. Open work comes first and in full; delivered history is only the latest page.
     // (One list sorted oldest-first used to fill up with old deliveries, so new pickups never showed.)
     // A paused rider sees only their own orders - no new pickups until resumed.
-    const open: FilterQuery<IOrder> = rider.riderPaused ? active : { ...base, $or: [{ status: { $in: UPCOMING }, rider: { $exists: false } }, { rider: req.user!.id, status: 'out_for_delivery' }] };
+    const open: FilterQuery<IOrder> = blocked ? active : { ...base, $or: [{ status: { $in: UPCOMING }, rider: { $exists: false } }, { rider: req.user!.id, status: 'out_for_delivery' }] };
     const [openOrders, doneOrders, doneTotal] = await Promise.all([
       page === 1 ? findRiderOrders(open, 1, 0, OPEN_CAP) : Promise.resolve([]),
       findRiderOrders(delivered, -1, (page - 1) * limit, limit),
@@ -82,7 +88,7 @@ export const listOrders = asyncHandler(async (req, res) => {
     return ok(res, [...openOrders, ...doneOrders], { ...pageMeta(page, limit, doneTotal), open: openOrders.length });
   }
 
-  if (status === 'ready_for_pickup' && rider.riderPaused) return ok(res, [], pageMeta(page, limit, 0));
+  if (status === 'ready_for_pickup' && blocked) return ok(res, [], pageMeta(page, limit, 0));
   const filter = status === 'ready_for_pickup' ? pickups : status === 'out_for_delivery' ? active : delivered;
   // Pickups oldest first (first come, first served); history newest first.
   const sort = status === 'delivered' ? -1 : 1;
@@ -94,12 +100,13 @@ export const listOrders = asyncHandler(async (req, res) => {
 });
 
 export const acceptOrder = asyncHandler(async (req, res) => {
-  const rider = await User.findById(req.user!.id).select('warehouse warehouses riderPaused riderLongDistance').lean();
+  const rider = await User.findById(req.user!.id).select('warehouse warehouses riderPaused riderLongDistance subscriptionUntil').lean();
   const shops = rider ? riderWarehouseIds(rider) : [];
   if (!rider || !shops.length) throw new ApiError(400, 'No warehouse is assigned to this rider');
   if (rider.riderPaused) {
     throw new ApiError(403, 'Your delivery service has been stopped for a short time. Submit your COD payment to the cash department.');
   }
+  if (await needsPlan('rider', rider)) throw planRequiredError('rider');
   const order = await Order.findOneAndUpdate(
     { _id: req.params.id, shop: { $in: shops }, status: 'ready_for_pickup', rider: { $exists: false }, ...(rider.riderLongDistance ? { longDistance: true } : { longDistance: { $ne: true } }) },
     { $set: { rider: req.user!.id, status: 'out_for_delivery' }, $push: { statusHistory: { status: 'out_for_delivery', at: new Date(), note: 'Accepted by rider' } } },

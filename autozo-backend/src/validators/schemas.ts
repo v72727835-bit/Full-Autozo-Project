@@ -764,3 +764,25 @@ export const bulkProductsBody = z.object({
   /** Check everything and report, but save nothing. */
   dryRun: z.boolean().optional(),
 });
+
+/* ---------- rider / warehouse plans ---------- */
+const audience = z.enum(['rider', 'seller']);
+export const startPlanBody = z.object({ planId: objectId });
+export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional() });
+export const planBody = z.object({
+  audience,
+  name: z.string().trim().min(2).max(60),
+  price: z.coerce.number().min(1, 'Price must be at least ₹1').max(1_000_000),
+  days: z.coerce.number().int().min(1).max(3650),
+  description: z.string().trim().max(200).optional(),
+  active: z.boolean().optional(),
+  sort: z.coerce.number().int().min(0).max(1000).optional(),
+});
+export const planUpdateBody = planBody.omit({ audience: true }).partial();
+export const subscribersQuery = pagination.extend({
+  audience,
+  status: z.enum(['active', 'expired', 'never']).optional(),
+  q: z.string().trim().max(80).optional(),
+});
+export const grantDaysBody = z.object({ days: z.coerce.number().int().min(1).max(3650), note: z.string().trim().max(200).optional() });
+export const planPaymentsQuery = pagination.extend({ audience: audience.optional(), user: objectId.optional() });

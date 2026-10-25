@@ -2,6 +2,7 @@ import app from './app';
 import { connectDB, disconnectDB } from './config/db';
 import { env } from './config/env';
 import { Product } from './models/Product';
+import { startPlanReminders } from './services/subscription.service';
 
 async function main() {
   await connectDB();
@@ -10,6 +11,7 @@ async function main() {
     // Legacy backfill must not block Passenger startup or the health route.
     void Product.updateMany({ sortCode: { $exists: false } }, { $set: { sortCode: 1_000_000 } })
       .catch((error) => console.error('Product sort-code backfill failed:', error));
+    startPlanReminders();
   });
 
   const shutdown = async (signal: string) => {
