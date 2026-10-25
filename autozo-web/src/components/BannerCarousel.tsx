@@ -11,6 +11,8 @@ import s from './BannerCarousel.module.css';
  * Promo rail. It scrolls by hand and advances on its own every six seconds,
  * pausing while the pointer is over it. With `bleed` it runs edge to edge
  * under the header, with the dots laid over the slide instead of below it.
+ * `hero` is the tall, rounded slider at the top of the home page column, and
+ * `promo` a shorter banner placed between home page sections.
  *
  * The scroll handling is deliberately defensive. A programmatic smooth scroll
  * on a scroll-snapping container emits a long burst of scroll events, and
@@ -19,7 +21,17 @@ import s from './BannerCarousel.module.css';
  * when the index actually changes, and events are ignored while our own
  * animation is still running.
  */
-export function BannerCarousel({ items: all, bleed = false }: { items: Banner[]; bleed?: boolean }) {
+export function BannerCarousel({
+  items: all,
+  bleed = false,
+  hero = false,
+  promo = false,
+}: {
+  items: Banner[];
+  bleed?: boolean;
+  hero?: boolean;
+  promo?: boolean;
+}) {
   // An uploaded banner whose image fails to load is dropped, not shown as an empty box.
   const [broken, setBroken] = useState<Set<string>>(() => new Set());
   const items = all.filter((b) => !broken.has(b.id));
@@ -95,7 +107,7 @@ export function BannerCarousel({ items: all, bleed = false }: { items: Banner[];
 
   return (
     <section
-      className={`${s.wrap} ${bleed ? s.bleed : ''}`}
+      className={`${s.wrap} ${bleed ? s.bleed : ''} ${hero ? s.hero : ''} ${promo ? s.promo : ''}`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
@@ -111,7 +123,7 @@ export function BannerCarousel({ items: all, bleed = false }: { items: Banner[];
             style={{ ['--from' as string]: b.from, ['--to' as string]: b.to }}
           >
             {/* An uploaded banner fills the slide; its copy, if any, sits on top. */}
-            {b.image ? <Image src={b.image} alt="" width={1040} height={360} className="photo-fill" unoptimized data-banner={b.id} onError={() => dropBroken(b.id)} /> : null}
+            {b.image ? <Image src={b.image} alt="" width={1600} height={500} className="photo-fill" unoptimized data-banner={b.id} onError={() => dropBroken(b.id)} /> : null}
             {b.title ? (
               <span className={s.copy}>
                 {b.categoryName ? <span className={s.kicker}>{b.categoryName}</span> : null}

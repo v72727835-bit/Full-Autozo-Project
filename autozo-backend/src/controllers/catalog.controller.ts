@@ -155,7 +155,7 @@ export const home = asyncHandler(async (req, res) => {
       : Shop.find({ isActive: true }).sort({ rating: -1 }).limit(10).select(SHOP_CARD_FIELDS).lean(),
     Banner.find({ isActive: true })
       .sort({ sortOrder: 1, createdAt: -1 })
-      .limit(10)
+      .limit(30)
       .populate<{ category: { name: string; slug: string; isActive: boolean } | null }>('category', 'name slug isActive')
       .lean(),
   ]);
@@ -212,21 +212,26 @@ export const home = asyncHandler(async (req, res) => {
   const circles = QUICK.map((n) => level3.find((c) => c.name === n)).filter(Boolean);
   if (circles.length) sections.push({ type: 'circleRail', id: 'quick', items: circles });
 
+  const toSlide = (b: (typeof uploadedBanners)[number]) => {
+    const cat = b.category?.isActive ? b.category : null;
+    return {
+      id: String(b._id),
+      title: b.title,
+      subtitle: b.subtitle,
+      cta: b.cta,
+      image: b.image,
+      slug: cat?.slug,
+      categoryName: cat?.name,
+    };
+  };
+  // Banners saved before placement existed have none, and belong at the top.
+  const heroBanners = uploadedBanners.filter((b) => b.placement !== 'between').slice(0, 10);
+  const betweenBanners = uploadedBanners.filter((b) => b.placement === 'between').map(toSlide);
+
   /* Banners uploaded from the admin panel win; the built-in set only fills
      the slot on a fresh install. */
-  const banners = uploadedBanners.length
-    ? uploadedBanners.map((b) => {
-        const cat = b.category?.isActive ? b.category : null;
-        return {
-          id: String(b._id),
-          title: b.title,
-          subtitle: b.subtitle,
-          cta: b.cta,
-          image: b.image,
-          slug: cat?.slug,
-          categoryName: cat?.name,
-        };
-      })
+  const banners = heroBanners.length
+    ? heroBanners.map(toSlide)
     : BANNERS.map((b) => {
         const cat = l2ByName.get(b.category);
         return cat ? { ...b, slug: cat.slug, categoryName: cat.name } : null;
@@ -288,6 +293,26 @@ export const home = asyncHandler(async (req, res) => {
   }
 
   sections.push(...standard.filter((r) => r.position === 'bottom'));
+
+  /* "Between" banners break up the long scroll: one after every second
+     content section, and any left over at the end. Each is its own one-slide
+     carousel, so an app that draws sections in order shows it in place. */
+  if (betweenBanners.length) {
+    const spread: Section[] = [];
+    let content = 0;
+    let next = 0;
+    for (const sec of sections) {
+      spread.push(sec);
+      if (sec.type === 'bannerCarousel' || sec.type === 'circleRail') continue;
+      content += 1;
+      if (content % 2 === 0 && next < betweenBanners.length) {
+        const b = betweenBanners[next++];
+        spread.push({ type: 'bannerCarousel', id: `promo-${b.id}`, style: 'promo', items: [b] });
+      }
+    }
+    for (const b of betweenBanners.slice(next)) spread.push({ type: 'bannerCarousel', id: `promo-${b.id}`, style: 'promo', items: [b] });
+    sections.splice(0, sections.length, ...spread);
+  }
 
   if (shops.length) sections.push({ type: 'storeTiles', id: 'stores', title: 'Stores near you', items: shops });
 

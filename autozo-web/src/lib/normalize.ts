@@ -221,7 +221,7 @@ function section(raw: Record<string, unknown>): HomeSection | null {
         items: unique(items.map((i) => category(i as RawCategory))),
       };
     case 'bannerCarousel':
-      return { kind: 'bannerCarousel', id, items: unique(items.map((i) => banner(i as RawBanner))) };
+      return { kind: 'bannerCarousel', id, style: raw.style as string | undefined, items: unique(items.map((i) => banner(i as RawBanner))) };
     case 'categoryGrid':
       return {
         kind: 'categoryGrid',

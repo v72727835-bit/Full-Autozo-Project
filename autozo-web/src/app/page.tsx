@@ -33,19 +33,21 @@ export default function HomePage() {
   if (loading && !home) return <HomeSkeleton />;
   if (!home) return null;
 
-  // The banner runs edge to edge straight under the header; everything else
-  // sits in the page column below it.
-  const banners = home.sections.filter((x) => x.kind === 'bannerCarousel');
-  const rest = home.sections.filter((x) => x.kind !== 'bannerCarousel');
+  // The hero slider sits at the top of the page column, above everything
+  // else; promo banners stay where the API put them, between sections.
+  type Carousel = Extract<HomeSection, { kind: 'bannerCarousel' }>;
+  const isHero = (x: HomeSection): x is Carousel => x.kind === 'bannerCarousel' && x.style !== 'promo';
+  const banners = home.sections.filter(isHero);
+  const rest = home.sections.filter((x) => !isHero(x));
 
   return (
     <>
-      {banners.map((section) => (
-        <ErrorBoundary key={section.id} label={section.kind}>
-          <BannerCarousel items={section.items} bleed />
-        </ErrorBoundary>
-      ))}
-      <div className="page rise" style={{ paddingTop: 20 }}>
+      <div className="page rise" style={{ paddingTop: 16 }}>
+        {banners.map((section) => (
+          <ErrorBoundary key={section.id} label={section.kind}>
+            <BannerCarousel items={section.items} hero />
+          </ErrorBoundary>
+        ))}
         {home.serviceable ? null : (
           <div style={{ marginBottom: 20 }}>
             <Alert tone="bad">
@@ -68,9 +70,9 @@ export default function HomePage() {
 
 function Section({ section }: { section: HomeSection }) {
   switch (section.kind) {
-    // Drawn full width above the page column by HomePage.
+    // The hero is drawn above the sections by HomePage; a promo banner sits in line.
     case 'bannerCarousel':
-      return null;
+      return section.style === 'promo' ? <BannerCarousel items={section.items} promo /> : null;
 
     case 'circleRail':
       return (

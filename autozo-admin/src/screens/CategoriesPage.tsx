@@ -372,7 +372,7 @@ function CategoryForm({
       <form onSubmit={submit}>
         <ErrorBanner message={error} />
 
-        <Field label="Image">
+        <Field label={state.level === 1 ? 'Image (shown round in the website category bar under the header; square, about 200 × 200 px)' : 'Image'}>
           <div className="row-flex" style={{ alignItems: 'flex-start' }}>
             {image ? (
               <img src={image} alt="" className="thumb" style={{ width: 56, height: 56, borderRadius: 12 }} />

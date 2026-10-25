@@ -1,0 +1,97 @@
+.wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Red like Subcity's, so it reads as a separate call to action from the green cart. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 12px 0 14px;
+  border-radius: var(--r-pill);
+  background: #e53935;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 750;
+  white-space: nowrap;
+  transition: background-color 0.16s var(--ease), transform 0.12s var(--ease);
+}
+
+.btn:hover {
+  background: #c62828;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* The header is tight between tablet and laptop widths. */
+.long {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .long {
+    display: inline;
+  }
+  .short {
+    display: none;
+  }
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 60;
+  width: 260px;
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 30px rgba(20, 5, 14, 0.18);
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px;
+  border-radius: var(--r-sm);
+  transition: background-color 0.16s var(--ease);
+}
+
+.opt:hover {
+  background: var(--brand-tint);
+}
+
+.optIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface-3);
+  color: var(--brand-text);
+  flex-shrink: 0;
+}
+
+.optText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.optTitle {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.optNote {
+  font-size: 12px;
+  color: var(--ink-3);
+}

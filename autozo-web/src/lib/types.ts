@@ -241,7 +241,8 @@ export interface Banner {
 
 export type HomeSection =
   | { kind: 'circleRail'; id: string; title?: string; items: Category[] }
-  | { kind: 'bannerCarousel'; id: string; items: Banner[] }
+  /** `style: 'promo'` is a banner placed between sections; the rest form the hero slider. */
+  | { kind: 'bannerCarousel'; id: string; style?: string; items: Banner[] }
   | { kind: 'categoryGrid'; id: string; title: string; groupSlug?: string; items: Category[] }
   | {
       kind: 'productRail';

@@ -36,6 +36,8 @@ export interface Banner {
   cta?: string;
   image: string;
   category?: { _id: string; name: string; slug: string } | string | null;
+  /** `top`: the hero carousel. `between`: spread between home page sections. Missing on older banners, which are `top`. */
+  placement?: 'top' | 'between';
   sortOrder: number;
   isActive: boolean;
 }
