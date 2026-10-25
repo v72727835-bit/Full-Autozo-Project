@@ -4,8 +4,11 @@ import { env } from './env';
 mongoose.set('strictQuery', true);
 
 export async function connectDB(): Promise<void> {
-  // A bigger pool lets one instance serve many concurrent requests instead of queueing on 5 sockets.
-  await mongoose.connect(env.MONGO_URI, { maxPoolSize: 50, minPoolSize: 5 });
+  // MongoDB runs in the same cPanel account and spends one thread per open
+  // connection, and the account's process limit counts threads. A pool of 50
+  // (times every Passenger instance) could fill that limit on its own; 10
+  // still serves concurrent requests, and idle sockets close after a minute.
+  await mongoose.connect(env.MONGO_URI, { maxPoolSize: 10, minPoolSize: 1, maxIdleTimeMS: 60_000 });
   // Phone / email used to be unique across all accounts; they are now unique per role (see models/User.ts).
   for (const name of ['phone_1', 'email_1']) {
     try {
