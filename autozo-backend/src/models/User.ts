@@ -28,6 +28,13 @@ export interface IUser {
   avatar?: string;
   isActive: boolean;
   deletedAt?: Date;
+  /**
+   * Admins only. A super admin (the default for every admin created before
+   * role-based access) can do everything; a sub admin (`isSuperAdmin: false`)
+   * is limited to the sections listed in `adminPermissions`.
+   */
+  isSuperAdmin?: boolean;
+  adminPermissions?: string[];
   addresses: Types.DocumentArray<IAddress>;
   wishlist: Types.ObjectId[];
   refreshTokens: { hash: string; createdAt: Date }[];
@@ -126,6 +133,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       index: true,
     },
     avatar: String,
+    isSuperAdmin: { type: Boolean },
+    adminPermissions: { type: [String], default: undefined },
     warehouse: { type: Schema.Types.ObjectId, ref: 'Shop', index: true },
     warehouses: { type: [{ type: Schema.Types.ObjectId, ref: 'Shop' }], default: undefined, index: true },
     isActive: { type: Boolean, default: true },

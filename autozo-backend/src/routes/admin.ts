@@ -6,7 +6,9 @@ import * as extra from '../controllers/adminExtra.controller';
 import * as invoices from '../controllers/invoice.controller';
 import * as seller from '../controllers/seller.controller';
 import * as plans from '../controllers/subscription.controller';
-import { adminOnly } from '../middleware/auth';
+import * as ads from '../controllers/ads.controller';
+import * as pages from '../controllers/page.controller';
+import { adminOnly, permissionGate, superAdminOnly } from '../middleware/auth';
 import { uploadProductImages, uploadProductVideo, uploadThumb } from '../middleware/upload';
 import { validate } from '../middleware/validate';
 import * as v from '../validators/schemas';
@@ -26,8 +28,30 @@ router.post('/auth/login', authLimiter, validate({ body: v.adminLoginBody }), ad
 
 /* Everything below needs a valid admin session */
 router.use(...adminOnly);
+/* Sub admins are limited to the sections they were granted (super admins pass). */
+router.use(permissionGate);
 
 router.get('/stats', validate({ query: v.adminStatsQuery }), admin.stats);
+
+/* ---- Team: role-based access (super admin only) ---- */
+router.get('/permissions', admin.listPermissions);
+router.get('/admins', superAdminOnly, admin.listAdmins);
+router.post('/admins', superAdminOnly, validate({ body: v.adminAdminBody }), admin.createAdmin);
+router.patch('/admins/:id', superAdminOnly, validate({ params: v.idParam, body: v.adminAdminUpdateBody }), admin.updateAdmin);
+router.delete('/admins/:id', superAdminOnly, validate({ params: v.idParam }), admin.deleteAdmin);
+
+/* ---- Ads & campaigns ---- */
+router.get('/ads', validate({ query: v.adminAdsQuery }), ads.listAdsAdmin);
+router.post('/ads', validate({ body: v.adCampaignBody }), ads.createAd);
+router.patch('/ads/:id', validate({ params: v.idParam, body: v.adCampaignUpdateBody }), ads.updateAd);
+router.delete('/ads/:id', validate({ params: v.idParam }), ads.deleteAd);
+
+/* ---- Website content pages (CMS) ---- */
+router.get('/pages', pages.listPagesAdmin);
+router.get('/pages/:id', validate({ params: v.idParam }), pages.getPageAdmin);
+router.post('/pages', validate({ body: v.pageBody }), pages.createPage);
+router.patch('/pages/:id', validate({ params: v.idParam, body: v.pageUpdateBody }), pages.updatePage);
+router.delete('/pages/:id', validate({ params: v.idParam }), pages.deletePage);
 
 router.get('/me', admin.me);
 router.get('/integrations', extra.getIntegrationsAdmin);

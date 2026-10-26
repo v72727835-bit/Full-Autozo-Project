@@ -144,6 +144,8 @@ interface SocialProfile {
   provider: 'google' | 'facebook';
   id: string;
   email?: string;
+  /** True only when the provider says the email is verified. We never link accounts by an unverified email. */
+  emailVerified?: boolean;
   name: string;
 }
 
@@ -157,7 +159,11 @@ async function getJson<T>(url: string): Promise<T> {
 /** Signs in (or signs up) the customer behind a verified social profile. */
 async function signInWithSocial(p: SocialProfile) {
   const key = p.provider === 'google' ? 'googleId' : 'facebookId';
-  let user = (await User.findOne({ [key]: p.id, role: 'customer' })) ?? (p.email ? await User.findOne({ email: p.email.toLowerCase(), role: 'customer' }) : null);
+  // Only ever match or link accounts by email when the provider verified it:
+  // otherwise someone with a provider account bearing a victim's address could
+  // take over the victim's account (Facebook does not verify emails for us).
+  const linkEmail = p.emailVerified && p.email ? p.email.toLowerCase() : undefined;
+  let user = (await User.findOne({ [key]: p.id, role: 'customer' })) ?? (linkEmail ? await User.findOne({ email: linkEmail, role: 'customer' }) : null);
   if (user && user.role !== 'customer') throw new ApiError(403, 'This login is for customers only.');
   if (user && !user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
   if (!user) {
@@ -165,7 +171,7 @@ async function signInWithSocial(p: SocialProfile) {
     user = await User.create({
       name: p.name || 'Customer',
       phone: `s${crypto.randomBytes(6).toString('hex')}`,
-      email: p.email?.toLowerCase(),
+      email: linkEmail,
       password: crypto.randomBytes(24).toString('hex'),
       role: 'customer',
       [key]: p.id,
@@ -190,7 +196,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
     `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${encodeURIComponent(accessToken)}`,
   );
   const verified = info.email_verified === true || info.email_verified === 'true';
-  ok(res, await signInWithSocial({ provider: 'google', id: info.sub, email: verified ? info.email ?? profile.email : undefined, name: profile.name ?? info.name ?? '' }));
+  ok(res, await signInWithSocial({ provider: 'google', id: info.sub, email: info.email ?? profile.email, emailVerified: verified, name: profile.name ?? info.name ?? '' }));
 });
 
 export const facebookLogin = asyncHandler(async (req, res) => {
@@ -207,5 +213,7 @@ export const facebookLogin = asyncHandler(async (req, res) => {
   const me = await getJson<{ id: string; name?: string; email?: string }>(
     `https://graph.facebook.com/me?fields=id,name,email&access_token=${encodeURIComponent(accessToken)}`,
   );
-  ok(res, await signInWithSocial({ provider: 'facebook', id: me.id, email: me.email, name: me.name ?? '' }));
+  // Facebook's Graph API does not tell us whether the email is verified, so we
+  // treat it as unverified: the user can still sign in, just not auto-link by email.
+  ok(res, await signInWithSocial({ provider: 'facebook', id: me.id, email: me.email, emailVerified: false, name: me.name ?? '' }));
 });
