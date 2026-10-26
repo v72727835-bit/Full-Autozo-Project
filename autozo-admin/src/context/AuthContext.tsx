@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, getErrorMessage, setSessionExpiredHandler, tokens } from '../api/client';
+import { fetchMe } from '../api/admin';
 import { AdminUser } from '../types';
 
 interface AuthApi {
@@ -21,7 +22,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSessionExpiredHandler(() => setUser(null));
     // The admin's profile came back with login and is cached alongside the
     // tokens, so a page refresh doesn't force a fresh sign-in.
-    if (tokens.access && tokens.user) setUser(tokens.user as AdminUser);
+    if (tokens.access && tokens.user) {
+      const cached = tokens.user as AdminUser;
+      setUser(cached);
+      // Refresh an admin's role & permissions in the background, so a change a
+      // super admin made to this account takes effect without a re-login.
+      if (cached.role === 'admin') {
+        fetchMe()
+          .then((fresh) => {
+            setUser(fresh);
+            tokens.save(tokens.access!, tokens.refresh!, fresh);
+          })
+          .catch(() => undefined);
+      }
+    }
     setLoading(false);
     return () => setSessionExpiredHandler(null);
   }, []);

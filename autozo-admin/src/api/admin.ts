@@ -1,6 +1,6 @@
 import { api } from './client';
 import { CompressOptions, prepareImage, runLimited } from '../lib/imageCompress';
-import { WarehouseApplication, StandardCategory, Enquiry, SellerRow, SellerStats, SellerProfile, AdminAlert, AdminUser, AppUser, Banner, Category, Notice, RiderRow, RiderTotals, Settings, StockAlert, Ticket, Coupon, DashboardStats, Order, OrderStatus, PageMeta, Product, Shop } from '../types';
+import { WarehouseApplication, StandardCategory, Enquiry, SellerRow, SellerStats, SellerProfile, AdminAlert, AdminUser, AppUser, Banner, Category, Notice, RiderRow, RiderTotals, Settings, StockAlert, Ticket, Coupon, DashboardStats, Order, OrderStatus, PageMeta, Product, Shop, AdCampaign, AdPlacement, ContentPage, ContentPageSummary, PermissionDef, TeamMember } from '../types';
 
 interface Paged<T> {
   items: T[];
@@ -654,3 +654,59 @@ export const startMyPlanPayment = async (planId: string): Promise<{ razorpayOrde
   (await api.post('/subscription/pay', { planId })).data.data;
 export const confirmMyPlanPayment = async (body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): Promise<MyPlan> =>
   (await api.post('/subscription/confirm', body)).data.data;
+
+/* ---------- team: sub-admins & role-based access (super admin only) ---------- */
+export const fetchPermissionDefs = async (): Promise<PermissionDef[]> => (await api.get('/admin/permissions')).data.data;
+export const fetchAdmins = async (): Promise<TeamMember[]> => (await api.get('/admin/admins')).data.data;
+export interface AdminInput {
+  name: string;
+  phone: string;
+  email?: string;
+  password?: string;
+  permissions: string[];
+  isActive?: boolean;
+}
+export const createAdmin = async (body: AdminInput): Promise<TeamMember> => (await api.post('/admin/admins', body)).data.data;
+export const updateAdmin = async (id: string, body: Partial<AdminInput>): Promise<TeamMember> =>
+  (await api.patch(`/admin/admins/${id}`, body)).data.data;
+export const deleteAdmin = async (id: string): Promise<void> => {
+  await api.delete(`/admin/admins/${id}`);
+};
+
+/* ---------- ads & campaigns ---------- */
+export const fetchAds = (params: { page?: number; limit?: number; q?: string; placement?: AdPlacement; isActive?: boolean }) =>
+  paged<AdCampaign>('/admin/ads', params);
+export interface AdInput {
+  advertiser: string;
+  title: string;
+  image: string;
+  targetUrl: string;
+  placement: AdPlacement;
+  startAt?: string | null;
+  endAt?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+export const createAd = async (body: AdInput): Promise<AdCampaign> => (await api.post('/admin/ads', body)).data.data;
+export const updateAd = async (id: string, body: Partial<AdInput>): Promise<AdCampaign> =>
+  (await api.patch(`/admin/ads/${id}`, body)).data.data;
+export const deleteAd = async (id: string): Promise<void> => {
+  await api.delete(`/admin/ads/${id}`);
+};
+
+/* ---------- website content pages (CMS) ---------- */
+export const fetchPagesList = async (): Promise<ContentPageSummary[]> => (await api.get('/admin/pages')).data.data;
+export const fetchPage = async (id: string): Promise<ContentPage> => (await api.get(`/admin/pages/${id}`)).data.data;
+export interface PageInput {
+  slug: string;
+  title: string;
+  blocks: ContentPage['blocks'];
+  metaDescription?: string;
+  isPublished?: boolean;
+}
+export const createPage = async (body: PageInput): Promise<ContentPage> => (await api.post('/admin/pages', body)).data.data;
+export const updatePage = async (id: string, body: Partial<PageInput>): Promise<ContentPage> =>
+  (await api.patch(`/admin/pages/${id}`, body)).data.data;
+export const deletePage = async (id: string): Promise<void> => {
+  await api.delete(`/admin/pages/${id}`);
+};
