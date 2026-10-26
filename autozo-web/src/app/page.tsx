@@ -6,6 +6,7 @@ import { useCatalog } from '../context/CatalogContext';
 import { HomeSection } from '../lib/types';
 import { DeliverySlots } from '../components/DeliverySlots';
 import { BannerCarousel } from '../components/BannerCarousel';
+import AdSlot from '../components/AdSlot';
 import { CategoryCircle, CategoryTile } from '../components/CategoryTile';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Icon } from '../components/Icon';
@@ -57,12 +58,18 @@ export default function HomePage() {
           </div>
         )}
         <DeliverySlots />
+        <ErrorBoundary label="ad-home_top">
+          <AdSlot placement="home_top" className={s.adSlot} />
+        </ErrorBoundary>
         {rest.map((section) => (
           // Per-section, so one malformed block can't blank the storefront.
           <ErrorBoundary key={section.id} label={section.kind}>
             <Section section={section} />
           </ErrorBoundary>
         ))}
+        <ErrorBoundary label="ad-home_bottom">
+          <AdSlot placement="home_bottom" className={s.adSlot} />
+        </ErrorBoundary>
       </div>
     </>
   );
