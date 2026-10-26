@@ -295,7 +295,7 @@ export const adminCreateSeller = asyncHandler(async (req, res) => {
 export const adminListSellers = asyncHandler(async (req, res) => {
   const { page, limit, q } = req.query as unknown as { page: number; limit: number; q?: string };
   const filter: Record<string, unknown> = { role: 'seller' };
-  if (q) filter.$or = [{ name: { $regex: q, $options: 'i' } }, { phone: { $regex: q } }, { sellerId: { $regex: q, $options: 'i' } }];
+  if (q) filter.$or = [{ name: { $regex: escapeRegex(q), $options: 'i' } }, { phone: { $regex: escapeRegex(q) } }, { sellerId: { $regex: escapeRegex(q), $options: 'i' } }];
   const [rows, total] = await Promise.all([
     User.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).select('name phone email isActive sellerId sellerProfile sellerWarehouses createdAt').populate('sellerWarehouses', 'name').lean(),
     User.countDocuments(filter),

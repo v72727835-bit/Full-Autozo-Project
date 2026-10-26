@@ -3,10 +3,11 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import Layout from './components/Layout';
-import { CenterSpinner } from './components/ui';
+import { CenterSpinner, EmptyState } from './components/ui';
 import { useAuth } from './context/AuthContext';
 import { StatsProvider } from './context/StatsContext';
 import { Navigate } from './navigation';
+import { Permission, can, isSuperAdmin } from './lib/permissions';
 import dynamic from 'next/dynamic';
 
 const AnalyticsPage = dynamic(() => import('./screens/AnalyticsPage'), { ssr: false });
@@ -35,6 +36,47 @@ const IntegrationsPage = dynamic(() => import('./screens/IntegrationsPage'), { s
 const SellerApp = dynamic(() => import('./seller/SellerApp'), { ssr: false });
 const SubscriptionsPage = dynamic(() => import('./screens/SubscriptionsPage'), { ssr: false });
 const UsersPage = dynamic(() => import('./screens/UsersPage'), { ssr: false });
+const AdsPage = dynamic(() => import('./screens/AdsPage'), { ssr: false });
+const PagesPage = dynamic(() => import('./screens/PagesPage'), { ssr: false });
+const TeamPage = dynamic(() => import('./screens/TeamPage'), { ssr: false });
+
+/**
+ * Which permission a panel route needs, so a sub-admin only reaches their
+ * sections. `'super'` means super-admins only; `null` means every admin
+ * (dashboard, analytics and their own account). The backend enforces the
+ * same rules on the API.
+ */
+function routePermission(pathname: string): Permission | 'super' | null {
+  if (pathname.startsWith('/riders/')) return 'riders';
+  const map: Record<string, Permission | 'super'> = {
+    '/products': 'products',
+    '/inventory': 'products',
+    '/categories': 'categories',
+    '/standard-categories': 'settings',
+    '/banners': 'banners',
+    '/gallery': 'media',
+    '/videos': 'media',
+    '/notifications': 'media',
+    '/offers': 'offers',
+    '/ads': 'ads',
+    '/pages': 'pages',
+    '/orders': 'orders',
+    '/shops': 'shops',
+    '/warehouse-requests': 'shops',
+    '/riders': 'riders',
+    '/payouts': 'payouts',
+    '/subscriptions': 'subscriptions',
+    '/rider-accounts': 'users',
+    '/customers': 'users',
+    '/support': 'support',
+    '/enquiries': 'enquiries',
+    '/delivery-pricing': 'settings',
+    '/store-settings': 'settings',
+    '/integrations': 'integrations',
+    '/team': 'super',
+  };
+  return map[pathname] ?? null;
+}
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -45,7 +87,17 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <StatsProvider>{children}</StatsProvider>;
 }
 
-function CurrentPage({ pathname }: { pathname: string }) {
+function NoAccess() {
+  return (
+    <div className="card" style={{ marginTop: 24 }}>
+      <EmptyState title="No access to this section" hint="Ask a super admin to grant you access from Team & Access." />
+    </div>
+  );
+}
+
+function CurrentPage({ pathname, user }: { pathname: string; user: ReturnType<typeof useAuth>['user'] }) {
+  const needed = routePermission(pathname);
+  if (needed === 'super' ? !isSuperAdmin(user) : needed && !can(user, needed)) return <NoAccess />;
   if (pathname.startsWith('/riders/')) return <RiderProfilePage riderId={pathname.slice('/riders/'.length)} />;
   switch (pathname) {
     case '/':
@@ -85,7 +137,11 @@ function CurrentPage({ pathname }: { pathname: string }) {
     case '/customers':
       return <UsersPage fixedRole="customer" title="Customers" subtitle="All customers registered on the Autozo app and website." />;
     case '/team':
-      return <UsersPage title="Team & access" subtitle="Grant administrator access or suspend an account." />;
+      return <TeamPage />;
+    case '/ads':
+      return <AdsPage />;
+    case '/pages':
+      return <PagesPage />;
     case '/support':
       return <SupportPage />;
     case '/notifications':
@@ -111,9 +167,16 @@ export default function AdminApp() {
 
   return (
     <RequireAuth>
-      <Layout>
-        <CurrentPage pathname={pathname} />
-      </Layout>
+      <AdminShell pathname={pathname} />
     </RequireAuth>
+  );
+}
+
+function AdminShell({ pathname }: { pathname: string }) {
+  const { user } = useAuth();
+  return (
+    <Layout>
+      <CurrentPage pathname={pathname} user={user} />
+    </Layout>
   );
 }

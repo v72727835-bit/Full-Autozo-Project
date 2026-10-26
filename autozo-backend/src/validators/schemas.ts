@@ -789,3 +789,82 @@ export const subscribersQuery = pagination.extend({
 });
 export const grantDaysBody = z.object({ days: z.coerce.number().int().min(1).max(3650), note: z.string().trim().max(200).optional() });
 export const planPaymentsQuery = pagination.extend({ audience: audience.optional(), user: objectId.optional() });
+
+/* ---------- team: sub-admins & role-based access ---------- */
+const permissionKey = z.string().trim().min(1).max(40);
+export const adminAdminBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  email: z.string().trim().toLowerCase().email().optional().or(z.literal('').transform(() => undefined)),
+  password,
+  permissions: z.array(permissionKey).max(40).default([]),
+});
+export const adminAdminUpdateBody = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    phone,
+    email: z.string().trim().toLowerCase().email().or(z.literal('')),
+    password: z.string().min(6, 'Password must be at least 6 characters').max(72),
+    permissions: z.array(permissionKey).max(40),
+    isActive: z.boolean(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+/* ---------- ads & campaigns ---------- */
+// Same list as AD_PLACEMENTS in models/AdCampaign.ts.
+const adPlacement = z.enum(['home_top', 'home_mid', 'home_bottom', 'category', 'sidebar']);
+const httpUrl = z.string().trim().max(500).refine((u) => /^https?:\/\//i.test(u), 'Enter the full link, starting with https://');
+export const adCampaignBody = z.object({
+  advertiser: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1).max(140),
+  image: z.string().trim().min(1, 'Upload an ad image').max(500),
+  targetUrl: httpUrl,
+  placement: adPlacement.default('home_mid'),
+  startAt: z.coerce.date().nullable().optional(),
+  endAt: z.coerce.date().nullable().optional(),
+  sortOrder: z.coerce.number().int().default(0),
+  isActive: z.boolean().default(true),
+});
+export const adCampaignUpdateBody = adCampaignBody.partial().refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export const adminAdsQuery = pagination.extend({
+  q: z.string().trim().max(60).optional(),
+  placement: adPlacement.optional(),
+  isActive: boolFromQuery.optional(),
+});
+export const publicAdsQuery = z.object({ placement: adPlacement.optional() });
+
+/* ---------- content pages (CMS) ---------- */
+const slug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and dashes only');
+const pageBlock = z
+  .object({
+    type: z.enum(['heading', 'text', 'image']),
+    text: z.string().trim().max(20000).optional(),
+    image: z.string().trim().max(500).optional(),
+    alt: z.string().trim().max(200).optional(),
+  })
+  .refine((b) => (b.type === 'image' ? !!b.image : !!b.text), { message: 'Each block needs its text or image' });
+export const pageBody = z.object({
+  slug,
+  title: z.string().trim().min(1).max(140),
+  blocks: z.array(pageBlock).max(200).default([]),
+  metaDescription: z.string().trim().max(300).optional(),
+  isPublished: z.boolean().default(true),
+});
+export const pageUpdateBody = z
+  .object({
+    slug,
+    title: z.string().trim().min(1).max(140),
+    blocks: z.array(pageBlock).max(200),
+    metaDescription: z.string().trim().max(300),
+    isPublished: z.boolean(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export const slugParam = z.object({ slug: z.string().trim().min(1).max(80) });

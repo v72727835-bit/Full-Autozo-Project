@@ -43,6 +43,10 @@ const walletTxnSchema = new Schema<IWalletTxn>(
     method: { type: String, enum: ['upi', 'bank'] },
     destination: { type: String, trim: true },
     reference: { type: String, trim: true },
+    // RazorpayX payout id + its latest status, so the webhook/settlement can
+    // find this row and the retry guard can see a payout was already started.
+    payoutId: { type: String, trim: true, index: true },
+    payoutStatus: { type: String, trim: true },
     note: { type: String, trim: true },
     km: { type: Number, min: 0 },
   },

@@ -15,6 +15,8 @@ import * as extra from '../controllers/adminExtra.controller';
 import * as support from '../controllers/support.controller';
 import * as seller from '../controllers/seller.controller';
 import * as plans from '../controllers/subscription.controller';
+import * as ads from '../controllers/ads.controller';
+import * as pages from '../controllers/page.controller';
 import { requirePlan } from '../services/subscription.service';
 import { authorize, customerOnly, protect } from '../middleware/auth';
 
@@ -70,6 +72,11 @@ router.get('/festival', catalogCache, validate({ query: v.homeQuery }), catalog.
 router.get('/notices', catalogCache, support.listNotices);
 router.get('/gallery', catalogCache, extra.listMediaPublic('photo'));
 router.get('/videos', catalogCache, extra.listMediaPublic('video'));
+/* Third-party ads on the website. Not cached, so impressions are counted per view. */
+router.get('/ads', validate({ query: v.publicAdsQuery }), ads.listPublicAds);
+router.post('/ads/:id/click', validate({ params: v.idParam }), ads.clickAd);
+/* Content pages (Terms, Privacy, …) written in the admin panel. */
+router.get('/pages/:slug', catalogCache, validate({ params: v.slugParam }), pages.getPublicPage);
 router.post('/enquiries', authLimiter, validate({ body: v.enquiryBody }), support.createEnquiry);
 router.post('/products/:id/notify', validate({ params: v.idParam, body: v.notifyMeBody }), support.notifyMe);
 

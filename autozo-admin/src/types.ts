@@ -5,6 +5,80 @@ export interface AdminUser {
   email?: string;
   role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller';
   warehouse?: string | { _id: string; name: string };
+  /** Admins only: super admins can do everything; sub-admins are limited to `permissions`. */
+  isSuperAdmin?: boolean;
+  /** Normalised list from `/admin/me`. */
+  permissions?: string[];
+  /** Raw list from the login response. */
+  adminPermissions?: string[];
+}
+
+/** One toggle in the Team screen; comes from GET /admin/permissions. */
+export interface PermissionDef {
+  key: string;
+  label: string;
+}
+
+/** An admin account as the Team screen lists it. */
+export interface TeamMember {
+  _id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  isActive: boolean;
+  isSuperAdmin: boolean;
+  permissions: string[];
+  lastLoginAt?: string;
+  createdAt: string;
+}
+
+export const AD_PLACEMENTS = ['home_top', 'home_mid', 'home_bottom', 'category', 'sidebar'] as const;
+export type AdPlacement = (typeof AD_PLACEMENTS)[number];
+
+/** A paid third-party advertisement shown on the website. */
+export interface AdCampaign {
+  _id: string;
+  advertiser: string;
+  title: string;
+  image: string;
+  targetUrl: string;
+  placement: AdPlacement;
+  startAt?: string | null;
+  endAt?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  impressions: number;
+  clicks: number;
+  createdAt: string;
+}
+
+export const PAGE_BLOCK_TYPES = ['heading', 'text', 'image'] as const;
+export type PageBlockType = (typeof PAGE_BLOCK_TYPES)[number];
+
+export interface PageBlock {
+  type: PageBlockType;
+  text?: string;
+  image?: string;
+  alt?: string;
+}
+
+/** A website content page (Terms, Privacy, …) written in the admin panel. */
+export interface ContentPage {
+  _id: string;
+  slug: string;
+  title: string;
+  blocks: PageBlock[];
+  metaDescription?: string;
+  isPublished: boolean;
+  updatedAt: string;
+}
+
+export interface ContentPageSummary {
+  _id: string;
+  slug: string;
+  title: string;
+  isPublished: boolean;
+  updatedAt: string;
 }
 
 export interface PageMeta {

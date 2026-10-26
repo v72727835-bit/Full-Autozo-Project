@@ -33,3 +33,8 @@
   justify-items: center;
   gap: 8px;
 }
+
+/* Third-party ad slots on the home page */
+.adSlot {
+  margin: 18px 0;
+}

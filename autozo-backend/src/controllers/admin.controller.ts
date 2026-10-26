@@ -18,6 +18,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { escapeRegex } from '../utils/helpers';
 import { sha256, signAccessToken, signRefreshToken } from '../utils/jwt';
 import { created, ok, pageMeta } from '../utils/response';
+import { ADMIN_PERMISSIONS, ALL_PERMISSION_KEYS } from '../config/permissions';
 
 const MAX_SESSIONS = 5;
 
@@ -684,10 +685,14 @@ export const deleteCoupon = asyncHandler(async (req, res) => {
 
 /** The signed-in admin's own profile — the Settings page reads this. */
 export const me = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user!.id).select('name phone email role warehouse isActive lastLoginAt createdAt')
-      .populate('warehouse', 'name');
+  const user = await User.findById(req.user!.id)
+    .select('name phone email role warehouse isActive lastLoginAt createdAt isSuperAdmin adminPermissions')
+    .populate('warehouse', 'name')
+    .lean();
   if (!user) throw new ApiError(404, 'User not found');
-  ok(res, user);
+  // Super admins (incl. every admin created before role-based access) can do everything.
+  const isSuperAdmin = user.isSuperAdmin !== false;
+  ok(res, { ...user, isSuperAdmin, permissions: isSuperAdmin ? ALL_PERMISSION_KEYS : user.adminPermissions ?? [] });
 });
 
 export const updateMe = asyncHandler(async (req, res) => {
@@ -702,6 +707,108 @@ export const updateMe = asyncHandler(async (req, res) => {
   );
   if (!user) throw new ApiError(404, 'User not found');
   ok(res, user);
+});
+
+/* ============ Team: sub-admins & role-based access (super admin only) ============ */
+
+const ADMIN_SELECT = 'name phone email role isActive isSuperAdmin adminPermissions lastLoginAt createdAt';
+
+/** Shapes a user document into the team-member view the panel expects. */
+function teamView(u: Record<string, unknown>) {
+  const isSuperAdmin = (u.isSuperAdmin as boolean | undefined) !== false;
+  return { ...u, isSuperAdmin, permissions: isSuperAdmin ? ALL_PERMISSION_KEYS : (u.adminPermissions as string[] | undefined) ?? [] };
+}
+
+/** The catalogue of permissions the panel renders as checkboxes. */
+export const listPermissions = asyncHandler(async (_req, res) => {
+  ok(res, ADMIN_PERMISSIONS);
+});
+
+/** Every admin account (super admins and sub admins). */
+export const listAdmins = asyncHandler(async (_req, res) => {
+  const admins = await User.find({ role: 'admin', deletedAt: { $exists: false } })
+    .sort({ createdAt: 1 })
+    .select(ADMIN_SELECT)
+    .lean();
+  ok(res, admins.map(teamView));
+});
+
+/** Keep only the permission keys we know about. */
+function cleanPermissions(input: unknown): string[] {
+  const list = Array.isArray(input) ? input : [];
+  return ALL_PERMISSION_KEYS.filter((k) => list.includes(k));
+}
+
+/** Create a sub admin with a limited set of permissions. */
+export const createAdmin = asyncHandler(async (req, res) => {
+  const { name, phone, email, password, permissions } = req.body as {
+    name: string;
+    phone: string;
+    email?: string;
+    password: string;
+    permissions?: string[];
+  };
+  if (await User.exists({ phone, role: 'admin' })) throw new ApiError(409, 'That phone number is already used by another admin');
+  if (email && (await User.exists({ email: email.toLowerCase(), role: 'admin' }))) throw new ApiError(409, 'That email is already used by another admin');
+
+  const admin = await User.create({
+    name,
+    phone,
+    email: email || undefined,
+    password,
+    role: 'admin',
+    isSuperAdmin: false,
+    adminPermissions: cleanPermissions(permissions),
+    isActive: true,
+  });
+  const saved = await User.findById(admin._id).select(ADMIN_SELECT).lean();
+  created(res, teamView(saved as Record<string, unknown>));
+});
+
+/** Update a sub admin's details, permissions, active state or password. */
+export const updateAdmin = asyncHandler(async (req, res) => {
+  const { name, phone, email, password, permissions, isActive } = req.body as {
+    name?: string;
+    phone?: string;
+    email?: string;
+    password?: string;
+    permissions?: string[];
+    isActive?: boolean;
+  };
+  const admin = await User.findOne({ _id: req.params.id, role: 'admin' }).select('+password');
+  if (!admin || admin.deletedAt) throw new ApiError(404, 'Admin not found');
+  if (admin.isSuperAdmin !== false) throw new ApiError(400, 'A super admin cannot be edited here');
+  if (req.user!.id === String(admin._id)) throw new ApiError(400, 'Use the Settings page to change your own account');
+
+  if (phone && phone !== admin.phone && (await User.exists({ phone, role: 'admin', _id: { $ne: admin._id } }))) {
+    throw new ApiError(409, 'That phone number is already used by another admin');
+  }
+  if (email && email !== admin.email && (await User.exists({ email: email.toLowerCase(), role: 'admin', _id: { $ne: admin._id } }))) {
+    throw new ApiError(409, 'That email is already used by another admin');
+  }
+
+  if (name !== undefined) admin.name = name;
+  if (phone !== undefined) admin.phone = phone;
+  if (email !== undefined) admin.email = email || undefined;
+  if (isActive !== undefined) admin.isActive = isActive;
+  if (permissions !== undefined) admin.adminPermissions = cleanPermissions(permissions);
+  if (password) {
+    admin.password = password; // hashed by the model on save
+    admin.refreshTokens = [] as unknown as typeof admin.refreshTokens; // sign out everywhere
+  }
+  await admin.save();
+  const saved = await User.findById(admin._id).select(ADMIN_SELECT).lean();
+  ok(res, teamView(saved as Record<string, unknown>));
+});
+
+/** Remove a sub admin for good. */
+export const deleteAdmin = asyncHandler(async (req, res) => {
+  const admin = await User.findOne({ _id: req.params.id, role: 'admin' }).select('isSuperAdmin');
+  if (!admin) throw new ApiError(404, 'Admin not found');
+  if (req.user!.id === String(admin._id)) throw new ApiError(400, 'You cannot delete your own account');
+  if (admin.isSuperAdmin !== false) throw new ApiError(400, 'A super admin cannot be deleted here');
+  await User.deleteOne({ _id: admin._id });
+  ok(res, { deleted: true });
 });
 
 /** Change the signed-in admin's password; every other session is signed out. */

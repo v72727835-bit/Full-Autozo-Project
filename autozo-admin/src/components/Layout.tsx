@@ -27,6 +27,7 @@ import {
   IconUsers,
 } from './icons';
 import { Modal, timeAgo } from './ui';
+import { Permission, can, isSuperAdmin } from '../lib/permissions';
 import type { AdminAlert } from '../types';
 
 type NavItem = {
@@ -36,6 +37,8 @@ type NavItem = {
   end?: boolean;
   badge?: number;
   badgeTone?: 'brand' | 'warn';
+  /** Section this item needs; `'super'` = super admins only; absent = every admin. */
+  perm?: Permission | 'super';
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -118,54 +121,63 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const groups: { title: string; items: NavItem[] }[] = [
+  const allGroups: { title: string; items: NavItem[] }[] = [
     {
       title: 'Overview',
       items: [
         { to: '/', label: 'Dashboard', icon: <IconDashboard />, end: true },
-        { to: '/orders?live=1', label: 'Live Orders', icon: <IconBolt />, badge: live, badgeTone: 'brand' },
+        { to: '/orders?live=1', label: 'Live Orders', icon: <IconBolt />, badge: live, badgeTone: 'brand', perm: 'orders' },
         { to: '/analytics', label: 'Analytics', icon: <IconChart /> },
       ],
     },
     {
       title: 'Catalogue',
       items: [
-        { to: '/products', label: 'Products', icon: <IconBox /> },
-        { to: '/inventory', label: 'Inventory', icon: <IconAlert />, badge: lowStock, badgeTone: 'warn' },
-        { to: '/categories', label: 'Categories', icon: <IconLayers /> },
-        { to: '/standard-categories', label: 'Standard category', icon: <IconLayers /> },
-        { to: '/banners', label: 'Home Banners', icon: <IconImage /> },
-        { to: '/gallery', label: 'Gallery', icon: <IconImage /> },
-        { to: '/videos', label: 'Videos', icon: <IconVideo /> },
-        { to: '/store-settings', label: 'Store Settings', icon: <IconSettings /> },
-        { to: '/integrations', label: 'Login & Payments', icon: <IconShield /> },
-        { to: '/delivery-pricing', label: 'Delivery & Pricing', icon: <IconTag /> },
-        { to: '/offers', label: 'Offers & Coupons', icon: <IconTag /> },
+        { to: '/products', label: 'Products', icon: <IconBox />, perm: 'products' },
+        { to: '/inventory', label: 'Inventory', icon: <IconAlert />, badge: lowStock, badgeTone: 'warn', perm: 'products' },
+        { to: '/categories', label: 'Categories', icon: <IconLayers />, perm: 'categories' },
+        { to: '/standard-categories', label: 'Standard category', icon: <IconLayers />, perm: 'settings' },
+        { to: '/banners', label: 'Home Banners', icon: <IconImage />, perm: 'banners' },
+        { to: '/ads', label: 'Ads & Campaigns', icon: <IconTag />, perm: 'ads' },
+        { to: '/gallery', label: 'Gallery', icon: <IconImage />, perm: 'media' },
+        { to: '/videos', label: 'Videos', icon: <IconVideo />, perm: 'media' },
+        { to: '/store-settings', label: 'Store Settings', icon: <IconSettings />, perm: 'settings' },
+        { to: '/integrations', label: 'Login & Payments', icon: <IconShield />, perm: 'integrations' },
+        { to: '/delivery-pricing', label: 'Delivery & Pricing', icon: <IconTag />, perm: 'settings' },
+        { to: '/offers', label: 'Offers & Coupons', icon: <IconTag />, perm: 'offers' },
       ],
     },
     {
       title: 'Operations',
       items: [
 
-        { to: '/shops', label: 'Warehouses', icon: <IconStore /> },
-        { to: '/warehouse-requests', label: 'Warehouse requests', icon: <IconStore />, badge: whPending, badgeTone: 'warn' },
-        { to: '/riders', label: 'Riders', icon: <IconRider />, badge: riders, badgeTone: 'brand' },
-        { to: '/payouts', label: 'Rider Payouts', icon: <IconTag /> },
-        { to: '/subscriptions', label: 'Subscriptions', icon: <IconRupee /> },
-        { to: '/support', label: 'Customer Care', icon: <IconBell />, badge: careUnread, badgeTone: 'brand' },
-        { to: '/notifications', label: 'Notifications', icon: <IconVolume /> },
-        { to: '/customers', label: 'Customers', icon: <IconUsers /> },
-        { to: '/enquiries', label: 'Enquiries', icon: <IconBell /> },
+        { to: '/shops', label: 'Warehouses', icon: <IconStore />, perm: 'shops' },
+        { to: '/warehouse-requests', label: 'Warehouse requests', icon: <IconStore />, badge: whPending, badgeTone: 'warn', perm: 'shops' },
+        { to: '/riders', label: 'Riders', icon: <IconRider />, badge: riders, badgeTone: 'brand', perm: 'riders' },
+        { to: '/payouts', label: 'Rider Payouts', icon: <IconTag />, perm: 'payouts' },
+        { to: '/subscriptions', label: 'Subscriptions', icon: <IconRupee />, perm: 'subscriptions' },
+        { to: '/support', label: 'Customer Care', icon: <IconBell />, badge: careUnread, badgeTone: 'brand', perm: 'support' },
+        { to: '/notifications', label: 'Notifications', icon: <IconVolume />, perm: 'media' },
+        { to: '/customers', label: 'Customers', icon: <IconUsers />, perm: 'users' },
+        { to: '/enquiries', label: 'Enquiries', icon: <IconBell />, perm: 'enquiries' },
       ],
     },
     {
       title: 'System',
       items: [
-        { to: '/team', label: 'Team & Access', icon: <IconShield /> },
+        { to: '/pages', label: 'Website Pages', icon: <IconReceipt />, perm: 'pages' },
+        { to: '/team', label: 'Team & Access', icon: <IconShield />, perm: 'super' },
         { to: '/settings', label: 'Settings', icon: <IconSettings /> },
       ],
     },
   ];
+
+  // A sub-admin only sees the sections they were granted.
+  const allowed = (perm?: Permission | 'super') => (!perm ? true : perm === 'super' ? isSuperAdmin(user) : can(user, perm));
+  const groups = allGroups
+    .map((g) => ({ ...g, items: g.items.filter((i) => allowed(i.perm)) }))
+    .filter((g) => g.items.length > 0);
+  const roleLabel = isSuperAdmin(user) ? 'Super Admin' : 'Sub-admin';
 
   const alerts = useMemo(() => {
     const out: { text: string; tone: string; to: string }[] = [];
@@ -188,7 +200,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <img className="logo-mark" src="/logo-mark.png" alt="Autozo" width={36} height={36} />
           <div className="logo-text">
             <b>Autozo</b>
-            <span>Super Admin</span>
+            <span>{roleLabel}</span>
           </div>
         </div>
 
@@ -255,7 +267,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <div className="avatar">{(user?.name ?? 'A').slice(0, 2).toUpperCase()}</div>
               <div>
                 <div className="u-name">{user?.name ?? 'Admin'}</div>
-                <div className="u-role">Super Admin</div>
+                <div className="u-role">{roleLabel}</div>
               </div>
             </div>
           </div>
@@ -318,6 +330,8 @@ const PAGES: { label: string; to: string }[] = [
   { label: 'Notifications & back-in-stock', to: '/notifications' },
   { label: 'Rider accounts', to: '/rider-accounts' },
   { label: 'Home Banners', to: '/banners' },
+  { label: 'Ads & Campaigns', to: '/ads' },
+  { label: 'Website Pages (Terms, Privacy)', to: '/pages' },
   { label: 'Gallery (photos)', to: '/gallery' },
   { label: 'Videos', to: '/videos' },
   { label: 'Offers & Coupons', to: '/offers' },
