@@ -4,6 +4,15 @@ export interface ApiEnvelope<T> {
   meta?: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean };
 }
 
+/** A delivery that is ringing this rider, from GET /rider/ring. */
+export interface RingItem {
+  dispatchId: string;
+  kind: string;
+  orderId?: string;
+  bookingId?: string;
+  since: string;
+}
+
 export interface User {
   _id: string;
   name: string;
