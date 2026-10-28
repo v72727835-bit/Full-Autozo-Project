@@ -34,6 +34,10 @@ const EnquiriesPage = dynamic(() => import('./screens/EnquiriesPage'), { ssr: fa
 const StandardCategoriesPage = dynamic(() => import('./screens/StandardCategoriesPage'), { ssr: false });
 const IntegrationsPage = dynamic(() => import('./screens/IntegrationsPage'), { ssr: false });
 const SellerApp = dynamic(() => import('./seller/SellerApp'), { ssr: false });
+const ProviderApp = dynamic(() => import('./provider/ProviderApp'), { ssr: false });
+const ProviderRequestsPage = dynamic(() => import('./screens/ProviderRequestsPage'), { ssr: false });
+const ServiceCategoriesPage = dynamic(() => import('./screens/ServiceCategoriesPage'), { ssr: false });
+const ServiceBookingsPage = dynamic(() => import('./screens/ServiceBookingsPage'), { ssr: false });
 const SubscriptionsPage = dynamic(() => import('./screens/SubscriptionsPage'), { ssr: false });
 const UsersPage = dynamic(() => import('./screens/UsersPage'), { ssr: false });
 const AdsPage = dynamic(() => import('./screens/AdsPage'), { ssr: false });
@@ -63,6 +67,9 @@ function routePermission(pathname: string): Permission | 'super' | null {
     '/orders': 'orders',
     '/shops': 'shops',
     '/warehouse-requests': 'shops',
+    '/provider-requests': 'shops',
+    '/service-categories': 'categories',
+    '/service-bookings': 'orders',
     '/riders': 'riders',
     '/payouts': 'payouts',
     '/subscriptions': 'subscriptions',
@@ -84,6 +91,8 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/login" replace />;
   // A warehouse never sees the admin panel: it gets its own panel.
   if (user.role === 'seller') return <SellerApp />;
+  // A service provider gets its own panel too.
+  if (user.role === 'provider') return <ProviderApp />;
   return <StatsProvider>{children}</StatsProvider>;
 }
 
@@ -150,6 +159,12 @@ function CurrentPage({ pathname, user }: { pathname: string; user: ReturnType<ty
       return <DeliveryPricingPage />;
     case '/warehouse-requests':
       return <WarehouseRequestsPage />;
+    case '/provider-requests':
+      return <ProviderRequestsPage />;
+    case '/service-categories':
+      return <ServiceCategoriesPage />;
+    case '/service-bookings':
+      return <ServiceBookingsPage />;
     case '/enquiries':
       return <EnquiriesPage />;
     case '/store-settings':

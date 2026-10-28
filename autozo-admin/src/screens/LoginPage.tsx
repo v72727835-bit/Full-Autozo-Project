@@ -9,7 +9,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [seller, setSeller] = useState(false);
+  const [kind, setKind] = useState<'admin' | 'seller' | 'provider'>('admin');
+  const panelName = kind === 'seller' ? 'Warehouse Panel' : kind === 'provider' ? 'Service Provider Panel' : 'Super Admin Panel';
+  const panelSub =
+    kind === 'seller'
+      ? 'Sign in with the warehouse login Autozo gave you to manage products, orders and riders.'
+      : kind === 'provider'
+        ? 'Sign in to manage your services, prices, times and bookings. New bookings ring until you accept them.'
+        : 'Sign in to manage products, orders, riders and offers.';
+  const nextKind = kind === 'admin' ? 'seller' : kind === 'seller' ? 'provider' : 'admin';
+  const switchLabel = nextKind === 'admin' ? 'Admin sign in' : nextKind === 'seller' ? 'Warehouse sign in' : 'Service provider sign in';
 
   if (user) return <Navigate to="/" replace />;
 
@@ -18,7 +27,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(identifier, password, seller);
+      await login(identifier, password, kind);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -33,10 +42,10 @@ export default function LoginPage() {
           <img className="logo-mark" src="/logo-mark.png" alt="Autozo" width={36} height={36} />
           <div className="logo-text">
             <b style={{ fontSize: 18 }}>Autozo</b>
-            <span>{seller ? 'Warehouse Panel' : 'Super Admin Panel'}</span>
+            <span>{panelName}</span>
           </div>
         </div>
-        <div className="login-sub">{seller ? 'Sign in with the warehouse login Autozo gave you to manage products, orders and riders.' : 'Sign in to manage products, orders, riders and offers.'}</div>
+        <div className="login-sub">{panelSub}</div>
         <ErrorBanner message={error} />
         <Field label="Email or phone">
           <input
@@ -59,8 +68,8 @@ export default function LoginPage() {
         <Button type="submit" disabled={loading} style={{ width: '100%', marginTop: 6 }}>
           {loading ? 'Signing in…' : 'Sign in'}
         </Button>
-        <button type="button" className="login-switch" onClick={() => { setSeller((v) => !v); setError(''); }}>
-          {seller ? 'Admin sign in' : 'Warehouse sign in'}
+        <button type="button" className="login-switch" onClick={() => { setKind(nextKind); setError(''); }}>
+          {switchLabel}
         </button>
       </form>
     </div>
