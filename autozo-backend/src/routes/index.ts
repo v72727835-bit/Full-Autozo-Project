@@ -14,6 +14,8 @@ import * as wallet from '../controllers/riderWallet.controller';
 import * as extra from '../controllers/adminExtra.controller';
 import * as support from '../controllers/support.controller';
 import * as seller from '../controllers/seller.controller';
+import * as provider from '../controllers/provider.controller';
+import * as services from '../controllers/service.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
@@ -66,6 +68,11 @@ router.get('/products/brands', catalogCache, catalog.listBrands);
 router.get('/products/suggest', catalogCache, validate({ query: v.suggestQuery }), catalog.suggestProducts);
 router.get('/products/:idOrSlug', catalogCache, validate({ params: v.idOrSlugParam }), catalog.getProduct);
 router.get('/products/:id/reviews', catalogCache, validate({ params: v.idParam, query: v.pagination }), reviews.listReviews);
+
+/* Services vertical: public catalog */
+router.get('/service-categories', catalogCache, services.listCategories);
+router.get('/services', catalogCache, validate({ query: v.servicesQuery }), services.listServices);
+router.get('/services/:idOrSlug', catalogCache, validate({ params: v.idOrSlugParam }), services.getService);
 
 router.get('/settings/public', catalogCache, catalog.publicSettings);
 router.get('/festival', catalogCache, validate({ query: v.homeQuery }), catalog.festival);
@@ -130,6 +137,33 @@ router.post('/seller/wallet/account', ...sellerOnly, validate({ body: v.walletAc
 router.post('/seller/wallet/withdraw', ...sellerOnly, validate({ body: v.withdrawBody }), seller.requestMyWithdraw);
 router.patch('/seller/products/:id', ...sellerOnly, invalidateOnWrite, validate({ params: v.idParam, body: v.sellerProductUpdateBody }), seller.updateMyProduct);
 
+/* ============ Service provider panel ============ */
+const providerOnly = [protect, authorize('provider')];
+router.post('/provider/register', authLimiter, validate({ body: v.providerRegisterBody }), provider.registerProvider);
+router.post('/provider/auth/login', authLimiter, validate({ body: v.loginBody }), provider.providerLogin);
+router.get('/provider/me', ...providerOnly, provider.getMe);
+router.get('/provider/dashboard', ...providerOnly, provider.dashboard);
+router.post('/provider/availability', ...providerOnly, validate({ body: v.providerAvailabilityBody }), provider.setAvailability);
+router.get('/provider/services', ...providerOnly, provider.listMyServices);
+router.post('/provider/services', ...providerOnly, invalidateOnWrite, validate({ body: v.providerServiceBody }), provider.createService);
+router.patch('/provider/services/:id', ...providerOnly, invalidateOnWrite, validate({ params: v.idParam, body: v.providerServiceUpdateBody }), provider.updateService);
+router.delete('/provider/services/:id', ...providerOnly, invalidateOnWrite, validate({ params: v.idParam }), provider.deleteService);
+router.get('/provider/bookings', ...providerOnly, validate({ query: v.providerBookingsQuery }), provider.listMyBookings);
+router.get('/provider/bookings/:id', ...providerOnly, validate({ params: v.idParam }), provider.getMyBooking);
+router.patch('/provider/bookings/:id/status', ...providerOnly, validate({ params: v.idParam, body: v.providerBookingStatusBody }), provider.setBookingStatus);
+router.post('/provider/bookings/:id/cancel', ...providerOnly, validate({ params: v.idParam, body: v.cancelBookingBody }), provider.cancelMyBooking);
+/* Persistent ring: poll, accept, decline */
+router.get('/provider/ring', ...providerOnly, provider.myRing);
+router.post('/provider/ring/:dispatchId/accept', ...providerOnly, validate({ params: v.dispatchIdParam }), provider.acceptRing);
+router.post('/provider/ring/:dispatchId/decline', ...providerOnly, validate({ params: v.dispatchIdParam }), provider.declineRing);
+
+/* ============ Service bookings (customer) ============ */
+router.post('/bookings', ...customerOnly, validate({ body: v.createBookingBody }), services.createBooking);
+router.get('/bookings', ...customerOnly, validate({ query: v.bookingsQuery }), services.listMyBookings);
+router.get('/bookings/:id', ...customerOnly, validate({ params: v.idParam }), services.getMyBooking);
+router.post('/bookings/:id/cancel', ...customerOnly, validate({ params: v.idParam, body: v.cancelBookingBody }), services.cancelBooking);
+router.post('/bookings/:id/rate', ...customerOnly, validate({ params: v.idParam, body: v.rateBookingBody }), services.rateBooking);
+
 /* ============ Reviews (login) ============ */
 router.put('/products/:id/reviews', ...customerOnly, invalidateOnWrite, validate({ params: v.idParam, body: v.reviewBody }), reviews.upsertReview);
 router.delete('/reviews/:id', ...customerOnly, invalidateOnWrite, validate({ params: v.idParam }), reviews.deleteReview);
@@ -178,6 +212,9 @@ router.get('/rider/earnings', protect, authorize('rider'), wallet.earningsSummar
 router.post('/rider/wallet/account', protect, authorize('rider'), validate({ body: v.walletAccountBody }), wallet.saveAccount);
 router.post('/rider/wallet/withdraw', protect, authorize('rider'), validate({ body: v.withdrawBody }), wallet.requestWithdraw);
 router.post('/rider/wallet/cash-submit', protect, authorize('rider'), validate({ body: v.cashSubmitBody }), wallet.submitCash);
+/* Rider persistent ring: poll which deliveries are ringing, and dismiss one. */
+router.get('/rider/ring', protect, authorize('rider'), rider.touchRider, rider.myRing);
+router.post('/rider/ring/:dispatchId/decline', protect, authorize('rider'), validate({ params: v.dispatchIdParam }), rider.declineRing);
 
 /* ============ Admin panel ============ */
 router.use('/admin', invalidateOnWrite, adminRoutes);

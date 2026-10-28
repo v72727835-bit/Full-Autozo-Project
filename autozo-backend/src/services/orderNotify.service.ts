@@ -1,5 +1,6 @@
 import { User } from '../models/User';
 import { pushToUsers } from './firebase.service';
+import { startOrderDispatch } from './dispatch.service';
 import { riderPlanFilter } from './subscription.service';
 
 /**
@@ -88,7 +89,11 @@ export function notifyOrderStatus(o: OrderLike, status: string) {
       const t = CUSTOMER_TEXT[status];
       if (t) await pushToUsers([idOf(o.user)], { title: t[0], body: `Order ${num(o)} ${t[1]}`, data: data(o, `order_${status}`) });
       if (status === 'accepted') await notifyRidersUpcoming(o);
-      if (status === 'ready_for_pickup') await notifyRidersPickup(o);
+      if (status === 'ready_for_pickup') {
+        await notifyRidersPickup(o);
+        // Start the persistent ring: keep ringing nearby riders until one accepts.
+        void startOrderDispatch(String(o._id));
+      }
       if (status === 'cancelled' && o.rider) {
         await pushToUsers([idOf(o.rider)], { title: 'Order cancelled', body: `Order ${num(o)} was cancelled.`, data: data(o, 'order_cancelled', 'rider') });
       }

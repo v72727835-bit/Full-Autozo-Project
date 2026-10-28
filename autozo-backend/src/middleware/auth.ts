@@ -26,7 +26,7 @@ export const protect = asyncHandler(async (req, _res, next) => {
 
 /** Restricts a route to specific roles. Use after `protect`. */
 export const authorize =
-  (...roles: Array<'customer' | 'rider' | 'shop' | 'admin' | 'seller'>): RequestHandler =>
+  (...roles: Array<'customer' | 'rider' | 'shop' | 'admin' | 'seller' | 'provider'>): RequestHandler =>
   (req, _res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return next(new ApiError(403, 'You do not have access to this resource'));

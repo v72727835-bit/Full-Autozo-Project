@@ -51,7 +51,7 @@ export const resetPasswordBody = z.object({
 export const deviceBody = z.object({
   token: z.string().min(20).max(4000),
   platform: z.enum(['web', 'android', 'ios']).default('android'),
-  app: z.enum(['customer', 'rider', 'warehouse', 'web']).default('customer'),
+  app: z.enum(['customer', 'rider', 'warehouse', 'web', 'provider']).default('customer'),
 });
 export const deviceDeleteBody = z.object({ token: z.string().min(20).max(4000) });
 
@@ -868,3 +868,107 @@ export const pageUpdateBody = z
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 export const slugParam = z.object({ slug: z.string().trim().min(1).max(80) });
+
+/* ============ Services vertical ============ */
+
+const latLng = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM (24h)');
+const availabilitySlot = z.object({
+  day: z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']),
+  open: hhmm,
+  close: hhmm,
+});
+
+/* ---- provider auth ---- */
+export const providerRegisterBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  email: z.string().trim().toLowerCase().email().optional(),
+  password,
+  firm: z.string().trim().min(2).max(120),
+  category: z.string().trim().max(80).optional(),
+  line1: z.string().trim().min(3).max(200),
+  city: z.string().trim().min(2).max(60),
+  state: z.string().trim().min(2).max(60),
+  pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+  location: latLng,
+  about: z.string().trim().max(1000).optional(),
+});
+
+/* ---- provider service listings ---- */
+export const providerServiceBody = z.object({
+  category: objectId,
+  title: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(4000).optional(),
+  images: z.array(z.string().trim().max(500)).max(8).optional(),
+  price: z.number().min(0).max(10_000_000),
+  mrp: z.number().min(0).max(10_000_000).optional(),
+  priceUnit: z.enum(['fixed', 'hourly', 'visit']).default('fixed'),
+  durationMins: z.number().int().min(5).max(1440).default(60),
+  availability: z.array(availabilitySlot).max(21).optional(),
+  serviceRadiusKm: z.number().min(1).max(100).optional(),
+  city: z.string().trim().max(60).optional(),
+  tags: z.array(z.string().trim().max(40)).max(20).optional(),
+  isActive: z.boolean().optional(),
+});
+export const providerServiceUpdateBody = providerServiceBody
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+export const providerAvailabilityBody = z.object({ available: z.boolean() });
+export const providerBookingsQuery = pagination.extend({
+  status: z.enum(['requested', 'accepted', 'on_the_way', 'in_progress', 'completed', 'cancelled', 'rejected', 'expired']).optional(),
+});
+export const providerBookingStatusBody = z.object({
+  status: z.enum(['on_the_way', 'in_progress', 'completed']),
+  otp: z.string().trim().regex(/^\d{4}$/).optional(),
+});
+export const dispatchIdParam = z.object({ dispatchId: objectId });
+
+/* ---- admin: providers ---- */
+export const providersQuery = pagination.extend({ status: z.enum(['pending', 'approved', 'rejected']).optional() });
+export const providerRejectBody = z.object({ reason: z.string().trim().min(3).max(300) });
+
+/* ---- admin: service categories ---- */
+export const serviceCategoryBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(300).optional(),
+  icon: z.string().trim().max(200).optional(),
+  image: z.string().trim().max(500).optional(),
+  isActive: z.boolean().optional(),
+  sort: z.number().int().optional(),
+});
+export const serviceCategoryUpdateBody = serviceCategoryBody
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+/* ---- public + customer ---- */
+export const servicesQuery = pagination.extend({
+  category: z.string().trim().max(120).optional(),
+  q: z.string().trim().max(80).optional(),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  maxKm: z.coerce.number().min(1).max(100).optional(),
+});
+export const createBookingBody = z.object({
+  serviceId: objectId,
+  scheduledAt: z.string().datetime().optional(),
+  note: z.string().trim().max(500).optional(),
+  paymentMethod: z.enum(['cod', 'online']).default('cod'),
+  address: z.object({
+    name: z.string().trim().min(2).max(80),
+    phone,
+    line1: z.string().trim().min(3).max(200),
+    line2: z.string().trim().max(200).optional(),
+    landmark: z.string().trim().max(100).optional(),
+    city: z.string().trim().min(2).max(60),
+    state: z.string().trim().min(2).max(60),
+    pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+    location: latLng.optional(),
+  }),
+});
+export const bookingsQuery = pagination.extend({
+  status: z.enum(['requested', 'accepted', 'on_the_way', 'in_progress', 'completed', 'cancelled', 'rejected', 'expired']).optional(),
+});
+export const cancelBookingBody = z.object({ reason: z.string().trim().max(300).optional() });
+export const rateBookingBody = z.object({ rating: z.number().int().min(1).max(5), comment: z.string().trim().max(1000).optional() });

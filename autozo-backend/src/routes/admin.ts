@@ -5,6 +5,7 @@ import * as uploads from '../controllers/upload.controller';
 import * as extra from '../controllers/adminExtra.controller';
 import * as invoices from '../controllers/invoice.controller';
 import * as seller from '../controllers/seller.controller';
+import * as provider from '../controllers/provider.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
@@ -145,6 +146,18 @@ router.patch('/riders/:id/long-distance', validate({ params: v.idParam, body: v.
 router.get('/warehouse-applications', validate({ query: v.warehouseApplicationsQuery }), seller.adminListWarehouseApplications);
 router.post('/warehouse-applications/:id/approve', validate({ params: v.idParam }), seller.adminApproveWarehouse);
 router.post('/warehouse-applications/:id/reject', validate({ params: v.idParam, body: v.warehouseRejectBody }), seller.adminRejectWarehouse);
+
+/* Service providers: approval gate (same pattern as warehouses) */
+router.get('/providers', validate({ query: v.providersQuery }), provider.adminListProviders);
+router.post('/providers/:id/approve', validate({ params: v.idParam }), provider.adminApproveProvider);
+router.post('/providers/:id/reject', validate({ params: v.idParam, body: v.providerRejectBody }), provider.adminRejectProvider);
+/* Service categories shown on the public Services page */
+router.get('/service-categories', provider.adminListCategories);
+router.post('/service-categories', validate({ body: v.serviceCategoryBody }), provider.adminCreateCategory);
+router.patch('/service-categories/:id', validate({ params: v.idParam, body: v.serviceCategoryUpdateBody }), provider.adminUpdateCategory);
+router.delete('/service-categories/:id', validate({ params: v.idParam }), provider.adminDeleteCategory);
+/* All service bookings across the platform */
+router.get('/service-bookings', validate({ query: v.bookingsQuery }), provider.adminListBookings);
 router.get('/sellers', validate({ query: v.adminSellersQuery }), seller.adminListSellers);
 router.post('/sellers', validate({ body: v.adminSellerBody }), seller.adminCreateSeller);
 router.patch('/sellers/:id/warehouses', validate({ params: v.idParam, body: v.sellerWarehousesBody }), seller.adminSetSellerWarehouses);

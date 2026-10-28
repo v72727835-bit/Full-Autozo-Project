@@ -3,6 +3,7 @@ import { connectDB, disconnectDB } from './config/db';
 import { env } from './config/env';
 import { Product } from './models/Product';
 import { startPlanReminders } from './services/subscription.service';
+import { startDispatchSweep } from './services/dispatch.service';
 
 async function main() {
   await connectDB();
@@ -12,6 +13,8 @@ async function main() {
     void Product.updateMany({ sortCode: { $exists: false } }, { $set: { sortCode: 1_000_000 } })
       .catch((error) => console.error('Product sort-code backfill failed:', error));
     startPlanReminders();
+    // Keep service/delivery rings going and widening until someone accepts.
+    startDispatchSweep();
   });
 
   const shutdown = async (signal: string) => {
