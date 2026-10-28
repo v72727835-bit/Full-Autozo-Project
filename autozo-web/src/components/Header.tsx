@@ -146,6 +146,12 @@ export function Header() {
               </span>
               <span className={s.stripName}>All</span>
             </Link>
+            <Link href="/services" className={s.stripLink} data-on={pathname.startsWith('/services')}>
+              <span className={`${s.stripPic} ${s.stripGlyph}`}>
+                <Icon name="sliders" size={22} />
+              </span>
+              <span className={s.stripName}>Services</span>
+            </Link>
             {settings?.festival?.enabled ? (
               <Link href="/festival" className={s.stripLink} data-on={pathname === '/festival'}>
                 <span className={`${s.stripPic} ${s.stripGlyph}`}>
