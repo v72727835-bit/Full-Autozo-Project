@@ -1,0 +1,283 @@
+{
+  "project_info": {
+    "project_number": "161359373411",
+    "firebase_url": "https://autozo-app-default-rtdb.firebaseio.com",
+    "project_id": "autozo-app",
+    "storage_bucket": "autozo-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161359373411:android:06632b19c4cdbb96b14456",
+        "android_client_info": {
+          "package_name": "com.autozo.customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161359373411-p42a506mjlc6dlecuvj8896i9iglh8oo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.autozo.customer",
+            "certificate_hash": "7024b62535e5ac60b27e7691bf26108586ed24f4"
+          }
+        },
+        {
+          "client_id": "161359373411-rfcjdln8dp6rjvvbuqcsgankvkthspfr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.autozo.customer",
+            "certificate_hash": "420b1125a515ae8b619cff2bc9dd9b4c556f707e"
+          }
+        },
+        {
+          "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3hj_qgLOkvIuLEk7ov783mbeapcWNIA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161359373411-2h3etdm07j52vo7ljmaruv5ed08ekn5j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.autozo.customer"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161359373411:android:eda679f282620fe6b14456",
+        "android_client_info": {
+          "package_name": "com.autozo.rider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161359373411-1seodqjltoua5063hgisna0dr19rj8j5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.autozo.rider",
+            "certificate_hash": "7024b62535e5ac60b27e7691bf26108586ed24f4"
+          }
+        },
+        {
+          "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3hj_qgLOkvIuLEk7ov783mbeapcWNIA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161359373411-2h3etdm07j52vo7ljmaruv5ed08ekn5j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.autozo.customer"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161359373411:android:87cb0827961e5e0eb14456",
+        "android_client_info": {
+          "package_name": "com.autozo.seller"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161359373411-mq6ttf9godo1jlgt1mt0ts88ed5endof.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.autozo.seller",
+            "certificate_hash": "7024b62535e5ac60b27e7691bf26108586ed24f4"
+          }
+        },
+        {
+          "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3hj_qgLOkvIuLEk7ov783mbeapcWNIA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161359373411-2h3etdm07j52vo7ljmaruv5ed08ekn5j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.autozo.customer"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161359373411:android:48b8cd71e4c72ee8b14456",
+        "android_client_info": {
+          "package_name": "com.bingoor.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161359373411-0ldsvbfo1eon3keiibosnsaa7s17g0to.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bingoor.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3hj_qgLOkvIuLEk7ov783mbeapcWNIA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161359373411-2h3etdm07j52vo7ljmaruv5ed08ekn5j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.autozo.customer"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161359373411:android:11f6bc2864187fe2b14456",
+        "android_client_info": {
+          "package_name": "com.bingoor.rider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161359373411-nipu3qjlu3lnnmvfncc6mdsqdi1i7rpn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bingoor.rider",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3hj_qgLOkvIuLEk7ov783mbeapcWNIA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161359373411-2h3etdm07j52vo7ljmaruv5ed08ekn5j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.autozo.customer"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161359373411:android:04ac496e63c40648b14456",
+        "android_client_info": {
+          "package_name": "com.bingoor.provider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "161359373411-9qnff703i0838hsr7r7fg4lj743fir1r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bingoor.provider",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3hj_qgLOkvIuLEk7ov783mbeapcWNIA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "161359373411-c2rvp6ns33ukbhgc9ckvh3dtpqqlfsel.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "161359373411-2h3etdm07j52vo7ljmaruv5ed08ekn5j.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.autozo.customer"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

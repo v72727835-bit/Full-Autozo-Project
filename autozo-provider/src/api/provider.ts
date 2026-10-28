@@ -1,0 +1,38 @@
+import { api } from './client';
+import { ApiEnvelope, AuthResult, BookingRow, Me, PageMeta, ProviderDashboard, RingItem, ServiceCategory, ServiceRow } from '../types';
+
+export interface Paged<T> { items: T[]; meta: PageMeta }
+async function paged<T>(url: string, params?: Record<string, unknown>): Promise<Paged<T>> {
+  const { data } = await api.get<ApiEnvelope<T[]>>(url, { params });
+  return { items: data.data, meta: data.meta as PageMeta };
+}
+
+/* ---------- auth ---------- */
+export async function providerLogin(identifier: string, password: string): Promise<AuthResult> {
+  const { data } = await api.post<ApiEnvelope<AuthResult>>('/provider/auth/login', { identifier, password });
+  return data.data;
+}
+export async function logoutRequest(refreshToken: string | null): Promise<void> {
+  await api.post('/auth/logout', refreshToken ? { refreshToken } : {});
+}
+export const providerMe = async (): Promise<Me> => (await api.get('/provider/me')).data.data;
+export const providerDashboard = async (): Promise<ProviderDashboard> => (await api.get('/provider/dashboard')).data.data;
+export const setAvailability = async (available: boolean): Promise<void> => { await api.post('/provider/availability', { available }); };
+
+/* ---------- services ---------- */
+export const serviceCategories = async (): Promise<ServiceCategory[]> => (await api.get('/service-categories')).data.data;
+export const providerServices = async (): Promise<ServiceRow[]> => (await api.get('/provider/services')).data.data;
+export const createService = async (body: Record<string, unknown>): Promise<ServiceRow> => (await api.post('/provider/services', body)).data.data;
+export const updateService = async (id: string, body: Record<string, unknown>): Promise<ServiceRow> => (await api.patch(`/provider/services/${id}`, body)).data.data;
+export const deleteService = async (id: string): Promise<void> => { await api.delete(`/provider/services/${id}`); };
+
+/* ---------- bookings ---------- */
+export const providerBookings = (p: { page?: number; limit?: number; status?: string }) => paged<BookingRow>('/provider/bookings', p);
+export const providerBooking = async (id: string): Promise<BookingRow> => (await api.get(`/provider/bookings/${id}`)).data.data;
+export const setBookingStatus = async (id: string, status: string, otp?: string): Promise<void> => { await api.patch(`/provider/bookings/${id}/status`, { status, otp }); };
+export const cancelBooking = async (id: string, reason?: string): Promise<void> => { await api.post(`/provider/bookings/${id}/cancel`, reason ? { reason } : {}); };
+
+/* ---------- ring ---------- */
+export const providerRing = async (): Promise<RingItem[]> => (await api.get('/provider/ring')).data.data;
+export const acceptRing = async (dispatchId: string): Promise<BookingRow> => (await api.post(`/provider/ring/${dispatchId}/accept`)).data.data;
+export const declineRing = async (dispatchId: string): Promise<void> => { await api.post(`/provider/ring/${dispatchId}/decline`); };
