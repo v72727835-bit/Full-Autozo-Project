@@ -14,6 +14,10 @@ import { OrderDetailScreen } from '../screens/OrderDetailScreen';
 import { OrderSuccessScreen } from '../screens/OrderSuccessScreen';
 import { ProductDetailScreen } from '../screens/ProductDetailScreen';
 import { ProductListScreen } from '../screens/ProductListScreen';
+import { ServicesScreen } from '../screens/ServicesScreen';
+import { ServiceDetailScreen } from '../screens/ServiceDetailScreen';
+import { BookingsScreen } from '../screens/BookingsScreen';
+import { BookingDetailScreen } from '../screens/BookingDetailScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ShopDetailScreen } from '../screens/ShopDetailScreen';
 import { SignupScreen } from '../screens/SignupScreen';
@@ -84,6 +88,10 @@ function AppFlow() {
         options={{ animation: 'fade', gestureEnabled: false }}
       />
       <AppStack.Screen name="OrderDetail" component={OrderDetailScreen} />
+      <AppStack.Screen name="Services" component={ServicesScreen} />
+      <AppStack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+      <AppStack.Screen name="Bookings" component={BookingsScreen} />
+      <AppStack.Screen name="BookingDetail" component={BookingDetailScreen} />
       <AppStack.Screen name="Wishlist" component={WishlistScreen} />
       <AppStack.Screen name="Support" component={SupportScreen} />
       <AppStack.Screen name="EditProfile" component={EditProfileScreen} />

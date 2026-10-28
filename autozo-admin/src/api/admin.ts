@@ -1,6 +1,6 @@
 import { api } from './client';
 import { CompressOptions, prepareImage, runLimited } from '../lib/imageCompress';
-import { WarehouseApplication, StandardCategory, Enquiry, SellerRow, SellerStats, SellerProfile, AdminAlert, AdminUser, AppUser, Banner, Category, Notice, RiderRow, RiderTotals, Settings, StockAlert, Ticket, Coupon, DashboardStats, Order, OrderStatus, PageMeta, Product, Shop, AdCampaign, AdPlacement, ContentPage, ContentPageSummary, PermissionDef, TeamMember } from '../types';
+import { WarehouseApplication, StandardCategory, Enquiry, SellerRow, SellerStats, SellerProfile, AdminAlert, AdminUser, AppUser, Banner, Category, Notice, RiderRow, RiderTotals, Settings, StockAlert, Ticket, Coupon, DashboardStats, Order, OrderStatus, PageMeta, Product, Shop, AdCampaign, AdPlacement, ContentPage, ContentPageSummary, PermissionDef, TeamMember, ProviderApplication, ServiceCategoryRow, ServiceRow, ServiceBookingRow, RingItem } from '../types';
 
 interface Paged<T> {
   items: T[];
@@ -710,3 +710,74 @@ export const updatePage = async (id: string, body: Partial<PageInput>): Promise<
 export const deletePage = async (id: string): Promise<void> => {
   await api.delete(`/admin/pages/${id}`);
 };
+
+/* ============ Services vertical ============ */
+
+/* ---- public category list (used by the provider panel's service form) ---- */
+export const serviceCategories = async (): Promise<ServiceCategoryRow[]> => (await api.get('/service-categories')).data.data;
+
+/* ---- provider panel ---- */
+export interface ProviderMe {
+  _id: string; name: string; phone: string; email?: string;
+  providerId?: string; providerStatus?: string; providerBusy?: boolean;
+  providerApplication?: ProviderApplication['providerApplication'];
+}
+export interface ProviderDashboard {
+  totalServices: number; activeServices: number; bookings: number;
+  bookingsByStatus: Record<string, number>; todaysBookings: number; earnings: number;
+}
+export const providerMe = async (): Promise<ProviderMe> => (await api.get('/provider/me')).data.data;
+export const providerDashboard = async (): Promise<ProviderDashboard> => (await api.get('/provider/dashboard')).data.data;
+export const providerSetAvailability = async (available: boolean): Promise<void> => {
+  await api.post('/provider/availability', { available });
+};
+export const providerServices = async (): Promise<ServiceRow[]> => (await api.get('/provider/services')).data.data;
+export const providerCreateService = async (body: Record<string, unknown>): Promise<ServiceRow> =>
+  (await api.post('/provider/services', body)).data.data;
+export const providerUpdateService = async (id: string, body: Record<string, unknown>): Promise<ServiceRow> =>
+  (await api.patch(`/provider/services/${id}`, body)).data.data;
+export const providerDeleteService = async (id: string): Promise<void> => {
+  await api.delete(`/provider/services/${id}`);
+};
+export const providerBookings = (params: { page?: number; limit?: number; status?: string }) =>
+  paged<ServiceBookingRow>('/provider/bookings', params);
+export const providerBooking = async (id: string): Promise<ServiceBookingRow> =>
+  (await api.get(`/provider/bookings/${id}`)).data.data;
+export const providerSetBookingStatus = async (id: string, status: string, otp?: string): Promise<void> => {
+  await api.patch(`/provider/bookings/${id}/status`, { status, otp });
+};
+export const providerCancelBooking = async (id: string, reason?: string): Promise<void> => {
+  await api.post(`/provider/bookings/${id}/cancel`, { reason });
+};
+export const providerRing = async (): Promise<RingItem[]> => (await api.get('/provider/ring')).data.data;
+export const providerAcceptRing = async (dispatchId: string): Promise<ServiceBookingRow> =>
+  (await api.post(`/provider/ring/${dispatchId}/accept`)).data.data;
+export const providerDeclineRing = async (dispatchId: string): Promise<void> => {
+  await api.post(`/provider/ring/${dispatchId}/decline`);
+};
+
+/* ---- admin: provider approvals ---- */
+export const fetchProviderApplications = async (params: { status?: string; page?: number; limit?: number }) => {
+  const { data } = await api.get('/admin/providers', { params });
+  return { items: data.data as ProviderApplication[], pending: (data.meta?.pending ?? 0) as number };
+};
+export const approveProvider = async (id: string): Promise<void> => {
+  await api.post(`/admin/providers/${id}/approve`);
+};
+export const rejectProvider = async (id: string, reason: string): Promise<void> => {
+  await api.post(`/admin/providers/${id}/reject`, { reason });
+};
+
+/* ---- admin: service categories ---- */
+export const adminServiceCategories = async (): Promise<ServiceCategoryRow[]> => (await api.get('/admin/service-categories')).data.data;
+export const adminCreateServiceCategory = async (body: Record<string, unknown>): Promise<ServiceCategoryRow> =>
+  (await api.post('/admin/service-categories', body)).data.data;
+export const adminUpdateServiceCategory = async (id: string, body: Record<string, unknown>): Promise<ServiceCategoryRow> =>
+  (await api.patch(`/admin/service-categories/${id}`, body)).data.data;
+export const adminDeleteServiceCategory = async (id: string): Promise<void> => {
+  await api.delete(`/admin/service-categories/${id}`);
+};
+
+/* ---- admin: all service bookings ---- */
+export const adminServiceBookings = (params: { page?: number; limit?: number; status?: string }) =>
+  paged<ServiceBookingRow>('/admin/service-bookings', params);

@@ -3,7 +3,7 @@ export interface AdminUser {
   name: string;
   phone: string;
   email?: string;
-  role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller';
+  role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller' | 'provider';
   warehouse?: string | { _id: string; name: string };
   /** Admins only: super admins can do everything; sub-admins are limited to `permissions`. */
   isSuperAdmin?: boolean;
@@ -514,7 +514,7 @@ export interface RiderTotals {
 
 export interface AdminAlert {
   _id: string;
-  type: 'rider_paused' | 'warehouse_registered';
+  type: 'rider_paused' | 'warehouse_registered' | 'provider_registered';
   message: string;
   rider?: { _id: string; name: string; email?: string } | string;
   read: boolean;
@@ -555,4 +555,92 @@ export interface MediaItem {
   embedUrl?: string;
   sortOrder: number;
   isActive: boolean;
+}
+
+/* ---------- Services vertical ---------- */
+export interface ProviderApplication {
+  _id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  providerId?: string;
+  providerStatus: 'pending' | 'approved' | 'rejected';
+  providerRejectReason?: string;
+  providerApplication?: {
+    firm: string;
+    category?: string;
+    line1: string;
+    city: string;
+    state: string;
+    pincode: string;
+    lat: number;
+    lng: number;
+    about?: string;
+    submittedAt: string;
+  };
+  createdAt: string;
+}
+
+export interface ServiceCategoryRow {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  image?: string;
+  isActive: boolean;
+  sort: number;
+}
+
+export interface ServiceRow {
+  _id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  images: string[];
+  price: number;
+  mrp?: number;
+  priceUnit: 'fixed' | 'hourly' | 'visit';
+  durationMins: number;
+  serviceRadiusKm: number;
+  availability: { day: string; open: string; close: string }[];
+  isActive: boolean;
+  rating: number;
+  ratingCount: number;
+  bookingCount: number;
+  category: { _id: string; name: string; slug: string } | string;
+}
+
+export type BookingStatus =
+  | 'requested' | 'accepted' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled' | 'rejected' | 'expired';
+
+export interface ServiceBookingRow {
+  _id: string;
+  bookingNumber: string;
+  status: BookingStatus;
+  price: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  scheduledAt?: string;
+  note?: string;
+  completionOtp?: string;
+  snapshot: { title: string; image?: string; price: number; priceUnit: string; durationMins: number };
+  address: {
+    name: string; phone: string; line1: string; line2?: string; landmark?: string;
+    city: string; state: string; pincode: string; location?: { lat: number; lng: number };
+  };
+  customer?: { _id: string; name: string; phone?: string } | string;
+  provider?: { _id: string; name: string; phone?: string; providerId?: string } | string;
+  service?: { _id: string; title: string } | string;
+  statusHistory?: { status: BookingStatus; at: string; by?: string; note?: string }[];
+  rating?: number;
+  createdAt: string;
+}
+
+export interface RingItem {
+  dispatchId: string;
+  kind: string;
+  bookingId?: string;
+  orderId?: string;
+  since: string;
 }

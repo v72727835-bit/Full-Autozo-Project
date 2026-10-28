@@ -21,7 +21,7 @@ export interface IUser {
   phone: string;
   email?: string;
   password: string;
-  role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller';
+  role: 'customer' | 'rider' | 'shop' | 'admin' | 'seller' | 'provider';
   /** Riders: the first warehouse (kept for old data). `warehouses` is the full list they deliver for. */
   warehouse?: Types.ObjectId;
   warehouses?: Types.ObjectId[];
@@ -95,6 +95,32 @@ export interface IUser {
     note?: string;
     submittedAt: Date;
   };
+  /* ---------- Service providers ---------- */
+  /** Service providers: short public id shown on their dashboard and to the admin. */
+  providerId?: string;
+  /** Service providers that registered themselves: no login until the admin approves. */
+  providerStatus?: 'pending' | 'approved' | 'rejected';
+  providerRejectReason?: string;
+  /** The one-time registration form a provider fills in when they sign up. */
+  providerApplication?: {
+    firm: string;
+    category?: string;
+    line1: string;
+    city: string;
+    state: string;
+    pincode: string;
+    lat: number;
+    lng: number;
+    about?: string;
+    submittedAt: Date;
+  };
+  /** Where the provider is based: [lng, lat]. Used to ring the nearest providers. */
+  providerLocation?: { type: 'Point'; coordinates: [number, number] };
+  /** Last time the provider app checked in; recent = online and ringable. Cleared on logout. */
+  providerOnlineAt?: Date | null;
+  /** A provider busy on a job (or who turned themselves off) gets no new rings. */
+  providerBusy?: boolean;
+  providerPaused?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,6 +131,15 @@ interface IUserMethods {
 
 export type UserDoc = HydratedDocument<IUser, IUserMethods>;
 type UserModel = Model<IUser, {}, IUserMethods>;
+
+/** A provider's base location, stored as GeoJSON so the nearest ones can be found. */
+const pointSchema = new Schema(
+  {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], required: true }, // [lng, lat]
+  },
+  { _id: false },
+);
 
 const addressSchema = new Schema<IAddress>({
   label: { type: String, enum: ['home', 'work', 'other'], default: 'home' },
@@ -128,7 +163,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     password: { type: String, required: true, select: false },
     role: {
       type: String,
-      enum: ['customer', 'rider', 'shop', 'admin', 'seller'],
+      enum: ['customer', 'rider', 'shop', 'admin', 'seller', 'provider'],
       default: 'customer',
       index: true,
     },
@@ -206,6 +241,29 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       },
       default: undefined,
     },
+    providerId: { type: String, unique: true, sparse: true },
+    providerStatus: { type: String, enum: ['pending', 'approved', 'rejected'], index: true },
+    providerRejectReason: String,
+    providerApplication: {
+      type: {
+        firm: String,
+        category: String,
+        line1: String,
+        city: String,
+        state: String,
+        pincode: String,
+        lat: Number,
+        lng: Number,
+        about: String,
+        submittedAt: Date,
+        _id: false,
+      },
+      default: undefined,
+    },
+    providerLocation: { type: pointSchema, default: undefined },
+    providerOnlineAt: { type: Date, default: null },
+    providerBusy: { type: Boolean, default: false },
+    providerPaused: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -223,6 +281,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
 // One phone number / email may be used once per kind of account: the same person can be a customer, a rider and a warehouse owner.
 userSchema.index({ phone: 1, role: 1 }, { unique: true });
 userSchema.index({ email: 1, role: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string' } } });
+// Ring the nearest approved providers to a booking.
+userSchema.index({ providerLocation: '2dsphere' });
 
 userSchema.pre('save', async function (next) {
   if (this.isModified('password')) {

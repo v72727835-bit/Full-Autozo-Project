@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useNavigate } from '../navigation';
-import { fetchAdminAlerts, fetchOrders, fetchWarehouseApplications, fetchProducts, fetchShops, fetchTickets, markAdminAlertsRead } from '../api/admin';
+import { fetchAdminAlerts, fetchOrders, fetchWarehouseApplications, fetchProviderApplications, fetchProducts, fetchShops, fetchTickets, markAdminAlertsRead } from '../api/admin';
 import { useAuth } from '../context/AuthContext';
 import { askNotificationPermission, notifyNewOrders, playChime } from '../lib/alerts';
 import { activeOrderCount, useStats } from '../context/StatsContext';
@@ -89,6 +89,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [careUnread, setCareUnread] = useState(0);
   const [paused, setPaused] = useState<AdminAlert[]>([]);
   const [whPending, setWhPending] = useState(0);
+  const [providerPending, setProviderPending] = useState(0);
   useEffect(() => {
     let alive = true;
     const check = () => {
@@ -97,6 +98,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         .catch(() => undefined);
       fetchWarehouseApplications({ status: 'pending', page: 1, limit: 1 })
         .then(({ pending }) => alive && setWhPending(pending))
+        .catch(() => undefined);
+      fetchProviderApplications({ status: 'pending', page: 1, limit: 1 })
+        .then(({ pending }) => alive && setProviderPending(pending))
         .catch(() => undefined);
       fetchAdminAlerts()
         .then(({ items }) => alive && setPaused(items.filter((a) => !a.read)))
@@ -163,6 +167,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       ],
     },
     {
+      title: 'Services',
+      items: [
+        { to: '/provider-requests', label: 'Provider requests', icon: <IconStore />, badge: providerPending, badgeTone: 'warn', perm: 'shops' },
+        { to: '/service-categories', label: 'Service categories', icon: <IconLayers />, perm: 'categories' },
+        { to: '/service-bookings', label: 'Service bookings', icon: <IconReceipt />, perm: 'orders' },
+      ],
+    },
+    {
       title: 'System',
       items: [
         { to: '/pages', label: 'Website Pages', icon: <IconReceipt />, perm: 'pages' },
@@ -187,7 +199,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if ((stats?.orders.byStatus.placed ?? 0) > 0)
       out.push({ text: `${stats?.orders.byStatus.placed} new order(s) not accepted yet`, tone: 'brand', to: '/orders?live=1' });
     // Riders paused automatically for unsubmitted cash.
-    paused.forEach((a) => out.push({ text: a.message, tone: 'warn', to: a.type === 'warehouse_registered' ? '/warehouse-requests' : '/riders' }));
+    paused.forEach((a) => out.push({ text: a.message, tone: 'warn', to: a.type === 'warehouse_registered' ? '/warehouse-requests' : a.type === 'provider_registered' ? '/provider-requests' : '/riders' }));
     if (careUnread > 0)
       out.push({ text: `${careUnread} customer care chat${careUnread > 1 ? 's' : ''} waiting for a reply`, tone: 'brand', to: '/support' });
     return out;

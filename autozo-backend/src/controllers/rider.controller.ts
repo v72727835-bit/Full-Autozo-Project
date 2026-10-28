@@ -1,4 +1,5 @@
 import { notifyBackToPickup, notifyOrderStatus, notifyRiderAssigned } from '../services/orderNotify.service';
+import { declineDispatch, orderAccepted, orderDropped, ringingForUser } from '../services/dispatch.service';
 import { FilterQuery } from 'mongoose';
 import { Order, IOrder } from '../models/Order';
 import { riderWarehouseIds, User } from '../models/User';
@@ -113,6 +114,8 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     { new: true },
   ).select('-statusHistory -deliveryOtp').populate('shop', 'name address phone location').populate('user', 'name phone').lean();
   if (!order) throw new ApiError(409, 'This order is no longer available for pickup');
+  // Stop every other rider's ring for this order.
+  void orderAccepted(order._id, req.user!.id);
   notifyRiderAssigned(order, false);
   ok(res, order);
 });
@@ -156,7 +159,22 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   if (!order) throw new ApiError(404, 'Active delivery not found');
   await User.updateOne({ _id: req.user!.id }, { $inc: { riderCancelCount: 1 } });
   notifyBackToPickup(order);
+  // Ring the next-nearest riders, excluding the one who just dropped it.
+  void orderDropped(order._id, req.user!.id);
   ok(res, { message: 'Delivery cancelled. The order is back in the pickup queue.' });
+});
+
+/* ============ Ring (persistent bell) ============ */
+
+/** Orders currently ringing this rider; the app plays the bell until it's empty. */
+export const myRing = asyncHandler(async (req, res) => {
+  ok(res, await ringingForUser(req.user!.id));
+});
+
+/** Rider dismisses a ring (they're busy). Others keep ringing. */
+export const declineRing = asyncHandler(async (req, res) => {
+  await declineDispatch(req.params.dispatchId, req.user!.id);
+  ok(res, { declined: true });
 });
 /**
  * The rider app reports its position every few seconds while it has a parcel.

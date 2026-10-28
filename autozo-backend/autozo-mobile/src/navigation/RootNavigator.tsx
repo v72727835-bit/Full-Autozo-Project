@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 
 const LOGO = require('../assets/logo-mark.png');
 import { useAuth } from '../context/AuthContext';
+import RingOverlay from '../components/RingOverlay';
 import RiderHome from '../screens/RiderHome';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -48,7 +49,7 @@ export default function RootNavigator() {
   if (initializing) return <Splash />;
   if (offline) return <Offline onRetry={retry} />;
   return <NavigationContainer theme={navTheme}>
-    {user?.role === 'rider' ? <AppStack.Navigator screenOptions={{ headerShown: false }}><AppStack.Screen name="RiderHome" component={RiderHome} /></AppStack.Navigator> : <AuthStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}><AuthStack.Screen name="Login" component={LoginScreen} /><AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /></AuthStack.Navigator>}
+    {user?.role === 'rider' ? <><AppStack.Navigator screenOptions={{ headerShown: false }}><AppStack.Screen name="RiderHome" component={RiderHome} /></AppStack.Navigator><RingOverlay /></> : <AuthStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}><AuthStack.Screen name="Login" component={LoginScreen} /><AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /></AuthStack.Navigator>}
   </NavigationContainer>;
 }
 

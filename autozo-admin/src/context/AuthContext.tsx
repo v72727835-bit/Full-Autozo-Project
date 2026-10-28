@@ -8,7 +8,7 @@ import { AdminUser } from '../types';
 interface AuthApi {
   user: AdminUser | null;
   loading: boolean;
-  login: (identifier: string, password: string, asSeller?: boolean) => Promise<void>;
+  login: (identifier: string, password: string, kind?: 'admin' | 'seller' | 'provider') => Promise<void>;
   logout: () => void;
 }
 
@@ -40,9 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => setSessionExpiredHandler(null);
   }, []);
 
-  const login = async (identifier: string, password: string, asSeller = false) => {
+  const login = async (identifier: string, password: string, kind: 'admin' | 'seller' | 'provider' = 'admin') => {
+    const endpoint = kind === 'seller' ? '/seller/auth/login' : kind === 'provider' ? '/provider/auth/login' : '/admin/auth/login';
     try {
-      const { data } = await api.post(asSeller ? '/seller/auth/login' : '/admin/auth/login', { identifier, password });
+      const { data } = await api.post(endpoint, { identifier, password });
       tokens.save(data.data.accessToken, data.data.refreshToken, data.data.user);
       setUser(data.data.user);
     } catch (err) {

@@ -1,5 +1,16 @@
-import { ApiEnvelope, EarningsSummary, MyPlan, PayoutAccount, RiderOrder, RiderProfile, RiderWallet, WalletTxn } from '../types';
+import { ApiEnvelope, EarningsSummary, MyPlan, PayoutAccount, RingItem, RiderOrder, RiderProfile, RiderWallet, WalletTxn } from '../types';
 import { api } from './client';
+
+/** Deliveries currently ringing this rider (the app keeps the bell on until this is empty). */
+export async function fetchRing(): Promise<RingItem[]> {
+  const { data } = await api.get<ApiEnvelope<RingItem[]>>('/rider/ring');
+  return data.data;
+}
+
+/** Dismiss a ring (the rider is busy). Other riders keep ringing. */
+export async function declineRing(dispatchId: string): Promise<void> {
+  await api.post(`/rider/ring/${dispatchId}/decline`);
+}
 
 export async function fetchRiderOrders(status?: 'ready_for_pickup' | 'out_for_delivery' | 'delivered'): Promise<RiderOrder[]> {
   const { data } = await api.get<ApiEnvelope<RiderOrder[]>>('/rider/orders', { params: { page: 1, limit: 50, status } });

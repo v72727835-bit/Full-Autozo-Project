@@ -5,7 +5,7 @@ export interface IDeviceToken {
   user: Types.ObjectId;
   token: string;
   platform: 'web' | 'android' | 'ios';
-  app: 'customer' | 'rider' | 'warehouse' | 'web';
+  app: 'customer' | 'rider' | 'warehouse' | 'web' | 'provider';
 }
 
 const schema = new Schema<IDeviceToken>(
@@ -13,7 +13,7 @@ const schema = new Schema<IDeviceToken>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     token: { type: String, required: true, unique: true },
     platform: { type: String, enum: ['web', 'android', 'ios'], default: 'android' },
-    app: { type: String, enum: ['customer', 'rider', 'warehouse', 'web'], default: 'customer' },
+    app: { type: String, enum: ['customer', 'rider', 'warehouse', 'web', 'provider'], default: 'customer' },
   },
   { timestamps: true },
 );
