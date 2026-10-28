@@ -125,4 +125,8 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
-            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks'
+            "root@$SERVER_HOST" 'mkdir -p /tmp/autozo-apks'
+          scp -i ~/.ssh/id_deploy -P "${SERVER_PORT:-22}" -o BatchMode=yes \
+            autozo-*.apk "root@$SERVER_HOST:/tmp/autozo-apks/"
+          ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
+            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks /tmp/autozo-apks'

@@ -18,7 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Run update-apks.sh on the server
+      - name: Download latest APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download --repo "$GITHUB_REPOSITORY" --pattern 'autozo-*.apk' --dir apks
+      - name: Configure SSH
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
@@ -29,5 +33,14 @@ jobs:
           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Upload APKs and refresh server files
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
           ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
-            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks'
+            "root@$SERVER_HOST" 'mkdir -p /tmp/autozo-apks'
+          scp -i ~/.ssh/id_deploy -P "${SERVER_PORT:-22}" -o BatchMode=yes \
+            apks/autozo-*.apk "root@$SERVER_HOST:/tmp/autozo-apks/"
+          ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
+            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks /tmp/autozo-apks'
