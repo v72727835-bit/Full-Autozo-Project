@@ -8,7 +8,8 @@ import { BackButton } from '../../../components/BackButton';
 import { Alert, Button, Field, PageLoader, Rating, Select, Textarea } from '../../../components/ui';
 import { useAuth } from '../../../context/AuthContext';
 import { getErrorMessage } from '../../../lib/client';
-import { createBooking, fetchService, priceLabel, ServiceListing } from '../../../api/services';
+import { confirmBookingPayment, createBooking, fetchService, priceLabel, ServiceListing } from '../../../api/services';
+import { payWithRazorpay } from '../../../lib/razorpay';
 
 const DAYS: Record<string, string> = { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' };
 
@@ -65,6 +66,20 @@ export default function ServiceDetailPage() {
         paymentMethod,
         address: addr,
       });
+      if ('requiresPayment' in created) {
+        // Online: open Razorpay, then verify so providers get rung.
+        const paid = await payWithRazorpay({
+          keyId: created.keyId,
+          orderId: created.razorpayOrderId,
+          amountPaise: created.amount,
+          name: addr.name,
+          phone: addr.phone,
+          description: `Booking for ${service.title}`,
+        });
+        const booking = await confirmBookingPayment(paid);
+        router.push(`/bookings/${booking._id}`);
+        return;
+      }
       router.push(`/bookings/${created._id}`);
     } catch (e) {
       setBookError(getErrorMessage(e));

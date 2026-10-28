@@ -76,14 +76,22 @@ export async function fetchService(idOrSlug: string): Promise<ServiceListing> {
   return data.data;
 }
 
+export interface BookingPayStart {
+  requiresPayment: true;
+  bookingId: string;
+  razorpayOrderId: string;
+  amount: number;
+  keyId: string;
+}
+
 export async function createBooking(body: {
   serviceId: string;
   scheduledAt?: string;
   note?: string;
   paymentMethod: 'cod' | 'online';
   address: BookingAddress;
-}): Promise<Booking> {
-  const { data } = await api.post<ApiEnvelope<Booking>>('/bookings', body);
+}): Promise<Booking | BookingPayStart> {
+  const { data } = await api.post<ApiEnvelope<Booking | BookingPayStart>>('/bookings', body);
   return data.data;
 }
 

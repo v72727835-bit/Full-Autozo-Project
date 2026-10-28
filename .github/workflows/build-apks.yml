@@ -1,9 +1,9 @@
-# Builds the release APKs of the customer, warehouse and rider apps.
+# Builds the release APKs of the customer, warehouse, rider and service-provider apps.
 # Every run keeps the APKs as a downloadable artifact. Runs on main also publish a GitHub Release
 # (releases/latest/download/autozo-<app>.apk) and force-push the APKs to the `apk-builds` branch,
 # which the server's update-apks.sh copies to https://app-api.autozo.org/downloads/ for the website.
 # Optional secrets (Settings > Secrets and variables > Actions), pasted as the whole JSON file text:
-#   GOOGLE_SERVICES_CUSTOMER, GOOGLE_SERVICES_WAREHOUSE, GOOGLE_SERVICES_RIDER, and MAPS_API_KEY for the rider map.
+#   GOOGLE_SERVICES_CUSTOMER, GOOGLE_SERVICES_WAREHOUSE, GOOGLE_SERVICES_RIDER, GOOGLE_SERVICES_PROVIDER, and MAPS_API_KEY for the rider map.
 name: Build APKs
 
 on:
@@ -13,6 +13,7 @@ on:
     paths:
       - blinkit-app-/**
       - autozo-warehouse/**
+      - autozo-provider/**
       - autozo-backend/autozo-mobile/**
       - .github/workflows/build-apks.yml
 
@@ -37,6 +38,9 @@ jobs:
           - app: rider
             dir: autozo-backend/autozo-mobile
             firebase: GOOGLE_SERVICES_RIDER
+          - app: provider
+            dir: autozo-provider
+            firebase: GOOGLE_SERVICES_PROVIDER
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -95,7 +99,7 @@ jobs:
           name: Autozo APKs ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          body: Customer, warehouse and rider APKs built from ${{ github.sha }}.
+          body: Customer, warehouse, rider and provider APKs built from ${{ github.sha }}.
           files: autozo-*.apk
 
       # One commit, force-pushed, so old APKs do not pile up in the repo history.

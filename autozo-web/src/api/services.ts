@@ -104,8 +104,22 @@ export interface CreateBookingBody {
   address: BookingAddress;
 }
 
-export const createBooking = async (body: CreateBookingBody): Promise<Booking> => {
+/** A started online payment for a booking (customer must pay before providers are rung). */
+export interface BookingPayStart {
+  requiresPayment: true;
+  bookingId: string;
+  razorpayOrderId: string;
+  amount: number;
+  keyId: string;
+}
+
+export const createBooking = async (body: CreateBookingBody): Promise<Booking | BookingPayStart> => {
   const { data } = await api.post('/bookings', body);
+  return data.data as Booking | BookingPayStart;
+};
+
+export const confirmBookingPayment = async (p: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): Promise<Booking> => {
+  const { data } = await api.post('/bookings/online/confirm', p);
   return data.data as Booking;
 };
 

@@ -1,9 +1,11 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
 import { createBooking, fetchService, priceLabel, ServiceListing } from '../api/services';
 import { fetchAddresses } from '../api/user';
+import { WEB_URL } from '../config';
+import { tokenStore } from '../storage/tokens';
 import type { AppNav, AppRoute } from '../navigation/types';
 import { gutter, ms, radius, space, useTheme } from '../theme';
 import { Address } from '../types';
@@ -57,6 +59,14 @@ export function ServiceDetailScreen() {
           city: addr.city, state: addr.state, pincode: addr.pincode, location: addr.location,
         },
       });
+      if ('requiresPayment' in created) {
+        // Razorpay runs on the website; the booking starts ringing providers once payment is verified there.
+        const token = await tokenStore.getAccess();
+        const hash = `o=${encodeURIComponent(created.razorpayOrderId)}&k=${encodeURIComponent(created.keyId)}&a=${created.amount}&t=${encodeURIComponent(token ?? '')}&x=booking`;
+        await Linking.openURL(`${WEB_URL}/pay#${hash}`);
+        navigation.replace('BookingDetail', { id: created.bookingId });
+        return;
+      }
       toast.success('Booking placed! Finding a provider…');
       navigation.replace('BookingDetail', { id: created._id });
     } catch (e) {

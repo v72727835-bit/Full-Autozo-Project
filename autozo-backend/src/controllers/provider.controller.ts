@@ -297,6 +297,30 @@ export const adminRejectProvider = asyncHandler(async (req, res) => {
   ok(res, { rejected: true });
 });
 
+/** Admin creates an already-approved provider with a login (phone + password), like a seller/rider. */
+export const adminCreateProvider = asyncHandler(async (req, res) => {
+  const b = req.body as {
+    name: string; phone: string; email?: string; password: string; firm: string; category?: string;
+    line1?: string; city?: string; state?: string; pincode?: string; location?: { lat: number; lng: number };
+  };
+  const clash = await User.findOne({ role: 'provider', $or: [{ phone: b.phone }, ...(b.email ? [{ email: b.email }] : [])] }).select('_id').lean();
+  if (clash) throw new ApiError(409, 'That phone or email is already registered as a provider');
+  let providerId: string | undefined;
+  for (let i = 0; !providerId && i < 5; i++) {
+    const candidate = genId();
+    if (!(await User.exists({ providerId: candidate }))) providerId = candidate;
+  }
+  const user = await User.create({
+    name: b.name, phone: b.phone, email: b.email, password: b.password, role: 'provider',
+    providerStatus: 'approved', providerId,
+    providerApplication: b.firm
+      ? { firm: b.firm, category: b.category, line1: b.line1 ?? '', city: b.city ?? '', state: b.state ?? '', pincode: b.pincode ?? '', lat: b.location?.lat ?? 0, lng: b.location?.lng ?? 0, submittedAt: new Date() }
+      : undefined,
+    providerLocation: b.location ? { type: 'Point', coordinates: [b.location.lng, b.location.lat] } : undefined,
+  });
+  created(res, { _id: user._id, name: user.name, phone: user.phone, email: user.email, providerId: user.providerId });
+});
+
 /* ============ Admin: service categories ============ */
 
 export const adminListCategories = asyncHandler(async (_req, res) => {

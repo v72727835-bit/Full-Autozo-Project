@@ -159,6 +159,7 @@ router.post('/provider/ring/:dispatchId/decline', ...providerOnly, validate({ pa
 
 /* ============ Service bookings (customer) ============ */
 router.post('/bookings', ...customerOnly, validate({ body: v.createBookingBody }), services.createBooking);
+router.post('/bookings/online/confirm', ...customerOnly, validate({ body: v.confirmPaymentBody }), services.confirmBookingPayment);
 router.get('/bookings', ...customerOnly, validate({ query: v.bookingsQuery }), services.listMyBookings);
 router.get('/bookings/:id', ...customerOnly, validate({ params: v.idParam }), services.getMyBooking);
 router.post('/bookings/:id/cancel', ...customerOnly, validate({ params: v.idParam, body: v.cancelBookingBody }), services.cancelBooking);
