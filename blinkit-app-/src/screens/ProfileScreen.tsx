@@ -76,6 +76,18 @@ export function ProfileScreen(_props: TabScreenProps) {
       subtitle: 'Track deliveries and reorder in one tap',
       onPress: () => goToTab('orders'),
     },
+    {
+      icon: 'construct-outline',
+      title: 'Services',
+      subtitle: 'Book plumbers, cleaning, car wash and more',
+      onPress: () => navigation.navigate('Services'),
+    },
+    {
+      icon: 'calendar-outline',
+      title: 'My bookings',
+      subtitle: 'Track services you booked',
+      onPress: () => navigation.navigate('Bookings'),
+    },
   ];
 
   const settings: MenuItem[] = [

@@ -27,6 +27,10 @@ export type AppStackParamList = {
   AddressForm: { address?: Address } | undefined;
   OrderSuccess: { orderIds: string[]; grandTotal: number };
   OrderDetail: { id: string };
+  Services: undefined;
+  ServiceDetail: { idOrSlug: string; title?: string };
+  Bookings: undefined;
+  BookingDetail: { id: string };
   Wishlist: undefined;
   Support: undefined;
   EditProfile: undefined;
