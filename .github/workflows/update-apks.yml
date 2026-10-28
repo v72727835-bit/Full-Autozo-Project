@@ -1,6 +1,4 @@
-# Copies the newest APKs (apk-builds branch) to the server's download folders by running
-# update-apks.sh over SSH. The sites stay up. Runs when the script changes, or by hand.
-# Uses the same SSH secrets as deploy.yml.
+# Refreshes the APK downloads on the Autozo VPS without restarting the sites.
 name: Update APKs on server
 
 on:
@@ -22,20 +20,14 @@ jobs:
     steps:
       - name: Run update-apks.sh on the server
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          if [ -n "$SSH_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          else
-            ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" > ~/.ssh/known_hosts
-          fi
-          # Pull main first so the newest update-apks.sh is the one that runs.
-          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
-            'cd ~/bingoor-project && git fetch -q origin main && git checkout -q origin/main -- update-apks.sh && bash update-apks.sh'
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
+            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks'

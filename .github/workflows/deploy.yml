@@ -1,24 +1,8 @@
-# Autozo: deploy the website, admin panel and backend whenever main changes.
-#
-# GitHub logs in to the cPanel server over SSH and runs the same command used
-# by hand: bash ~/bingoor-project/deploy.sh
-#
-# One-time setup (repo Settings > Secrets and variables > Actions):
-#   SSH_HOST         server hostname, e.g. server26.<host>.com or autozo.org
-#   SSH_USER         cPanel username
-#   SSH_PRIVATE_KEY  private key whose public half is authorized in cPanel > SSH Access
-#   SSH_PORT         optional, defaults to 22 (some hosts use another port)
-#   SSH_KNOWN_HOSTS  optional, output of `ssh-keyscan -p <port> <host>`; scanned live if empty
-#
-# Docker is not used: the cPanel account (CloudLinux/CageFS) cannot run it.
-
-name: Deploy to server
+name: CI and deploy to Autozo VPS
 
 on:
   push:
     branches: [main]
-    # Only server code. Mobile apps and docs do not need a redeploy, which
-    # takes the sites down for a few minutes.
     paths:
       - 'autozo-backend/**'
       - '!autozo-backend/autozo-mobile/**'
@@ -26,46 +10,89 @@ on:
       - 'autozo-web/**'
       - 'autozo-admin/**'
       - 'deploy.sh'
+      - 'update-apks.sh'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
-# Never two deploys at once (the account's process limit can't take it).
-# A push during a deploy waits, then deploys the newest main.
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-production
+  group: autozo-production
   cancel-in-progress: false
 
 jobs:
+  validate:
+    name: Validate ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: autozo-backend
+            path: autozo-backend
+            build: npm run build
+          - app: autozo-web
+            path: autozo-web
+            build: npx next build --webpack
+          - app: autozo-admin
+            path: autozo-admin
+            build: npx next build --webpack
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+      - run: npm ci --include=dev --no-audit --no-fund
+      - run: ${{ matrix.build }}
+        env:
+          NEXT_PUBLIC_API_URL: https://app-api.autozo.org/api/v1
+          NEXT_TELEMETRY_DISABLED: '1'
+          NODE_OPTIONS: --max-old-space-size=3072
+
   deploy:
+    name: Deploy to Autozo VPS
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Set up SSH key
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      - uses: actions/checkout@v4
+      - name: Create release archive
         run: |
-          if [ -z "$SSH_HOST" ] || [ -z "$SSH_PRIVATE_KEY" ]; then
-            echo "::error::Add the SSH_HOST, SSH_USER and SSH_PRIVATE_KEY secrets first (see the top of deploy.yml)."
-            exit 1
-          fi
+          tar --exclude='.git' \
+            --exclude='node_modules' --exclude='.next' --exclude='build' \
+            --exclude='.gradle' --exclude='autozo-*.apk' \
+            -czf autozo-release.tar.gz -C . .
+      - name: Configure SSH
+        env:
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+        run: |
+          test -n "$SERVER_SSH_KEY" || { echo 'SERVER_SSH_KEY secret is missing'; exit 1; }
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          if [ -n "$SSH_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          else
-            ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" > ~/.ssh/known_hosts
-          fi
-
-      - name: Run deploy.sh on the server
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/autozo_deploy
+          chmod 600 ~/.ssh/autozo_deploy
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Upload release
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
         run: |
-          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" \
-            -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
-            "$SSH_USER@$SSH_HOST" 'bash ~/bingoor-project/deploy.sh'
+          test -n "$SERVER_HOST" || { echo 'SERVER_HOST secret is missing'; exit 1; }
+          scp -P "${SERVER_PORT:-22}" -i ~/.ssh/autozo_deploy \
+            autozo-release.tar.gz "root@$SERVER_HOST:/tmp/autozo-release-${GITHUB_SHA}.tar.gz"
+      - name: Deploy and smoke-test
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          ssh -p "${SERVER_PORT:-22}" -i ~/.ssh/autozo_deploy \
+            -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=40 \
+            "root@$SERVER_HOST" \
+            "/usr/local/sbin/autozo-deploy /tmp/autozo-release-${GITHUB_SHA}.tar.gz ${GITHUB_SHA}"
