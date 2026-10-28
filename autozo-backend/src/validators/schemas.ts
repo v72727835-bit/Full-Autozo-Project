@@ -928,6 +928,19 @@ export const dispatchIdParam = z.object({ dispatchId: objectId });
 /* ---- admin: providers ---- */
 export const providersQuery = pagination.extend({ status: z.enum(['pending', 'approved', 'rejected']).optional() });
 export const providerRejectBody = z.object({ reason: z.string().trim().min(3).max(300) });
+export const adminProviderBody = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone,
+  email: z.string().trim().toLowerCase().email().optional(),
+  password,
+  firm: z.string().trim().min(2).max(120),
+  category: z.string().trim().max(80).optional(),
+  line1: z.string().trim().max(200).optional(),
+  city: z.string().trim().max(60).optional(),
+  state: z.string().trim().max(60).optional(),
+  pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits').optional(),
+  location: latLng.optional(),
+});
 
 /* ---- admin: service categories ---- */
 export const serviceCategoryBody = z.object({

@@ -764,6 +764,8 @@ export const fetchProviderApplications = async (params: { status?: string; page?
 export const approveProvider = async (id: string): Promise<void> => {
   await api.post(`/admin/providers/${id}/approve`);
 };
+export const adminCreateProvider = async (body: Record<string, unknown>): Promise<{ _id: string; name: string; phone: string; email?: string; providerId?: string }> =>
+  (await api.post('/admin/providers', body)).data.data;
 export const rejectProvider = async (id: string, reason: string): Promise<void> => {
   await api.post(`/admin/providers/${id}/reject`, { reason });
 };

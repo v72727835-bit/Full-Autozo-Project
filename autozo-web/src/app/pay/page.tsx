@@ -24,7 +24,9 @@ export default function PayPage() {
     const keyId = p.get('k');
     const amount = Number(p.get('a'));
     const token = p.get('t');
-    const plan = p.get('x') === 'plan';
+    const kind = p.get('x');
+    const plan = kind === 'plan';
+    const booking = kind === 'booking';
     setForPlan(plan);
     if (!orderId || !keyId || !amount || !token) {
       setMessage('This payment link is not valid. Please go back to the app and try again.');
@@ -33,8 +35,9 @@ export default function PayPage() {
     }
     try {
       setState('paying');
-      const paid = await payWithRazorpay({ keyId, orderId, amountPaise: amount, name: '', description: plan ? 'Your Autozo plan' : undefined });
-      await axios.post(`${API_URL}${plan ? '/subscription/confirm' : '/orders/online/confirm'}`, paid, { headers: { Authorization: `Bearer ${token}` }, timeout: 30000 });
+      const paid = await payWithRazorpay({ keyId, orderId, amountPaise: amount, name: '', description: plan ? 'Your Autozo plan' : booking ? 'Your Autozo booking' : undefined });
+      const confirmPath = plan ? '/subscription/confirm' : booking ? '/bookings/online/confirm' : '/orders/online/confirm';
+      await axios.post(`${API_URL}${confirmPath}`, paid, { headers: { Authorization: `Bearer ${token}` }, timeout: 30000 });
       setState('done');
     } catch (e) {
       const apiMessage = axios.isAxiosError(e) ? (e.response?.data as { message?: string } | undefined)?.message : undefined;

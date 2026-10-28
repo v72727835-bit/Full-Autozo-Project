@@ -10,6 +10,7 @@ import { created, ok, pageMeta } from '../utils/response';
 import { idOrSlugFilter } from '../utils/helpers';
 import { cancelDispatch, startBookingDispatch } from '../services/dispatch.service';
 import { pushToUsers } from '../services/firebase.service';
+import { createRazorpayOrder, razorpayEnabled, razorpayKeys, verifyRazorpaySignature } from '../services/razorpay.service';
 
 function newBookingNumber(): string {
   const d = new Date();
@@ -80,6 +81,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (!service) throw new ApiError(404, 'This service is not available right now.');
   const provider = await User.findOne({ _id: service.provider, role: 'provider', providerStatus: 'approved', isActive: true }).select('_id').lean();
   if (!provider) throw new ApiError(409, 'This provider is not accepting bookings right now.');
+  if (b.paymentMethod === 'online' && !(await razorpayEnabled())) throw new ApiError(400, 'Online payment is not switched on. Please choose pay-after-service.');
 
   const booking = await ServiceBooking.create({
     bookingNumber: newBookingNumber(),
@@ -99,13 +101,52 @@ export const createBooking = asyncHandler(async (req, res) => {
   });
   await Service.updateOne({ _id: service._id }, { $inc: { bookingCount: 1 } });
 
-  // Start ringing nearby providers (the original provider first).
-  await startBookingDispatch(booking._id);
+  // Online: take payment first, then ring providers once it is verified.
+  if (b.paymentMethod === 'online') {
+    const rzp = await createRazorpayOrder(service.price, booking.bookingNumber, { bookingId: String(booking._id) });
+    booking.razorpayOrderId = rzp.id;
+    await booking.save();
+    return created(res, {
+      requiresPayment: true,
+      bookingId: String(booking._id),
+      razorpayOrderId: rzp.id,
+      amount: rzp.amount,
+      currency: rzp.currency,
+      keyId: (await razorpayKeys())!.keyId,
+    });
+  }
 
+  // Cash: start ringing nearby providers now (the original provider first).
+  await startBookingDispatch(booking._id);
   void pushToUsers([String(req.user!.id)], {
     title: 'Booking placed',
     body: `Booking ${booking.bookingNumber} for "${service.title}" is placed. We're finding a provider now.`,
     data: { type: 'booking_placed', bookingId: String(booking._id), url: `/bookings/${String(booking._id)}` },
+  });
+  created(res, booking);
+});
+
+/** Verify a Razorpay payment for an online booking, then start ringing providers. */
+export const confirmBookingPayment = asyncHandler(async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body as {
+    razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string;
+  };
+  if (!(await razorpayEnabled())) throw new ApiError(400, 'Online payment is not switched on.');
+  if (!(await verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature))) {
+    throw new ApiError(400, 'We could not verify this payment. If money was deducted it will be refunded.');
+  }
+  const booking = await ServiceBooking.findOneAndUpdate(
+    { razorpayOrderId: razorpay_order_id, customer: req.user!.id, paymentStatus: 'pending' },
+    { $set: { paymentStatus: 'paid', paymentRef: razorpay_payment_id } },
+    { new: true },
+  );
+  if (!booking) throw new ApiError(404, 'No pending booking found for this payment.');
+  // Now that it is paid, start ringing providers (guard against a double confirm).
+  if (!booking.dispatch) await startBookingDispatch(booking._id);
+  void pushToUsers([String(req.user!.id)], {
+    title: 'Payment received',
+    body: `Payment confirmed for booking ${booking.bookingNumber}. We're finding a provider now.`,
+    data: { type: 'booking_paid', bookingId: String(booking._id), url: `/bookings/${String(booking._id)}` },
   });
   created(res, booking);
 });

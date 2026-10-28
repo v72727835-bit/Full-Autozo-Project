@@ -54,6 +54,8 @@ export interface IServiceBooking {
   paymentMethod: BookingPaymentMethod;
   paymentStatus: BookingPaymentStatus;
   paymentRef?: string;
+  /** For online bookings: the Razorpay order the customer pays against. */
+  razorpayOrderId?: string;
   status: BookingStatus;
   statusHistory: { status: BookingStatus; at: Date; by?: string; note?: string }[];
   note?: string;
@@ -104,6 +106,7 @@ const serviceBookingSchema = new Schema<IServiceBooking>(
     paymentMethod: { type: String, enum: BOOKING_PAYMENT_METHODS, required: true },
     paymentStatus: { type: String, enum: BOOKING_PAYMENT_STATUSES, default: 'pending' },
     paymentRef: String,
+    razorpayOrderId: { type: String, index: true },
     status: { type: String, enum: BOOKING_STATUSES, default: 'requested', index: true },
     statusHistory: {
       type: [
