@@ -68,7 +68,7 @@ jobs:
           tar --exclude='.git' \
             --exclude='node_modules' --exclude='.next' --exclude='build' \
             --exclude='.gradle' --exclude='autozo-*.apk' \
-            -czf autozo-release.tar.gz -C . .
+            -czf /tmp/autozo-release.tar.gz -C . .
       - name: Configure SSH
         env:
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -86,7 +86,7 @@ jobs:
         run: |
           test -n "$SERVER_HOST" || { echo 'SERVER_HOST secret is missing'; exit 1; }
           scp -P "${SERVER_PORT:-22}" -i ~/.ssh/autozo_deploy \
-            autozo-release.tar.gz "root@$SERVER_HOST:/tmp/autozo-release-${GITHUB_SHA}.tar.gz"
+            /tmp/autozo-release.tar.gz "root@$SERVER_HOST:/tmp/autozo-release-${GITHUB_SHA}.tar.gz"
       - name: Deploy and smoke-test
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
