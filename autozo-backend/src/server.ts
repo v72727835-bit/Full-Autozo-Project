@@ -1,3 +1,4 @@
+import './config/threads';
 import app from './app';
 import { connectDB, disconnectDB } from './config/db';
 import { env } from './config/env';

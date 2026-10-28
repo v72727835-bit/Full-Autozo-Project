@@ -29,7 +29,17 @@ LOG="$LOG_DIR/deploy-$(date +%Y%m%d-%H%M%S).log"
 # next.config.ts limits the build to one CPU worker) so npm and next build
 # fit in what is left.
 export UV_THREADPOOL_SIZE=2
-BUILD_NODE_OPTIONS="--max-old-space-size=3072"
+BUILD_NODE_OPTIONS="--max-old-space-size=3072 --v8-pool-size=2"
+
+# Only one deploy at a time. Two overlapping runs (for example after the
+# browser terminal reconnects and the command is typed again) double the
+# npm and next build processes and push the account over its limit.
+exec 9>"$LOG_DIR/.deploy.lock"
+if ! flock -n 9; then
+  echo "Another deploy is still running (see the newest file in $LOG_DIR)."
+  echo "Wait for it to finish, or stop it first:  pkill -u $ME -f deploy.sh"
+  exit 1
+fi
 
 say() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
 PAUSED=0
@@ -42,6 +52,8 @@ fail() {
   fi
   exit 1
 }
+# A closed browser tab or Ctrl+C must not leave the sites paused.
+trap 'fail "interrupted"' HUP INT TERM
 run() { "$@" >>"$LOG" 2>&1 || fail "'$*' failed (last lines below)$(printf '\n'; tail -25 "$LOG")"; }
 
 # The venv activate script is only for the backend; the Next.js builds use the
@@ -113,6 +125,15 @@ build_next() {
 
 echo "Autozo deploy started $(date). Log: $LOG"
 echo "Threads in use right now: $(threads)"
+
+# Leftovers from an earlier deploy that was cut off (closed tab, lost
+# connection) keep their threads until killed. Nothing else on this account
+# runs npm or next build, so clearing them is safe.
+pkill -u "$ME" -f "next build" 2>/dev/null || true
+pkill -u "$ME" -f "npm (ci|install)" 2>/dev/null || true
+pkill -u "$ME" -f "npm run build" 2>/dev/null || true
+sleep 1
+echo "Threads after clearing old build leftovers: $(threads)"
 
 say "Pulling latest code"
 cd "$ROOT"

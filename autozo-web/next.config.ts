@@ -8,6 +8,10 @@ const lowResource = process.env.AUTOZO_LOW_RESOURCE === '1';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
+    // Photos already come pre-sized from the API (?w=480), and the built-in
+    // optimizer would load sharp into the live site, whose thread pool
+    // (one thread per server CPU) eats the host's process limit.
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
       { protocol: 'http', hostname: '**' },
