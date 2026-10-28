@@ -13,6 +13,7 @@ import { Order } from './models/Order';
 import { Product } from './models/Product';
 import { Review } from './models/Review';
 import { Shop } from './models/Shop';
+import { ServiceCategory } from './models/ServiceCategory';
 import { User } from './models/User';
 
 // Sample area: Robertsganj, Sonbhadra (lat, lng)
@@ -42,7 +43,23 @@ async function main() {
     Cart.deleteMany({}),
     Order.deleteMany({}),
     Review.deleteMany({}),
+    ServiceCategory.deleteMany({}),
   ]);
+
+  /* ---------------- service categories (for the Services page) ---------------- */
+  const SERVICE_CATEGORIES = [
+    'Car wash & detailing',
+    'Bike service',
+    'Plumbing',
+    'Electrician',
+    'AC repair & service',
+    'Home cleaning',
+    'Salon at home',
+    'Pest control',
+    'Painting',
+    'Appliance repair',
+  ];
+  await ServiceCategory.create(SERVICE_CATEGORIES.map((name, i) => ({ name, sort: (i + 1) * 10 })));
 
   /* ---------------- users ---------------- */
   await User.create({
@@ -198,6 +215,7 @@ async function main() {
 
   console.log('\nSeed complete.');
   console.log(`  groups ${stats.groups}  categories ${stats.categories}  sub-categories ${stats.children}  products ${stats.products}`);
+  console.log(`  service categories ${SERVICE_CATEGORIES.length}`);
   console.log('\nCustomer login : phone 9876543210 / password Customer@123');
   console.log('Shop owners    : 9000000001-3 / password Shop@1234 (for the future shop portal)');
   console.log(`Sample location: lat=${BASE.lat} lng=${BASE.lng}\n`);
