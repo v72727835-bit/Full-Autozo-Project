@@ -434,7 +434,7 @@ export interface UserProfile {
 
 export interface PublicSettings {
   festival: { enabled: boolean; name: string; banner?: string | null };
-  appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
+  appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string; provider?: string };
   /** Social media pages the admin filled in (full https links only). */
   socialLinks?: Partial<Record<'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 'telegram' | 'linkedin', string>>;
   company?: { name?: string; logo?: string; tagline?: string };

@@ -11,6 +11,7 @@ export function appDownloads(settings: PublicSettings | null) {
     customer: links.android || `${DOWNLOADS}/autozo-customer.apk`,
     rider: links.rider || `${DOWNLOADS}/autozo-rider.apk`,
     warehouse: links.warehouse || `${DOWNLOADS}/autozo-warehouse.apk`,
+    provider: links.provider || `${DOWNLOADS}/autozo-provider.apk`,
     ios: links.ios,
   };
 }

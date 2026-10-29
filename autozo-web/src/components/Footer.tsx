@@ -89,6 +89,13 @@ export function Footer() {
                   Warehouse app
                 </span>
               </a>
+              <a href={apps.provider} className={s.store}>
+                <Icon name="android" size={20} />
+                <span>
+                  <small>For service providers</small>
+                  Provider app
+                </span>
+              </a>
               {apps.ios ? (
                 <a href={apps.ios} className={s.store} target="_blank" rel="noopener noreferrer">
                   <Icon name="apple" size={20} />
@@ -138,6 +145,9 @@ export function Footer() {
             ))}
             <Link href="/warehouse-register" className={s.colLink}>
               Register your warehouse
+            </Link>
+            <Link href="/provider-register" className={s.colLink}>
+              Become a service provider
             </Link>
           </nav>
 
