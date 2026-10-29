@@ -146,6 +146,9 @@ export function Footer() {
             <Link href="/warehouse-register" className={s.colLink}>
               Register your warehouse
             </Link>
+            <Link href="/provider-register" className={s.colLink}>
+              Become a service provider
+            </Link>
           </nav>
 
           <nav className={s.col} aria-label="Account">
