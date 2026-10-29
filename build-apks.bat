@@ -1,6 +1,6 @@
 @echo off
 rem Builds the release APKs of all three Android apps and copies them into apks\
-rem   build-apks.bat                 -> customer + warehouse + rider
+rem   build-apks.bat                 -> customer + warehouse + rider + provider
 rem   build-apks.bat rider           -> only the rider app (also: customer, warehouse)
 rem   build-apks.bat nopull          -> skip "git pull" (can be combined: nopull rider)
 rem Needs: Node, JDK 17, Android SDK (ANDROID_HOME). See docs\BUILD-APKS.md.
@@ -13,7 +13,7 @@ set "ONLY="
 for %%A in (%*) do (
   if /i "%%A"=="nopull" (set "PULL=0") else (set "ONLY=!ONLY! %%A")
 )
-if "%ONLY%"=="" set "ONLY= customer warehouse rider"
+if "%ONLY%"=="" set "ONLY= customer warehouse rider provider"
 
 if "%PULL%"=="1" (
   echo === Getting the latest code from GitHub ^(main^)
@@ -29,6 +29,7 @@ for %%A in (%ONLY%) do (
   if /i "%%A"=="customer"  set "DIR=blinkit-app-"
   if /i "%%A"=="warehouse" set "DIR=autozo-warehouse"
   if /i "%%A"=="rider"     set "DIR=autozo-backend\autozo-mobile"
+  if /i "%%A"=="provider"  set "DIR=autozo-provider"
   if "!DIR!"=="" (
     echo [error] unknown app "%%A" ^(use customer, warehouse or rider^)
     set "FAILED=!FAILED! %%A"

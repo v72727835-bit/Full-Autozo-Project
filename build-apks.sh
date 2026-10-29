@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the release APKs of all three Android apps and copies them into apks/
-#   bash build-apks.sh                -> customer + warehouse + rider
+#   bash build-apks.sh                -> customer + warehouse + rider + provider
 #   bash build-apks.sh rider          -> only the rider app (also: customer, warehouse)
 #   bash build-apks.sh nopull         -> skip "git pull" (can be combined: nopull rider)
 # Needs: Node, JDK 17, Android SDK (ANDROID_HOME). See docs/BUILD-APKS.md.
@@ -12,7 +12,7 @@ APPS=()
 for a in "$@"; do
   if [ "$a" = nopull ]; then PULL=0; else APPS+=("$a"); fi
 done
-[ ${#APPS[@]} -eq 0 ] && APPS=(customer warehouse rider)
+[ ${#APPS[@]} -eq 0 ] && APPS=(customer warehouse rider provider)
 
 cd "$ROOT"
 if [ "$PULL" = 1 ]; then
@@ -29,7 +29,8 @@ for app in "${APPS[@]}"; do
     customer)  dir="blinkit-app-" ;;
     warehouse) dir="autozo-warehouse" ;;
     rider)     dir="autozo-backend/autozo-mobile" ;;
-    *) echo "[error] unknown app \"$app\" (use customer, warehouse or rider)"; FAILED="$FAILED $app"; continue ;;
+    provider)  dir="autozo-provider" ;;
+    *) echo "[error] unknown app \"$app\" (use customer, warehouse, rider or provider)"; FAILED="$FAILED $app"; continue ;;
   esac
   echo
   echo "================================================================"
