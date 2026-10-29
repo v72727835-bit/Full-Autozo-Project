@@ -8,6 +8,8 @@ import { BackButton } from '../../components/BackButton';
 import { LocationPicker, PickedPlace } from '../../components/LocationPicker';
 import { PasswordField } from '../../components/PasswordField';
 import { Alert, Button, Field, Input, Textarea } from '../../components/ui';
+import { useSettings } from '../../context/SettingsContext';
+import { appDownloads } from '../../lib/apps';
 import { getErrorMessage } from '../../lib/client';
 
 /** A service provider registers itself; the Autozo team approves it, then it signs in to its own panel. */
@@ -21,6 +23,7 @@ export default function ProviderRegisterPage() {
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const set = (k: keyof typeof f, v: string) => setF((cur) => ({ ...cur, [k]: v }));
+  const apps = appDownloads(useSettings());
 
   const picked = (p: PickedPlace) => {
     setLocation({ lat: p.lat, lng: p.lng });
@@ -65,13 +68,16 @@ export default function ProviderRegisterPage() {
       <BackButton />
       <h1 className="h1" style={{ margin: '12px 0 4px' }}>Become a service provider</h1>
       <p className="body-sm" style={{ marginBottom: 20 }}>
-        Fill this once. The Autozo team reviews it and, after approval, you can sign in to your provider panel to add your
-        services, set prices and times, and start getting bookings. New bookings ring on your phone until you accept them.
+        Fill this once. The Autozo team reviews it and, after approval, you can sign in to the provider panel (or the
+        provider app) to add your services, set prices and times, and start getting bookings. New bookings ring on your
+        phone until you accept them.{' '}
+        <a href={apps.provider} style={{ fontWeight: 700 }}>Download the provider app</a>.
       </p>
 
       {done ? (
         <Alert tone="ok" icon="check-circle">
-          {done} We will review it shortly. <Link href="/services" style={{ fontWeight: 700 }}>Browse services</Link>
+          {done} We will review it shortly. Meanwhile, <a href={apps.provider} style={{ fontWeight: 700 }}>download the provider app</a>
+          {' '}to sign in once you are approved. <Link href="/services" style={{ fontWeight: 700 }}>Browse services</Link>
         </Alert>
       ) : (
         <form className="card card-pad" onSubmit={submit}>
