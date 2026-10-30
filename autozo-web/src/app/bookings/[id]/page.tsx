@@ -70,8 +70,8 @@ export default function BookingDetailPage() {
 
       {['requested', 'accepted', 'on_the_way', 'in_progress'].includes(b.status) && b.completionOtp ? (
         <div className="card card-pad" style={{ marginBottom: 14, border: '2px solid var(--brand)', background: 'var(--brand-tint)' }}>
-          <strong>Your completion OTP</strong>
-          <p className="body-sm" style={{ margin: '4px 0 8px' }}>Give this OTP to the provider <b>only after the work is done</b>. The service is marked complete only with this OTP.</p>
+          <strong>Your completion OTP · {b.bookingNumber}</strong>
+          <p className="body-sm" style={{ margin: '4px 0 8px' }}>Give this OTP to the provider <b>only after the work is done</b>. Each booking has its own OTP — check the provider has booking {b.bookingNumber} open. The service is marked complete only with this OTP.</p>
           <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: 8, color: 'var(--brand-text)' }}>{b.completionOtp}</div>
         </div>
       ) : null}
