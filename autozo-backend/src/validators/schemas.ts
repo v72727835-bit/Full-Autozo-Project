@@ -459,6 +459,13 @@ export const adminSettingsBody = z
         minWithdraw: z.coerce.number().min(0).max(1_000_000),
       })
       .partial(),
+    providerPay: z
+      .object({
+        commissionPct: z.coerce.number().min(0).max(100),
+        minWithdraw: z.coerce.number().min(0).max(1_000_000),
+        dueLimit: z.coerce.number().min(0).max(1_000_000),
+      })
+      .partial(),
     appLinks: z
       .object({ android: z.string().trim().max(500), ios: z.string().trim().max(500), rider: z.string().trim().max(500), warehouse: z.string().trim().max(500) })
       .partial(),
@@ -929,6 +936,16 @@ export const providerBookingStatusBody = z.object({
   ),
 });
 export const dispatchIdParam = z.object({ dispatchId: objectId });
+export const providerTxnsQuery = pagination.extend({ kind: z.enum(['earning', 'commission', 'commission_paid', 'withdrawal', 'adjustment']).optional() });
+export const providerPayDuesBody = z.object({
+  method: z.enum(['wallet', 'cash', 'upi']),
+  amount: z.coerce.number().positive().max(1_000_000).optional(),
+  reference: z.string().trim().max(120).optional(),
+  note: z.string().trim().max(200).optional(),
+});
+export const markDuesPaymentBody = z.object({ status: z.enum(['confirmed', 'rejected']), reference: z.string().trim().max(120).optional() });
+export const collectDuesBody = z.object({ amount: z.coerce.number().positive().max(1_000_000).optional(), note: z.string().trim().max(200).optional() });
+export const providerDuesQuery = z.object({ q: z.string().trim().max(80).optional() });
 
 /* ---- admin: providers ---- */
 export const providersQuery = pagination.extend({ status: z.enum(['pending', 'approved', 'rejected']).optional() });

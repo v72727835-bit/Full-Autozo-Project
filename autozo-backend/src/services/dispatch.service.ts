@@ -6,6 +6,7 @@ import { ServiceBooking } from '../models/ServiceBooking';
 import { User, riderWarehouseIds } from '../models/User';
 import { pushToUsers } from './firebase.service';
 import { providerPlanFilter, riderPlanFilter } from './subscription.service';
+import { providerDueFilter } from './providerPay.service';
 
 /**
  * The ring engine. On a new service booking (providers) or a packed order
@@ -20,6 +21,8 @@ import { providerPlanFilter, riderPlanFilter } from './subscription.service';
  */
 
 const RING_SECONDS = 30;
+/** Notification channel created by the rider / provider apps (RingModule.CHANNEL_ID). */
+const RING_CHANNEL = 'autozo_ring_v1';
 const MAX_ROUNDS = 6;
 const START_RADIUS_KM = 5;
 const RADIUS_STEP_KM = 5;
@@ -29,7 +32,7 @@ const oid = (v: Types.ObjectId | string) => new Types.ObjectId(String(v));
 
 /* ---------------- candidate finding ---------------- */
 
-/** Who may be rung for a booking: approved, active, not paused or busy, and (when plans are on) with a running plan. */
+/** Who may be rung for a booking: approved, active, not paused or busy, dues cleared, and (when plans are on) with a running plan. */
 async function eligibleProviderFilter() {
   return {
     role: 'provider',
@@ -38,6 +41,8 @@ async function eligibleProviderFilter() {
     providerPaused: { $ne: true },
     providerBusy: { $ne: true },
     ...(await providerPlanFilter()),
+    // Unpaid commission over the limit: no new bookings until the super admin collects it.
+    ...(await providerDueFilter()),
   };
 }
 
@@ -128,6 +133,9 @@ function ringPush(d: IDispatch & { _id: Types.ObjectId }, userIds: string[], lab
       ...(d.order ? { orderId: String(d.order) } : {}),
       url: '/',
     },
+    // The apps' loud "ring" channel (28-second bell on the alarm stream): it rings even with the
+    // screen off or the app closed. Each round re-rings; the tag keeps one notification per job.
+    android: { channelId: RING_CHANNEL, sound: 'autozo_ring', tag: `ring-${String(d._id)}`, ttlSeconds: RING_SECONDS * 2 },
   });
 }
 

@@ -49,6 +49,15 @@ export interface ISettings {
     /** Smallest amount a seller may withdraw at once. */
     minWithdraw: number;
   };
+  /** Service providers without a running plan pay a commission on each completed booking. */
+  providerPay: {
+    /** Percent of the booking price the super admin keeps (only when the provider has no plan). */
+    commissionPct: number;
+    /** Smallest amount a provider may withdraw at once. */
+    minWithdraw: number;
+    /** Unpaid commission above this stops new bookings until it is collected. 0 = any due stops them. */
+    dueLimit: number;
+  };
   /** Paid plans: when switched on, riders get no new orders and warehouses cannot add products or see orders without one. */
   subscriptions: { rider: boolean; seller: boolean; provider?: boolean };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string; provider?: string };
@@ -126,6 +135,11 @@ const settingsSchema = new Schema<ISettings>(
     sellerPay: {
       commissionPct: { type: Number, default: 10, min: 0, max: 100 },
       minWithdraw: { type: Number, default: 500, min: 0 },
+    },
+    providerPay: {
+      commissionPct: { type: Number, default: 10, min: 0, max: 100 },
+      minWithdraw: { type: Number, default: 200, min: 0 },
+      dueLimit: { type: Number, default: 0, min: 0 },
     },
     subscriptions: {
       rider: { type: Boolean, default: false },

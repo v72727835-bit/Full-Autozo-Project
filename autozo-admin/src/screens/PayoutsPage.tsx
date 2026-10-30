@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import {
+  collectProviderDues,
   fetchIntegrations,
+  fetchProviderDues,
+  fetchProviderWithdrawals,
   fetchSellerWithdrawals,
+  markProviderDuesPayment,
+  markProviderWithdrawal,
   fetchWithdrawals,
   markSellerWithdrawal,
   markWithdrawal,
+  payProviderWithdrawal,
   paySellerWithdrawal,
   payWithdrawal,
+  ProviderDueRow,
+  ProviderTxnRow,
   SellerWithdrawal,
   Withdrawal,
 } from '../api/admin';
@@ -20,7 +28,7 @@ interface Row {
   phone: string;
   amount: number;
   status: 'pending' | 'paid' | 'rejected';
-  method?: 'upi' | 'bank';
+  method?: 'upi' | 'bank' | 'cash' | 'wallet';
   destination?: string;
   reference?: string;
   payoutId?: string;
@@ -38,6 +46,14 @@ const fromSeller = (w: SellerWithdrawal): Row => ({
   who: typeof w.seller === 'string' ? '—' : w.seller?.name ?? '—',
   phone: typeof w.seller === 'string' ? '' : w.seller?.phone ?? '',
 });
+const fromProvider = (w: ProviderTxnRow): Row => ({
+  ...w,
+  status: w.status === 'paid' || w.status === 'rejected' ? w.status : 'pending',
+  who: typeof w.provider === 'string' ? '—' : w.provider?.name ?? '—',
+  phone: typeof w.provider === 'string' ? '' : w.provider?.phone ?? '',
+});
+type Tab = 'rider' | 'seller' | 'provider' | 'dues';
+const WHOM: Record<Exclude<Tab, 'dues'>, string> = { rider: 'rider', seller: 'seller', provider: 'service provider' };
 
 /**
  * Where you pay your riders and sellers. Each row is a withdrawal someone asked
@@ -45,7 +61,7 @@ const fromSeller = (w: SellerWithdrawal): Row => ({
  * it is switched on, or mark it paid after paying by hand), or reject it.
  */
 export default function PayoutsPage() {
-  const [tab, setTab] = useState<'rider' | 'seller'>('rider');
+  const [tab, setTab] = useState<Tab>('rider');
   const [status, setStatus] = useState<'pending' | 'paid' | 'rejected' | 'all'>('pending');
   const [rows, setRows] = useState<Row[]>([]);
   const [pendingTotal, setPendingTotal] = useState(0);
@@ -59,10 +75,13 @@ export default function PayoutsPage() {
   }, []);
 
   const load = () => {
+    if (tab === 'dues') return;
     setLoading(true);
     const req = tab === 'rider'
       ? fetchWithdrawals(status).then(({ items, meta }) => ({ rows: items.map(fromRider), meta }))
-      : fetchSellerWithdrawals(status).then(({ items, meta }) => ({ rows: items.map(fromSeller), meta }));
+      : tab === 'seller'
+        ? fetchSellerWithdrawals(status).then(({ items, meta }) => ({ rows: items.map(fromSeller), meta }))
+        : fetchProviderWithdrawals(status).then(({ items, meta }) => ({ rows: items.map(fromProvider), meta }));
     req
       .then(({ rows, meta }) => { setRows(rows); setPendingTotal(meta.pendingTotal ?? 0); setError(''); })
       .catch((e) => setError(getErrorMessage(e)))
@@ -70,10 +89,10 @@ export default function PayoutsPage() {
   };
   useEffect(load, [status, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const whom = tab === 'rider' ? 'rider' : 'seller';
+  const whom = tab === 'dues' ? '' : WHOM[tab];
   const doMark = (id: string, next: 'paid' | 'rejected', reference?: string) =>
-    tab === 'rider' ? markWithdrawal(id, next, reference) : markSellerWithdrawal(id, next, reference);
-  const doPay = (id: string) => (tab === 'rider' ? payWithdrawal(id) : paySellerWithdrawal(id));
+    tab === 'rider' ? markWithdrawal(id, next, reference) : tab === 'seller' ? markSellerWithdrawal(id, next, reference) : markProviderWithdrawal(id, next, reference);
+  const doPay = (id: string) => (tab === 'rider' ? payWithdrawal(id) : tab === 'seller' ? paySellerWithdrawal(id) : payProviderWithdrawal(id));
 
   const act = async (w: Row, next: 'paid' | 'rejected') => {
     let reference: string | undefined;
@@ -102,18 +121,22 @@ export default function PayoutsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Payouts</h1>
-          <div className="page-subtitle">Pay riders and sellers the earnings they withdraw. Verify, then pay to the UPI / bank shown (one click with RazorpayX) or mark it paid.</div>
+          <div className="page-subtitle">Pay riders, sellers and service providers the earnings they withdraw, and collect providers&apos; commission dues. Verify, then pay to the UPI / bank shown (one click with RazorpayX) or mark it paid.</div>
         </div>
       </div>
 
       <div className="row-flex" style={{ marginBottom: 14, gap: 8 }}>
         <button className="chip" data-active={tab === 'rider'} onClick={() => setTab('rider')}>Riders</button>
         <button className="chip" data-active={tab === 'seller'} onClick={() => setTab('seller')}>Sellers</button>
+        <button className="chip" data-active={tab === 'provider'} onClick={() => setTab('provider')}>Service providers</button>
+        <button className="chip" data-active={tab === 'dues'} onClick={() => setTab('dues')}>Provider commission</button>
       </div>
+
+      {tab === 'dues' ? <ProviderDues /> : (<>
 
       <div className="stat-row" style={{ marginBottom: 16 }}>
         <div className="card card-pad">
-          <div className="stat-label">Waiting to pay ({tab === 'rider' ? 'riders' : 'sellers'})</div>
+          <div className="stat-label">Waiting to pay ({whom}s)</div>
           <div className="stat-value">{money(pendingTotal)}</div>
           <div className="cell-muted">Across all pending requests</div>
         </div>
@@ -134,7 +157,7 @@ export default function PayoutsPage() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>{tab === 'rider' ? 'Rider' : 'Seller'}</th><th>Amount</th><th>Pay to</th><th>Requested</th><th>Status</th><th /></tr>
+                <tr><th style={{ textTransform: 'capitalize' }}>{whom}</th><th>Amount</th><th>Pay to</th><th>Requested</th><th>Status</th><th /></tr>
               </thead>
               <tbody>
                 {rows.map((w) => (
@@ -172,6 +195,101 @@ export default function PayoutsPage() {
           </div>
         </div>
       )}
+      </>)}
+    </>
+  );
+}
+
+/**
+ * Commission service providers owe on cash bookings. A provider over the due
+ * limit gets no new bookings until the money is collected: confirm a payment
+ * they reported, or record cash collected at the office.
+ */
+function ProviderDues() {
+  const [data, setData] = useState<{ providers: ProviderDueRow[]; payments: ProviderTxnRow[]; totalDue: number } | null>(null);
+  const [q, setQ] = useState('');
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+
+  const load = () => { fetchProviderDues(q.trim() || undefined).then((d) => { setData(d); setError(''); }).catch((e) => setError(getErrorMessage(e))); };
+  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const run = async (key: string, fn: () => Promise<void>) => {
+    setBusy(key);
+    try { await fn(); load(); } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(''); }
+  };
+  const nameOf = (p: ProviderTxnRow['provider']) => (typeof p === 'object' && p ? p.name : '—');
+  const phoneOf = (p: ProviderTxnRow['provider']) => (typeof p === 'object' && p ? p.phone : '');
+
+  if (!data) return error ? <ErrorBanner message={error} /> : <CenterSpinner />;
+  return (
+    <>
+      <ErrorBanner message={error} />
+      <div className="stat-row" style={{ marginBottom: 16 }}>
+        <div className="card card-pad"><div className="stat-label">Commission due (all providers)</div><div className="stat-value">{money(data.totalDue)}</div><div className="cell-muted">{data.providers.length} provider{data.providers.length === 1 ? '' : 's'}</div></div>
+        <div className="card card-pad"><div className="stat-label">Payments to confirm</div><div className="stat-value">{data.payments.length}</div><div className="cell-muted">Cash / UPI the providers reported</div></div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card-pad"><h2 className="card-title">Payments waiting for confirmation</h2><div className="page-subtitle">Confirm only after the money has reached you. Confirming clears the due; new bookings start again once nothing over the limit is left.</div></div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Provider</th><th>Amount</th><th>Paid by</th><th>Reported</th><th /></tr></thead>
+            <tbody>
+              {data.payments.length === 0 ? (
+                <tr><td colSpan={5}><div className="empty-state">Nothing waiting.</div></td></tr>
+              ) : data.payments.map((t) => (
+                <tr key={t._id}>
+                  <td className="cell-name">{nameOf(t.provider)}<div className="cell-muted">{phoneOf(t.provider)}</div></td>
+                  <td className="cell-name">{money(t.amount)}</td>
+                  <td className="cell-muted" style={{ textTransform: 'uppercase' }}>{t.method}{t.reference ? <div style={{ textTransform: 'none', fontSize: 12 }}>Ref: {t.reference}</div> : null}</td>
+                  <td className="cell-muted">{timeAgo(t.createdAt)}</td>
+                  <td>
+                    <div className="row-flex">
+                      <Button size="sm" disabled={busy === t._id} onClick={() => run(t._id, () => markProviderDuesPayment(t._id, 'confirmed'))}>Confirm received</Button>
+                      <Button size="sm" variant="ghost" disabled={busy === t._id} onClick={() => { if (window.confirm('Reject this payment? The commission stays due.')) void run(t._id, () => markProviderDuesPayment(t._id, 'rejected')); }}>Reject</Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-pad row-flex" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <h2 className="card-title" style={{ margin: 0 }}>Providers with commission due</h2>
+          <form className="row-flex" onSubmit={(e) => { e.preventDefault(); load(); }}>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, phone or ID" />
+            <Button size="sm" variant="secondary" type="submit">Search</Button>
+          </form>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Provider</th><th>Due</th><th /></tr></thead>
+            <tbody>
+              {data.providers.length === 0 ? (
+                <tr><td colSpan={3}><div className="empty-state">No provider owes commission.</div></td></tr>
+              ) : data.providers.map((p) => (
+                <tr key={p._id}>
+                  <td className="cell-name">{p.providerApplication?.firm || p.name}<div className="cell-muted">{p.name} · {p.phone}{p.providerId ? ` · ${p.providerId}` : ''}</div></td>
+                  <td className="cell-name" style={{ color: 'var(--danger, #d33)' }}>{money(p.providerDue)}</td>
+                  <td>
+                    <Button size="sm" disabled={busy === p._id} onClick={() => {
+                      const raw = window.prompt(`Record commission collected from ${p.name}.\n\nAmount (₹), up to ${p.providerDue}:`, String(p.providerDue));
+                      if (raw === null) return;
+                      const amount = Number(raw);
+                      if (!amount || amount <= 0) { setError('Enter the amount you collected.'); return; }
+                      void run(p._id, () => collectProviderDues(p._id, amount));
+                    }}>Mark collected</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </>
   );
 }

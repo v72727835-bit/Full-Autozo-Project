@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Modal, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import { ActivityIndicator, AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { acceptRiderOrder, declineRing, fetchRing } from '../api/rider';
 import { useAuth } from '../context/AuthContext';
 import { RingItem } from '../types';
+import { bell } from '../lib/bell';
 import { colors, radius, spacing } from '../theme';
 
 const POLL_MS = 5000;
-// Repeating buzz: wait 0, buzz 700ms, pause 700ms … looped by Vibration.
-const PATTERN = [0, 700, 700];
 
 /**
  * The persistent delivery bell. While any order is ringing this rider, a
@@ -19,6 +18,8 @@ export default function RingOverlay() {
   const { user } = useAuth();
   const [ring, setRing] = useState<RingItem[]>([]);
   const [busy, setBusy] = useState('');
+  // The in-app bell only plays while the app is on screen; in the background the ring push rings instead.
+  const [onScreen, setOnScreen] = useState(AppState.currentState === 'active');
   const active = useRef(true);
 
   const poll = async () => {
@@ -36,6 +37,7 @@ export default function RingOverlay() {
     poll();
     let timer: ReturnType<typeof setInterval> | null = setInterval(poll, POLL_MS);
     const sub = AppState.addEventListener('change', (s) => {
+      setOnScreen(s === 'active');
       if (s === 'active') {
         poll();
         if (!timer) timer = setInterval(poll, POLL_MS);
@@ -48,17 +50,16 @@ export default function RingOverlay() {
       active.current = false;
       if (timer) clearInterval(timer);
       sub.remove();
-      Vibration.cancel();
+      bell.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
 
-  // Buzz while something is ringing; stop the moment it clears.
+  // Loud bell while something is ringing and the app is on screen; stop the moment it clears.
   useEffect(() => {
-    if (ring.length > 0) Vibration.vibrate(PATTERN, true);
-    else Vibration.cancel();
-    return () => Vibration.cancel();
-  }, [ring.length]);
+    if (ring.length > 0 && onScreen) bell.start(); else bell.stop();
+    return () => bell.stop();
+  }, [ring.length, onScreen]);
 
   if (user?.role !== 'rider' || ring.length === 0) return null;
 
@@ -67,7 +68,7 @@ export default function RingOverlay() {
     setBusy(r.dispatchId);
     try {
       await acceptRiderOrder(r.orderId);
-      Vibration.cancel();
+      bell.stop();
       setRing((cur) => cur.filter((x) => x.dispatchId !== r.dispatchId));
     } catch {
       poll();

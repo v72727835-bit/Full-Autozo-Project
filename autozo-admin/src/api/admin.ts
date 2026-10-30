@@ -435,6 +435,70 @@ export const paySellerWithdrawal = async (id: string): Promise<void> => {
   await api.post(`/admin/seller-withdrawals/${id}/pay`);
 };
 
+/* ---------- provider wallet (provider's own session) ---------- */
+export type PayoutAccount = { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string };
+export interface ProviderWallet {
+  balance: number;
+  onlineEarned: number;
+  commissionTotal: number;
+  due: number;
+  duePending: number;
+  pendingWithdraw: number;
+  paidOut: number;
+  cashCollected: number;
+  cashBookings: number;
+  commissionPct: number;
+  planCommissionPct: number;
+  hasPlan: boolean;
+  minWithdraw: number;
+  dueLimit: number;
+  blocked: boolean;
+  account: PayoutAccount | null;
+}
+export type ProviderTxnKind = 'earning' | 'commission' | 'commission_paid' | 'withdrawal' | 'adjustment';
+export interface ProviderTxnRow {
+  _id: string;
+  kind: ProviderTxnKind;
+  amount: number;
+  status: 'completed' | 'pending' | 'paid' | 'rejected' | 'confirmed';
+  bookingNumber?: string;
+  gross?: number; commission?: number; commissionPct?: number; paymentMethod?: 'cod' | 'online';
+  method?: 'upi' | 'bank' | 'cash' | 'wallet'; destination?: string; reference?: string; payoutStatus?: string; note?: string; createdAt: string;
+  provider?: { _id: string; name: string; phone: string; providerId?: string; payout?: PayoutAccount } | string;
+}
+export const providerWallet = async (): Promise<ProviderWallet> => (await api.get('/provider/wallet')).data.data;
+export const providerWalletTxns = (params: { page?: number; limit?: number; kind?: ProviderTxnKind }) => paged<ProviderTxnRow>('/provider/wallet/txns', params);
+export const providerSaveWalletAccount = async (body: PayoutAccount): Promise<void> => {
+  await api.post('/provider/wallet/account', body);
+};
+export const providerRequestWithdraw = async (amount: number, method: 'upi' | 'bank'): Promise<void> => {
+  await api.post('/provider/wallet/withdraw', { amount, method });
+};
+export const providerPayDues = async (body: { method: 'wallet' | 'cash' | 'upi'; amount?: number; reference?: string }): Promise<void> => {
+  await api.post('/provider/wallet/pay-dues', body);
+};
+
+/* ---------- provider payouts & commission dues (super admin) ---------- */
+export interface ProviderDueRow { _id: string; name: string; phone: string; providerId?: string; providerDue: number; providerApplication?: { firm?: string } }
+export const fetchProviderDues = async (q?: string): Promise<{ providers: ProviderDueRow[]; payments: ProviderTxnRow[]; totalDue: number }> =>
+  (await api.get('/admin/provider-payouts/dues', { params: q ? { q } : {} })).data.data;
+export const markProviderDuesPayment = async (id: string, status: 'confirmed' | 'rejected', reference?: string): Promise<void> => {
+  await api.post(`/admin/provider-payouts/dues/${id}/mark`, { status, reference });
+};
+export const collectProviderDues = async (providerId: string, amount?: number, note?: string): Promise<void> => {
+  await api.post(`/admin/provider-payouts/providers/${providerId}/collect`, { amount, note });
+};
+export const fetchProviderWithdrawals = async (status = 'pending', page = 1): Promise<{ items: ProviderTxnRow[]; meta: { total: number; totalPages: number; hasNext: boolean; pendingTotal: number } }> => {
+  const { data } = await api.get('/admin/provider-payouts/withdrawals', { params: { status, page, limit: 20 } });
+  return { items: data.data, meta: data.meta };
+};
+export const markProviderWithdrawal = async (id: string, status: 'paid' | 'rejected', reference?: string): Promise<void> => {
+  await api.post(`/admin/provider-payouts/withdrawals/${id}/mark`, { status, reference });
+};
+export const payProviderWithdrawal = async (id: string): Promise<void> => {
+  await api.post(`/admin/provider-payouts/withdrawals/${id}/pay`);
+};
+
 /* ---------- assigning a free rider ---------- */
 export interface FreeRider { _id: string; name: string; phone: string; lastSeenAt?: string }
 export const adminFreeRiders = async (orderId: string): Promise<FreeRider[]> => (await api.get(`/admin/orders/${orderId}/free-riders`)).data.data;
@@ -728,6 +792,8 @@ export interface ProviderMe {
 export interface ProviderDashboard {
   totalServices: number; activeServices: number; bookings: number;
   bookingsByStatus: Record<string, number>; todaysBookings: number; earnings: number;
+  /** Commission owed on cash bookings; when blocked the provider gets no new bookings. */
+  due?: number; blockedByDues?: boolean;
 }
 export const providerMe = async (): Promise<ProviderMe> => (await api.get('/provider/me')).data.data;
 export const providerDashboard = async (): Promise<ProviderDashboard> => (await api.get('/provider/dashboard')).data.data;

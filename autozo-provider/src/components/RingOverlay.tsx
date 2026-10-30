@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Modal, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import { ActivityIndicator, AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { acceptRing, declineRing, providerRing } from '../api/provider';
 import { RingItem } from '../types';
+import { bell } from '../lib/bell';
 import { colors, radius } from '../theme';
 
 const POLL_MS = 5000;
-const PATTERN = [0, 700, 700];
 
 /**
  * The persistent booking bell. While any booking is ringing this provider, a
@@ -16,6 +16,8 @@ const PATTERN = [0, 700, 700];
 export default function RingOverlay({ onAccepted }: { onAccepted?: () => void }) {
   const [ring, setRing] = useState<RingItem[]>([]);
   const [busy, setBusy] = useState('');
+  // The in-app bell only plays while the app is on screen; in the background the ring push rings instead.
+  const [onScreen, setOnScreen] = useState(AppState.currentState === 'active');
   const alive = useRef(true);
 
   const poll = async () => {
@@ -27,16 +29,18 @@ export default function RingOverlay({ onAccepted }: { onAccepted?: () => void })
     poll();
     let timer: ReturnType<typeof setInterval> | null = setInterval(poll, POLL_MS);
     const sub = AppState.addEventListener('change', (s) => {
+      setOnScreen(s === 'active');
       if (s === 'active') { poll(); if (!timer) timer = setInterval(poll, POLL_MS); }
       else if (timer) { clearInterval(timer); timer = null; }
     });
-    return () => { alive.current = false; if (timer) clearInterval(timer); sub.remove(); Vibration.cancel(); };
+    return () => { alive.current = false; if (timer) clearInterval(timer); sub.remove(); bell.stop(); };
   }, []);
 
+  // Loud bell while something is ringing and the app is on screen; stop the moment it clears.
   useEffect(() => {
-    if (ring.length > 0) Vibration.vibrate(PATTERN, true); else Vibration.cancel();
-    return () => Vibration.cancel();
-  }, [ring.length]);
+    if (ring.length > 0 && onScreen) bell.start(); else bell.stop();
+    return () => bell.stop();
+  }, [ring.length, onScreen]);
 
   if (ring.length === 0) return null;
 
@@ -44,7 +48,7 @@ export default function RingOverlay({ onAccepted }: { onAccepted?: () => void })
     setBusy(r.dispatchId);
     try {
       await acceptRing(r.dispatchId);
-      Vibration.cancel();
+      bell.stop();
       setRing((cur) => cur.filter((x) => x.dispatchId !== r.dispatchId));
       onAccepted?.();
     } catch { poll(); } finally { setBusy(''); }

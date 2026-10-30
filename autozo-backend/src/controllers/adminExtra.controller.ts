@@ -20,6 +20,7 @@ import { testShiprocket } from '../services/shiprocket.service';
 import { payoutForWithdrawal, razorpayxConfig, syncPayout, syncPayoutById, testRazorpayx } from '../services/razorpayx.service';
 import { SellerTxn } from '../models/SellerTxn';
 import { paySellerWithdrawal, syncSellerPayout, syncSellerPayoutById } from '../services/sellerPay.service';
+import { syncProviderPayoutById } from '../services/providerPay.service';
 import { seal } from '../utils/secretBox';
 import { checkServiceAccount, pushToUsers } from '../services/firebase.service';
 import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
@@ -336,6 +337,7 @@ export const razorpayxWebhook = asyncHandler(async (req, res) => {
   if (payoutId) {
     await syncPayoutById(payoutId).catch(() => undefined); // a rider payout…
     await syncSellerPayoutById(payoutId).catch(() => undefined); // …or a seller payout
+    await syncProviderPayoutById(payoutId).catch(() => undefined); // …or a service-provider payout
   }
   ok(res, { received: true });
 });

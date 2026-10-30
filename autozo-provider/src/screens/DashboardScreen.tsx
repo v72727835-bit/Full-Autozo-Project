@@ -49,6 +49,13 @@ export default function DashboardScreen() {
         </Card>
       )}
 
+      {d?.blockedByDues ? (
+        <View style={[st.banner, { backgroundColor: colors.dangerSoft, marginTop: 10 }]}>
+          <Text style={{ color: colors.danger, fontWeight: '800' }}>New bookings are stopped — {money(d.due ?? 0)} commission due</Text>
+          <Text style={{ color: colors.danger, marginTop: 4 }}>Open Wallet and pay it. Bookings start again once the office confirms it.</Text>
+        </View>
+      ) : null}
+
       {d ? (
         <>
           <Section title="Overview" />

@@ -1,5 +1,5 @@
 import { api } from './client';
-import { ApiEnvelope, AuthResult, BookingRow, Me, PageMeta, ProviderDashboard, RingItem, ServiceCategory, ServiceRow } from '../types';
+import { ApiEnvelope, AuthResult, BookingRow, Me, PageMeta, PayoutAccount, ProviderDashboard, ProviderTxn, ProviderWallet, RingItem, ServiceCategory, ServiceRow } from '../types';
 
 export interface Paged<T> { items: T[]; meta: PageMeta }
 async function paged<T>(url: string, params?: Record<string, unknown>): Promise<Paged<T>> {
@@ -31,6 +31,13 @@ export const providerBookings = (p: { page?: number; limit?: number; status?: st
 export const providerBooking = async (id: string): Promise<BookingRow> => (await api.get(`/provider/bookings/${id}`)).data.data;
 export const setBookingStatus = async (id: string, status: string, otp?: string): Promise<void> => { await api.patch(`/provider/bookings/${id}/status`, { status, otp }); };
 export const cancelBooking = async (id: string, reason?: string): Promise<void> => { await api.post(`/provider/bookings/${id}/cancel`, reason ? { reason } : {}); };
+
+/* ---------- wallet ---------- */
+export const fetchWallet = async (): Promise<ProviderWallet> => (await api.get('/provider/wallet')).data.data;
+export const walletTxns = (p: { page?: number; limit?: number }) => paged<ProviderTxn>('/provider/wallet/txns', p);
+export const saveWalletAccount = async (body: PayoutAccount): Promise<void> => { await api.post('/provider/wallet/account', body); };
+export const requestWithdraw = async (amount: number, method: 'upi' | 'bank'): Promise<void> => { await api.post('/provider/wallet/withdraw', { amount, method }); };
+export const payDues = async (body: { method: 'wallet' | 'cash' | 'upi'; reference?: string }): Promise<void> => { await api.post('/provider/wallet/pay-dues', body); };
 
 /* ---------- ring ---------- */
 export const providerRing = async (): Promise<RingItem[]> => (await api.get('/provider/ring')).data.data;
