@@ -120,7 +120,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   await startBookingDispatch(booking._id);
   void pushToUsers([String(req.user!.id)], {
     title: 'Booking placed',
-    body: `Booking ${booking.bookingNumber} for "${service.title}" is placed. We're finding a provider now.`,
+    body: `Booking ${booking.bookingNumber} for "${service.title}" is placed. Your completion OTP is ${booking.completionOtp}. We're finding a provider now.`,
     data: { type: 'booking_placed', bookingId: String(booking._id), url: `/bookings/${String(booking._id)}` },
   });
   created(res, booking);

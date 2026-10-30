@@ -10,6 +10,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getErrorMessage } from '../../../lib/client';
 import { confirmBookingPayment, createBooking, fetchService, priceLabel, ServiceListing } from '../../../api/services';
 import { payWithRazorpay } from '../../../lib/razorpay';
+import s from './service.module.css';
 
 const DAYS: Record<string, string> = { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' };
 
@@ -88,65 +89,51 @@ export default function ServiceDetailPage() {
     }
   };
 
+  const photos = service.images ?? [];
+  const current = photos[Math.min(photo, Math.max(photos.length - 1, 0))];
+
   return (
-    <div className="page rise">
+    <div className={`page rise ${s.wrap}`}>
       <BackButton />
 
-      {service.images?.length ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={service.images[Math.min(photo, service.images.length - 1)]} alt={service.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 14, marginTop: 8 }} />
-          {service.images.length > 1 ? (
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginTop: 8 }}>
-              {service.images.map((u, i) => (
-                <button key={u} type="button" onClick={() => setPhoto(i)} aria-label={`Photo ${i + 1}`}
-                  style={{ padding: 0, border: i === photo ? '2px solid var(--brand)' : '1px solid var(--line)', borderRadius: 10, background: 'none', cursor: 'pointer', flexShrink: 0 }}>
+      <div className={s.top}>
+        <div className={s.gallery}>
+          {current ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={current} alt={service.title} className={s.main} />
+          ) : (
+            <div className={s.noPhoto}>{categoryName ?? 'Service'}</div>
+          )}
+          {photos.length > 1 ? (
+            <div className={s.thumbs}>
+              {photos.map((u, i) => (
+                <button key={u} type="button" onClick={() => setPhoto(i)} aria-label={`Photo ${i + 1}`} className={`${s.thumb} ${i === photo ? s.thumbOn : ''}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u} alt="" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 8, display: 'block' }} />
+                  <img src={u} alt="" />
                 </button>
               ))}
             </div>
           ) : null}
-        </>
-      ) : null}
-
-      <h1 className="h1" style={{ margin: '14px 0 4px' }}>{service.title}</h1>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <strong style={{ fontSize: 18 }}>{priceLabel(service.price, service.priceUnit)}</strong>
-        {service.mrp && service.mrp > service.price ? <span style={{ textDecoration: 'line-through', color: '#999' }}>₹{service.mrp}</span> : null}
-        {service.ratingCount > 0 ? <Rating value={service.rating} count={service.ratingCount} /> : null}
-        <span className="body-sm" style={{ color: '#888' }}>~{service.durationMins} min</span>
-      </div>
-      <div className="body-sm" style={{ color: '#888', marginTop: 4 }}>
-        {categoryName ? `${categoryName} · ` : ''}{providerName ? `by ${providerName}` : ''}{service.city ? ` · ${service.city}` : ''}
-      </div>
-
-      {service.description ? <p style={{ marginTop: 14, whiteSpace: 'pre-wrap' }}>{service.description}</p> : null}
-
-      {service.video ? (
-        <div className="card card-pad" style={{ marginTop: 14 }}>
-          <strong>Watch the work</strong>
-          {/youtube\.com|youtu\.be/.test(service.video) ? (
-            <p className="body-sm" style={{ marginTop: 6 }}><a href={service.video} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>Open the video on YouTube</a></p>
-          ) : (
-            <video src={service.video} controls preload="metadata" style={{ width: '100%', borderRadius: 12, marginTop: 8 }} />
-          )}
         </div>
-      ) : null}
 
-      {service.availability && service.availability.length > 0 ? (
-        <div className="card card-pad" style={{ marginTop: 14 }}>
-          <strong>Available hours</strong>
-          <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-            {service.availability.map((a, i) => (
-              <li key={i} className="body-sm">{DAYS[a.day] ?? a.day}: {a.open}–{a.close}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+        <div>
+          {categoryName ? <span className={s.kicker}>{categoryName}</span> : null}
+          <h1 className={s.title}>{service.title}</h1>
+          <div className={s.meta}>
+            {providerName ? `by ${providerName}` : ''}{service.city ? ` · ${service.city}` : ''}
+          </div>
+          <div className={s.priceRow}>
+            <span className={s.price}>{priceLabel(service.price, service.priceUnit)}</span>
+            {service.mrp && service.mrp > service.price ? <span className={s.mrp}>₹{service.mrp}</span> : null}
+            {service.ratingCount > 0 ? <Rating value={service.rating} count={service.ratingCount} /> : null}
+          </div>
+          <div className={s.facts}>
+            <span className={s.fact}>⏱ ~{service.durationMins} min</span>
+            <span className={s.fact}>🏠 At your address</span>
+            <span className={s.fact}>🔐 Completed with your OTP</span>
+          </div>
 
-      <hr style={{ margin: '22px 0', border: 0, borderTop: '1px solid var(--line, #eee)' }} />
-
+          {service.description ? <p style={{ margin: '0 0 16px', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{service.description}</p> : null}
       {!user ? (
         <Alert tone="brand">
           Please <Link href={`/login?next=/services/${service.slug}`} style={{ fontWeight: 700 }}>log in</Link> to book this service.
@@ -177,6 +164,30 @@ export default function ServiceDetailPage() {
           )}
         </div>
       )}
+        </div>
+      </div>
+
+      {service.video ? (
+        <section className={s.section}>
+          <h2 className={s.sectionTitle}>Watch the work</h2>
+          {/youtube\.com|youtu\.be/.test(service.video) ? (
+            <a href={service.video} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>Open the video on YouTube</a>
+          ) : (
+            <video src={service.video} controls preload="metadata" className={s.video} />
+          )}
+        </section>
+      ) : null}
+
+      {service.availability && service.availability.length > 0 ? (
+        <section className={s.section}>
+          <h2 className={s.sectionTitle}>Available hours</h2>
+          <div className={s.hours}>
+            {service.availability.map((a, i) => (
+              <span key={i}><b>{DAYS[a.day] ?? a.day}</b> · {a.open}–{a.close}</span>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

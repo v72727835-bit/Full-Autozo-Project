@@ -69,9 +69,9 @@ export function BookingDetailScreen() {
         {b.status === 'requested' ? <Txt variant="body" tone="muted" style={{ marginTop: space.sm }}>We’re ringing nearby providers. The first to accept takes your booking.</Txt> : null}
         {['rejected', 'expired'].includes(b.status) ? <Txt variant="body" tone="danger" style={{ marginTop: space.sm }}>No provider could take this booking. Any payment will be refunded.</Txt> : null}
 
-        {LIVE.includes(b.status) && b.status !== 'requested' && b.completionOtp ? (
+        {LIVE.includes(b.status) && b.completionOtp ? (
           <Card title="Completion OTP">
-            <Txt variant="bodySm" tone="muted">Share with the provider only after the work is done.</Txt>
+            <Txt variant="bodySm" tone="muted">Give this to the provider only after the work is done. The service is completed only with this OTP.</Txt>
             <Txt variant="display" tone="brand" style={{ letterSpacing: 6, marginTop: space.xs }}>{b.completionOtp}</Txt>
           </Card>
         ) : null}
