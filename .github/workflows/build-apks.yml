@@ -15,6 +15,7 @@ on:
       - autozo-warehouse/**
       - autozo-provider/**
       - autozo-backend/autozo-mobile/**
+      - scripts/publish-apks.sh
       - .github/workflows/build-apks.yml
 
 concurrency:
@@ -113,6 +114,11 @@ jobs:
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" apk-builds
 
       # Same SSH secrets as deploy.yml. Only copies the APKs; the sites stay up.
+      - name: Get the APK publish script
+        uses: actions/checkout@v4
+        with:
+          path: _repo
+          sparse-checkout: scripts
       - name: Put the new APKs on the website
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -133,4 +139,8 @@ jobs:
           scp -i ~/.ssh/id_deploy -P "${SERVER_PORT:-22}" -o BatchMode=yes \
             autozo-*.apk "root@$SERVER_HOST:/tmp/autozo-apks/"
           ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
-            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks /tmp/autozo-apks'
+            "root@$SERVER_HOST" '/usr/local/sbin/autozo-update-apks /tmp/autozo-apks' \
+            || echo "::warning::The server's own APK script failed; publishing directly below."
+          # Publishes every autozo-*.apk (provider and any new app too) into the download folders.
+          ssh -i ~/.ssh/id_deploy -p "${SERVER_PORT:-22}" -o BatchMode=yes \
+            "root@$SERVER_HOST" 'bash -s -- /tmp/autozo-apks' < _repo/scripts/publish-apks.sh
