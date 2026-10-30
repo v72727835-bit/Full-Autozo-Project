@@ -18,6 +18,7 @@ import s from './profile.module.css';
 
 const SHORTCUTS: { href: string; label: string; body: string; icon: IconName }[] = [
   { href: '/orders', label: 'Your orders', body: 'Track an order or buy it again', icon: 'package' },
+  { href: '/bookings', label: 'My service bookings', body: 'Services you booked, their status and completion OTP', icon: 'clock' },
   { href: '/addresses', label: 'Your addresses', body: 'Home, work or anywhere else', icon: 'pin' },
   { href: '/wishlist', label: 'Your wishlist', body: 'Items you saved for later', icon: 'heart' },
   { href: '/support', label: 'Chat with customer care', body: 'We reply within a couple of hours', icon: 'chat' },

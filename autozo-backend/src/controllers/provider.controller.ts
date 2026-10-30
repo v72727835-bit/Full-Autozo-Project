@@ -28,6 +28,12 @@ const PROVIDER_FORWARD: Record<string, BookingStatus> = {
 
 const genId = () => `SP${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
+/** The completion OTP is the customer's proof the work is done: never send it to the provider. */
+const forProvider = (b: { toObject?: () => Record<string, unknown> } & Record<string, unknown>) => {
+  const { completionOtp: _otp, ...rest } = (typeof b.toObject === 'function' ? b.toObject() : b) as Record<string, unknown>;
+  return rest;
+};
+
 /* ============ Registration & login ============ */
 
 export const registerProvider = asyncHandler(async (req, res) => {
@@ -174,7 +180,7 @@ export const listMyBookings = asyncHandler(async (req, res) => {
   const filter: Record<string, unknown> = { provider: req.user!.id };
   if (status) filter.status = status;
   const [rows, total] = await Promise.all([
-    ServiceBooking.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)
+    ServiceBooking.find(filter).select('-completionOtp').sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)
       .populate('customer', 'name phone').populate('service', 'title').lean(),
     ServiceBooking.countDocuments(filter),
   ]);
@@ -182,7 +188,7 @@ export const listMyBookings = asyncHandler(async (req, res) => {
 });
 
 export const getMyBooking = asyncHandler(async (req, res) => {
-  const b = await ServiceBooking.findOne({ _id: req.params.id, provider: req.user!.id })
+  const b = await ServiceBooking.findOne({ _id: req.params.id, provider: req.user!.id }).select('-completionOtp')
     .populate('customer', 'name phone').populate('service', 'title').lean();
   if (!b) throw new ApiError(404, 'Booking not found');
   ok(res, b);
@@ -205,10 +211,12 @@ export const setBookingStatus = asyncHandler(async (req, res) => {
   await booking.save();
   void pushToUsers([String(booking.customer)], {
     title: `Booking ${status.replace(/_/g, ' ')}`,
-    body: `Your booking ${booking.bookingNumber} is now ${status.replace(/_/g, ' ')}.`,
+    body: status === 'in_progress'
+      ? `Work has started on booking ${booking.bookingNumber}. When it is done, give the provider your OTP ${booking.completionOtp}.`
+      : `Your booking ${booking.bookingNumber} is now ${status.replace(/_/g, ' ')}.`,
     data: { type: `booking_${status}`, bookingId: String(booking._id), url: `/bookings/${String(booking._id)}` },
   });
-  ok(res, booking);
+  ok(res, forProvider(booking as never));
 });
 
 /** Provider drops a booking they had: ring the next-nearest providers instead. */
@@ -255,10 +263,10 @@ export const acceptRing = asyncHandler(async (req, res) => {
   await User.updateOne({ _id: req.user!.id }, { $set: { providerBusy: true } });
   void pushToUsers([String(booking.customer)], {
     title: 'Provider assigned',
-    body: `A provider accepted your booking ${booking.bookingNumber} and will be in touch.`,
+    body: `A provider accepted your booking ${booking.bookingNumber}. Your completion OTP is ${booking.completionOtp} — share it only after the work is done.`,
     data: { type: 'booking_accepted', bookingId: String(booking._id), url: `/bookings/${String(booking._id)}` },
   });
-  ok(res, booking);
+  ok(res, forProvider(booking as never));
 });
 
 export const declineRing = asyncHandler(async (req, res) => {

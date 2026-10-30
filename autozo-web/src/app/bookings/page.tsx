@@ -65,6 +65,9 @@ export default function BookingsPage() {
               <div className="body-sm" style={{ color: '#888', marginTop: 4 }}>
                 {b.bookingNumber} · ₹{b.price} · {new Date(b.createdAt).toLocaleDateString()}
               </div>
+              {['requested', 'accepted', 'on_the_way', 'in_progress'].includes(b.status) && b.completionOtp ? (
+                <div style={{ marginTop: 8, fontSize: 13 }}>Completion OTP: <b style={{ letterSpacing: 3, color: 'var(--brand-text)' }}>{b.completionOtp}</b> <span style={{ color: '#888' }}>— give it only after the work is done</span></div>
+              ) : null}
             </Link>
           ))}
         </div>
