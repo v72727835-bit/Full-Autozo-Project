@@ -929,6 +929,24 @@ export const dispatchIdParam = z.object({ dispatchId: objectId });
 /* ---- admin: providers ---- */
 export const providersQuery = pagination.extend({ status: z.enum(['pending', 'approved', 'rejected']).optional() });
 export const providerRejectBody = z.object({ reason: z.string().trim().min(3).max(300) });
+export const adminProviderUpdateBody = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    phone,
+    email: z.union([z.string().trim().toLowerCase().email(), z.literal('')]),
+    password,
+    isActive: z.boolean(),
+    firm: z.string().trim().min(2).max(120),
+    category: z.string().trim().max(80),
+    line1: z.string().trim().max(200),
+    city: z.string().trim().max(60),
+    state: z.string().trim().max(60),
+    pincode: z.union([z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'), z.literal('')]),
+    about: z.string().trim().max(1000),
+    location: latLng,
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 export const adminProviderBody = z.object({
   name: z.string().trim().min(2).max(80),
   phone,

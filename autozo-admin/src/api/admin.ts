@@ -771,6 +771,10 @@ export const fetchProviderApplications = async (params: { status?: string; page?
 export const approveProvider = async (id: string): Promise<void> => {
   await api.post(`/admin/providers/${id}/approve`);
 };
+export const adminUpdateProvider = async (id: string, body: Record<string, unknown>): Promise<{ _id: string; phone: string; isActive: boolean }> =>
+  (await api.patch(`/admin/providers/${id}`, body)).data.data;
+export const adminDeleteProvider = async (id: string): Promise<{ deleted: boolean; kept?: boolean }> =>
+  (await api.delete(`/admin/providers/${id}`)).data.data;
 export const adminCreateProvider = async (body: Record<string, unknown>): Promise<{ _id: string; name: string; phone: string; email?: string; providerId?: string }> =>
   (await api.post('/admin/providers', body)).data.data;
 export const rejectProvider = async (id: string, reason: string): Promise<void> => {

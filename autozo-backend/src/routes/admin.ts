@@ -150,6 +150,8 @@ router.post('/warehouse-applications/:id/reject', validate({ params: v.idParam, 
 /* Service providers: approval gate (same pattern as warehouses) */
 router.get('/providers', validate({ query: v.providersQuery }), provider.adminListProviders);
 router.post('/providers', validate({ body: v.adminProviderBody }), provider.adminCreateProvider);
+router.patch('/providers/:id', validate({ params: v.idParam, body: v.adminProviderUpdateBody }), provider.adminUpdateProvider);
+router.delete('/providers/:id', validate({ params: v.idParam }), provider.adminDeleteProvider);
 router.post('/providers/:id/approve', validate({ params: v.idParam }), provider.adminApproveProvider);
 router.post('/providers/:id/reject', validate({ params: v.idParam, body: v.providerRejectBody }), provider.adminRejectProvider);
 /* Service categories shown on the public Services page */

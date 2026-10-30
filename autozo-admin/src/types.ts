@@ -564,6 +564,7 @@ export interface ProviderApplication {
   phone: string;
   email?: string;
   providerId?: string;
+  isActive?: boolean;
   providerStatus: 'pending' | 'approved' | 'rejected';
   providerRejectReason?: string;
   providerApplication?: {
