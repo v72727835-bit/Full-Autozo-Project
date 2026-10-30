@@ -6,6 +6,7 @@ import * as extra from '../controllers/adminExtra.controller';
 import * as invoices from '../controllers/invoice.controller';
 import * as seller from '../controllers/seller.controller';
 import * as provider from '../controllers/provider.controller';
+import * as providerWallet from '../controllers/providerWallet.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
@@ -155,6 +156,15 @@ router.delete('/providers/:id', validate({ params: v.idParam }), provider.adminD
 router.post('/providers/:id/approve', validate({ params: v.idParam }), provider.adminApproveProvider);
 router.post('/providers/:id/reject', validate({ params: v.idParam, body: v.providerRejectBody }), provider.adminRejectProvider);
 /* Service categories shown on the public Services page */
+/* Provider money: commission dues and withdrawals (Payouts permission) */
+router.get('/provider-payouts/dues', validate({ query: v.providerDuesQuery }), providerWallet.adminDues);
+router.post('/provider-payouts/dues/:id/mark', validate({ params: v.idParam, body: v.markDuesPaymentBody }), providerWallet.adminMarkDuesPayment);
+router.post('/provider-payouts/providers/:id/collect', validate({ params: v.idParam, body: v.collectDuesBody }), providerWallet.adminCollectDues);
+router.get('/provider-payouts/providers/:id', validate({ params: v.idParam }), providerWallet.adminProviderWallet);
+router.get('/provider-payouts/withdrawals', validate({ query: v.withdrawalsQuery }), providerWallet.adminListWithdrawals);
+router.post('/provider-payouts/withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), providerWallet.adminMarkWithdrawal);
+router.post('/provider-payouts/withdrawals/:id/pay', validate({ params: v.idParam }), providerWallet.adminPayWithdrawal);
+
 router.get('/service-categories', provider.adminListCategories);
 router.post('/service-categories', validate({ body: v.serviceCategoryBody }), provider.adminCreateCategory);
 router.patch('/service-categories/:id', validate({ params: v.idParam, body: v.serviceCategoryUpdateBody }), provider.adminUpdateCategory);

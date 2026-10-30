@@ -75,6 +75,7 @@ export default function SettingsStorePage() {
       <SpeedUpPhotos />
       <RiderPayCard settings={settings} onSave={save} />
       <SellerPayCard settings={settings} onSave={save} />
+      <ProviderPayCard settings={settings} onSave={save} />
       <CompanyCard settings={settings} onSave={save} />
       <GstCard settings={settings} onSave={save} />
       <SocialCard settings={settings} onSave={save} />
@@ -499,6 +500,46 @@ function SellerPayCard({ settings, onSave }: { settings: Settings; onSave: (patc
           <input type="number" min={0} value={minWithdraw} onChange={(e) => setMinWithdraw(e.target.value)} />
         </Field>
       </div>
+      <div className="modal-actions">
+        <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+      </div>
+    </div>
+  );
+}
+
+function ProviderPayCard({ settings, onSave }: { settings: Settings; onSave: (patch: Record<string, unknown>) => Promise<void> }) {
+  const pp = settings.providerPay ?? { commissionPct: 10, minWithdraw: 200, dueLimit: 0 };
+  const [commissionPct, setCommissionPct] = useState(String(pp.commissionPct));
+  const [minWithdraw, setMinWithdraw] = useState(String(pp.minWithdraw));
+  const [dueLimit, setDueLimit] = useState(String(pp.dueLimit));
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    setSaving(true);
+    await onSave({ providerPay: { commissionPct: Number(commissionPct) || 0, minWithdraw: Number(minWithdraw) || 0, dueLimit: Number(dueLimit) || 0 } });
+    setSaving(false);
+  };
+
+  return (
+    <div className="card card-pad" style={{ marginBottom: 18 }}>
+      <h2 className="card-title">Service provider commission &amp; wallet</h2>
+      <div className="page-subtitle" style={{ marginBottom: 12 }}>
+        Providers with a running plan pay no commission. Without a plan you keep this percent of each completed booking: on online
+        bookings it is taken before their share goes to their wallet; on cash bookings it becomes a due. When a provider&apos;s due goes
+        over the limit they get no new bookings until you collect it (Payouts → Provider commission).
+      </div>
+      <div className="field-row">
+        <Field label="Commission without a plan (% of booking)">
+          <input type="number" min={0} max={100} value={commissionPct} onChange={(e) => setCommissionPct(e.target.value)} />
+        </Field>
+        <Field label="Smallest a provider can withdraw (₹)">
+          <input type="number" min={0} value={minWithdraw} onChange={(e) => setMinWithdraw(e.target.value)} />
+        </Field>
+        <Field label="Stop new bookings when due is over (₹)">
+          <input type="number" min={0} value={dueLimit} onChange={(e) => setDueLimit(e.target.value)} />
+        </Field>
+      </div>
+      <div className="page-subtitle">Due limit 0 = any unpaid commission stops new bookings.</div>
       <div className="modal-actions">
         <Button onClick={submit} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>

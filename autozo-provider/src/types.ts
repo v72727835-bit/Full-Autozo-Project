@@ -23,6 +23,42 @@ export interface ProviderDashboard {
   bookingsByStatus: Record<string, number>;
   todaysBookings: number;
   earnings: number;
+  /** Commission owed on cash bookings; when blocked no new bookings ring. */
+  due?: number;
+  blockedByDues?: boolean;
+}
+
+export type PayoutAccount = { upi?: string; bankHolder?: string; bankNumber?: string; bankIfsc?: string };
+export interface ProviderWallet {
+  balance: number;
+  onlineEarned: number;
+  commissionTotal: number;
+  due: number;
+  duePending: number;
+  pendingWithdraw: number;
+  paidOut: number;
+  cashCollected: number;
+  cashBookings: number;
+  commissionPct: number;
+  planCommissionPct: number;
+  hasPlan: boolean;
+  minWithdraw: number;
+  dueLimit: number;
+  blocked: boolean;
+  account: PayoutAccount | null;
+}
+export interface ProviderTxn {
+  _id: string;
+  kind: 'earning' | 'commission' | 'commission_paid' | 'withdrawal' | 'adjustment';
+  amount: number;
+  status: 'completed' | 'pending' | 'paid' | 'rejected' | 'confirmed';
+  bookingNumber?: string;
+  gross?: number;
+  commission?: number;
+  method?: 'upi' | 'bank' | 'cash' | 'wallet';
+  reference?: string;
+  note?: string;
+  createdAt: string;
 }
 
 export interface ServiceCategory { _id: string; name: string; slug: string }

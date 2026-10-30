@@ -378,6 +378,11 @@ export interface Settings {
     commissionPct: number;
     minWithdraw: number;
   };
+  providerPay?: {
+    commissionPct: number;
+    minWithdraw: number;
+    dueLimit: number;
+  };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
   company?: CompanyDetails;
   gst?: { defaultRate: number; deliveryRate: number; homeState: string };

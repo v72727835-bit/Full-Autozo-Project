@@ -69,6 +69,8 @@ export interface IServiceBooking {
   completedAt?: Date;
   /** What the provider earned (set on completion). */
   providerEarning?: number;
+  /** Commission the platform kept on this booking (0 when the provider has a running plan). */
+  commission?: number;
   rating?: number;
   reviewComment?: string;
   createdAt: Date;
@@ -128,6 +130,7 @@ const serviceBookingSchema = new Schema<IServiceBooking>(
     acceptedAt: Date,
     completedAt: Date,
     providerEarning: { type: Number, default: 0, min: 0 },
+    commission: { type: Number, default: 0, min: 0 },
     rating: { type: Number, min: 1, max: 5 },
     reviewComment: { type: String, trim: true, maxlength: 1000 },
   },

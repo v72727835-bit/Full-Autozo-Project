@@ -15,6 +15,7 @@ import * as extra from '../controllers/adminExtra.controller';
 import * as support from '../controllers/support.controller';
 import * as seller from '../controllers/seller.controller';
 import * as provider from '../controllers/provider.controller';
+import * as providerWallet from '../controllers/providerWallet.controller';
 import * as services from '../controllers/service.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as ads from '../controllers/ads.controller';
@@ -157,6 +158,13 @@ router.get('/provider/bookings/:id', ...providerOnly, validate({ params: v.idPar
 router.patch('/provider/bookings/:id/status', ...providerOnly, validate({ params: v.idParam, body: v.providerBookingStatusBody }), provider.setBookingStatus);
 router.post('/provider/bookings/:id/cancel', ...providerOnly, validate({ params: v.idParam, body: v.cancelBookingBody }), provider.cancelMyBooking);
 /* Persistent ring: poll, accept, decline */
+/* Provider wallet: online earnings, commission dues, withdrawals */
+router.get('/provider/wallet', ...providerOnly, providerWallet.getWallet);
+router.get('/provider/wallet/txns', ...providerOnly, validate({ query: v.providerTxnsQuery }), providerWallet.listTxns);
+router.post('/provider/wallet/account', ...providerOnly, validate({ body: v.walletAccountBody }), providerWallet.saveAccount);
+router.post('/provider/wallet/withdraw', ...providerOnly, validate({ body: v.withdrawBody }), providerWallet.requestWithdraw);
+router.post('/provider/wallet/pay-dues', ...providerOnly, validate({ body: v.providerPayDuesBody }), providerWallet.payDues);
+
 router.get('/provider/ring', ...providerOnly, provider.myRing);
 router.post('/provider/ring/:dispatchId/accept', ...providerWithPlan, validate({ params: v.dispatchIdParam }), provider.acceptRing);
 router.post('/provider/ring/:dispatchId/decline', ...providerOnly, validate({ params: v.dispatchIdParam }), provider.declineRing);

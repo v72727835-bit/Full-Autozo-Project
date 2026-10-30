@@ -11,19 +11,21 @@ import DashboardScreen from '../screens/DashboardScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import AccountScreen from '../screens/AccountScreen';
+import WalletScreen from '../screens/WalletScreen';
 import PlanScreen, { planLocked } from '../screens/PlanScreen';
 import { fetchMyPlan, MyPlan } from '../api/provider';
 import LoginScreen from '../screens/LoginScreen';
 import { accents, colors, softShadow } from '../theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
-type Tab = 'dashboard' | 'bookings' | 'services' | 'plan' | 'account';
+type Tab = 'dashboard' | 'bookings' | 'services' | 'wallet' | 'plan' | 'account';
 
 const TABS: { key: Tab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Home', icon: 'grid-outline' },
   { key: 'bookings', label: 'Bookings', icon: 'receipt-outline' },
   { key: 'services', label: 'Services', icon: 'construct-outline' },
-  { key: 'plan', label: 'My plan', icon: 'card-outline' },
+  { key: 'wallet', label: 'Wallet', icon: 'wallet-outline' },
+  { key: 'plan', label: 'Plan', icon: 'card-outline' },
   { key: 'account', label: 'Account', icon: 'shield-checkmark-outline' },
 ];
 
@@ -47,6 +49,7 @@ function Shell() {
   if (tab === 'dashboard') body = <DashboardScreen />;
   else if (tab === 'bookings') body = <BookingsScreen />;
   else if (tab === 'services') body = <ServicesScreen />;
+  else if (tab === 'wallet') body = <WalletScreen />;
   else if (tab === 'plan') body = <PlanScreen plan={plan} onReload={loadPlan} />;
   else body = <AccountScreen />;
 

@@ -112,6 +112,29 @@ export interface PushMessage {
   body: string;
   /** Extra data for the app to route on, e.g. { orderId, type }. */
   data?: Record<string, string>;
+  /**
+   * Android extras for urgent alerts: the app's notification channel (its sound
+   * plays even when the app is closed), a tag so repeats replace each other
+   * instead of piling up, and a short time-to-live so a stale ring is dropped.
+   */
+  android?: { channelId?: string; sound?: string; tag?: string; ttlSeconds?: number };
+}
+
+function androidConfig(m: PushMessage) {
+  const a = m.android;
+  if (!a) return { priority: 'HIGH', notification: { sound: 'default' } };
+  return {
+    priority: 'HIGH',
+    ...(a.ttlSeconds ? { ttl: `${a.ttlSeconds}s` } : {}),
+    notification: {
+      sound: a.sound ?? 'default',
+      ...(a.channelId ? { channel_id: a.channelId } : {}),
+      ...(a.tag ? { tag: a.tag } : {}),
+      notification_priority: 'PRIORITY_MAX',
+      visibility: 'PUBLIC',
+      default_vibrate_timings: true,
+    },
+  };
 }
 
 /** Sends to one device token. Returns 'ok', 'dead' (token no longer valid: delete it) or 'error'. */
@@ -124,7 +147,7 @@ async function sendOne(projectId: string, bearer: string, token: string, m: Push
         token,
         notification: { title: m.title, body: m.body },
         data: m.data ?? {},
-        android: { priority: 'HIGH', notification: { sound: 'default' } },
+        android: androidConfig(m),
         webpush: { fcm_options: { link: m.data?.url ?? '/' } },
       },
     }),

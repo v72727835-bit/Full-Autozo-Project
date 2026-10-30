@@ -1,5 +1,6 @@
 import { PermissionsAndroid, Platform } from 'react-native';
 import { api } from '../api/client';
+import { bell } from '../lib/bell';
 
 /**
  * Push notifications through Firebase Cloud Messaging (native SDK, loaded
@@ -11,7 +12,7 @@ interface Messaging {
   getToken: () => Promise<string>;
   deleteToken: () => Promise<void>;
   onTokenRefresh: (cb: (token: string) => void) => () => void;
-  onMessage: (cb: (m: { notification?: { title?: string; body?: string } }) => void) => () => void;
+  onMessage: (cb: (m: { notification?: { title?: string; body?: string }; data?: Record<string, string> }) => void) => () => void;
 }
 
 function load(): (() => Messaging) | null {
@@ -43,7 +44,13 @@ export async function registerPush(app: 'customer' | 'rider', onForeground: (tit
     }
     await post(await messaging().getToken(), app);
     const offRefresh = messaging().onTokenRefresh((t) => void post(t, app).catch(() => undefined));
-    const offMessage = messaging().onMessage((m) => onForeground(m.notification?.title ?? 'Autozo', m.notification?.body ?? ''));
+    // Ring pushes are shown by the ring overlay (with the loud bell), not as a pop-up.
+    const offMessage = messaging().onMessage((m) => {
+      if (m.data?.type === 'ring') return;
+      onForeground(m.notification?.title ?? 'Autozo', m.notification?.body ?? '');
+    });
+    // So the bell still reaches a phone that has been idle for a while (asked once).
+    bell.allowBackgroundRinging();
     return () => {
       offRefresh();
       offMessage();

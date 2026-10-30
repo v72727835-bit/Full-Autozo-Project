@@ -18,6 +18,7 @@ import {
   ringingForUser,
 } from '../services/dispatch.service';
 import { pushToUsers } from '../services/firebase.service';
+import { providerBlockedByDues, settleCompletedBooking } from '../services/providerPay.service';
 
 /** A booking a provider may still act on while they hold it. */
 const PROVIDER_FORWARD: Record<string, BookingStatus> = {
@@ -92,7 +93,7 @@ export const getMe = asyncHandler(async (req, res) => {
 export const dashboard = asyncHandler(async (req, res) => {
   const id = new Types.ObjectId(req.user!.id);
   const start = new Date(); start.setHours(0, 0, 0, 0);
-  const [services, activeServices, byStatus, todays, earnRows] = await Promise.all([
+  const [services, activeServices, byStatus, todays, earnRows, dues] = await Promise.all([
     Service.countDocuments({ provider: id }),
     Service.countDocuments({ provider: id, isActive: true }),
     ServiceBooking.aggregate<{ _id: string; n: number }>([{ $match: { provider: id } }, { $group: { _id: '$status', n: { $sum: 1 } } }]),
@@ -101,6 +102,7 @@ export const dashboard = asyncHandler(async (req, res) => {
       { $match: { provider: id, status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$providerEarning' } } },
     ]),
+    providerBlockedByDues(req.user!.id),
   ]);
   const counts: Record<string, number> = {};
   for (const r of byStatus) counts[r._id] = r.n;
@@ -111,6 +113,9 @@ export const dashboard = asyncHandler(async (req, res) => {
     bookingsByStatus: counts,
     todaysBookings: todays,
     earnings: Math.round(earnRows[0]?.total ?? 0),
+    // Commission owed on cash bookings; over the limit = no new bookings until it is collected.
+    due: dues.due,
+    blockedByDues: dues.blocked,
   });
 });
 
@@ -205,7 +210,10 @@ export const setBookingStatus = asyncHandler(async (req, res) => {
     // Each booking has its own OTP, so name the booking: a customer with several bookings may read out the wrong one.
     if (otp !== booking.completionOtp) throw new ApiError(400, `Wrong OTP for booking ${booking.bookingNumber}. Ask the customer to open this booking in "My service bookings" and read its OTP.`);
     booking.completedAt = new Date();
-    booking.providerEarning = booking.price;
+    // Online money goes to the wallet; cash bookings without a plan owe the commission.
+    const { commission, earning } = await settleCompletedBooking(booking as never);
+    booking.commission = commission;
+    booking.providerEarning = earning;
     await User.updateOne({ _id: req.user!.id }, { $set: { providerBusy: false } });
   }
   booking.status = status;
@@ -253,6 +261,10 @@ export const myRing = asyncHandler(async (req, res) => {
 
 export const acceptRing = asyncHandler(async (req, res) => {
   await requireApproved(req.user!.id);
+  const dues = await providerBlockedByDues(req.user!.id);
+  if (dues.blocked) {
+    throw new ApiError(409, `You have ₹${dues.due} commission due. Pay it from your Wallet — new bookings start again once the office confirms it.`);
+  }
   const result = await acceptDispatch(req.params.dispatchId, req.user!.id);
   if (!result || !result.bookingId) throw new ApiError(409, 'This booking was already taken by someone else.');
   const booking = await ServiceBooking.findById(result.bookingId);

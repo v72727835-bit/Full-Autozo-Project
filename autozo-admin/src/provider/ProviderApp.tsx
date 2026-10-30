@@ -25,8 +25,9 @@ import {
   serviceCategories,
 } from '../api/admin';
 import PlanView, { PlanBanner } from '../seller/Plan';
+import ProviderWalletView from './Wallet';
 import { getErrorMessage } from '../api/client';
-import { IconBell, IconBox, IconDashboard, IconReceipt, IconRupee, IconShield } from '../components/icons';
+import { IconBell, IconBox, IconChart, IconDashboard, IconReceipt, IconRupee, IconShield } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { askNotificationPermission, playChime } from '../lib/alerts';
@@ -108,6 +109,7 @@ export default function ProviderApp() {
     { to: '/', label: 'Dashboard', icon: <IconDashboard />, end: true },
     { to: '/services', label: 'My services', icon: <IconBox /> },
     { to: '/bookings', label: 'Bookings', icon: <IconReceipt /> },
+    { to: '/wallet', label: 'Wallet', icon: <IconChart /> },
     { to: '/plan', label: 'My plan', icon: <IconRupee /> },
     { to: '/account', label: 'Account', icon: <IconShield /> },
   ];
@@ -117,6 +119,7 @@ export default function ProviderApp() {
     case '/': page = <DashboardView approved={approved} />; break;
     case '/services': page = <ServicesView approved={approved} />; break;
     case '/bookings': page = <BookingsView />; break;
+    case '/wallet': page = <ProviderWalletView />; break;
     case '/plan': page = plan ? <PlanView plan={plan} me={me} onPaid={setPlan} kind="provider" /> : <CenterSpinner />; break;
     case '/account': page = <AccountView me={me} onLogout={logout} />; break;
     default: return <Navigate to="/" replace />;
@@ -214,6 +217,13 @@ function DashboardView({ approved }: { approved: boolean }) {
   return (
     <>
       <div className="page-header"><div><h1 className="page-title">Dashboard</h1><div className="page-subtitle">{approved ? 'Your services and bookings at a glance.' : 'Awaiting approval.'}</div></div></div>
+      {d.blockedByDues ? (
+        <div className="card card-pad" style={{ marginBottom: 14, border: '2px solid var(--danger, #d33)', background: 'rgba(221,51,51,.08)' }}>
+          <strong>New bookings are stopped — ₹{d.due} commission due</strong>
+          <div className="cell-muted" style={{ marginTop: 4 }}>Pay it from the Wallet. Bookings start again as soon as the office confirms it.</div>
+          <div style={{ marginTop: 8 }}><NavLink to="/wallet" className={() => 'btn btn-sm btn-primary'}>Open wallet</NavLink></div>
+        </div>
+      ) : null}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
         {tiles.map(([label, value]) => (
           <div key={label} className="card" style={{ padding: 16 }}>

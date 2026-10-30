@@ -121,6 +121,8 @@ export interface IUser {
   /** A provider busy on a job (or who turned themselves off) gets no new rings. */
   providerBusy?: boolean;
   providerPaused?: boolean;
+  /** Unpaid commission on cash bookings (kept in step with the wallet ledger). Over the limit = no new bookings. */
+  providerDue?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -264,6 +266,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     providerOnlineAt: { type: Date, default: null },
     providerBusy: { type: Boolean, default: false },
     providerPaused: { type: Boolean, default: false },
+    providerDue: { type: Number, default: 0, min: 0 },
   },
   {
     timestamps: true,

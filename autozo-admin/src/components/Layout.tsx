@@ -158,7 +158,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         { to: '/shops', label: 'Warehouses', icon: <IconStore />, perm: 'shops' },
         { to: '/warehouse-requests', label: 'Warehouse requests', icon: <IconStore />, badge: whPending, badgeTone: 'warn', perm: 'shops' },
         { to: '/riders', label: 'Riders', icon: <IconRider />, badge: riders, badgeTone: 'brand', perm: 'riders' },
-        { to: '/payouts', label: 'Rider Payouts', icon: <IconTag />, perm: 'payouts' },
+        { to: '/payouts', label: 'Payouts & dues', icon: <IconTag />, perm: 'payouts' },
         { to: '/subscriptions', label: 'Subscriptions', icon: <IconRupee />, perm: 'subscriptions' },
         { to: '/support', label: 'Customer Care', icon: <IconBell />, badge: careUnread, badgeTone: 'brand', perm: 'support' },
         { to: '/notifications', label: 'Notifications', icon: <IconVolume />, perm: 'media' },
