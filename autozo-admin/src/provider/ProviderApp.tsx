@@ -514,7 +514,7 @@ function BookingsView() {
           {active.note ? <div style={{ marginBottom: 10 }}><strong>Note</strong><div className="cell-muted">{active.note}</div></div> : null}
 
           {active.status === 'in_progress' ? (
-            <Field label="Completion OTP (ask the customer)"><input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" placeholder="4-digit OTP" /></Field>
+            <Field label={`Completion OTP for ${active.bookingNumber} (ask the customer)`}><input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" placeholder="4-digit OTP" /></Field>
           ) : null}
           {FORWARD[active.status] ? (
             <div className="row-flex" style={{ marginTop: 10 }}>

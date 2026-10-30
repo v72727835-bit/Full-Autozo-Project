@@ -922,7 +922,11 @@ export const providerBookingsQuery = pagination.extend({
 });
 export const providerBookingStatusBody = z.object({
   status: z.enum(['on_the_way', 'in_progress', 'completed']),
-  otp: z.string().trim().regex(/^\d{4}$/).optional(),
+  // Accept "12 34", " 1234" or a number from any client; only the four digits matter.
+  otp: z.preprocess(
+    (v) => (v == null || v === '' ? undefined : String(v).replace(/\D/g, '')),
+    z.string().regex(/^\d{4}$/, 'Enter the 4-digit completion OTP').optional(),
+  ),
 });
 export const dispatchIdParam = z.object({ dispatchId: objectId });
 

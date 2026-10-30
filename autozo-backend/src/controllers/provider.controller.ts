@@ -201,7 +201,9 @@ export const setBookingStatus = asyncHandler(async (req, res) => {
   if (!booking) throw new ApiError(404, 'Booking not found');
   if (PROVIDER_FORWARD[booking.status] !== status) throw new ApiError(409, `You can't move this booking to "${status}" from "${booking.status}".`);
   if (status === 'completed') {
-    if (!otp || otp !== booking.completionOtp) throw new ApiError(400, 'Ask the customer for the completion OTP to close this booking.');
+    if (!otp) throw new ApiError(400, `Enter the 4-digit completion OTP the customer sees on booking ${booking.bookingNumber}.`);
+    // Each booking has its own OTP, so name the booking: a customer with several bookings may read out the wrong one.
+    if (otp !== booking.completionOtp) throw new ApiError(400, `Wrong OTP for booking ${booking.bookingNumber}. Ask the customer to open this booking in "My service bookings" and read its OTP.`);
     booking.completedAt = new Date();
     booking.providerEarning = booking.price;
     await User.updateOne({ _id: req.user!.id }, { $set: { providerBusy: false } });

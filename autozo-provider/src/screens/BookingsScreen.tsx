@@ -90,7 +90,7 @@ export default function BookingsScreen() {
             </Card>
 
             {active.status === 'in_progress' ? (
-              <View style={{ marginTop: 14 }}><Input label="Completion OTP (ask the customer)" value={otp} onChangeText={(v) => setOtp(v.replace(/\D/g, '').slice(0, 4))} keyboardType="numeric" placeholder="4-digit OTP" /></View>
+              <View style={{ marginTop: 14 }}><Input label={`Completion OTP for ${active.bookingNumber} (ask the customer)`} value={otp} onChangeText={(v) => setOtp(v.replace(/\D/g, '').slice(0, 4))} keyboardType="numeric" placeholder="4-digit OTP" /></View>
             ) : null}
 
             <ErrorText message={error} />
