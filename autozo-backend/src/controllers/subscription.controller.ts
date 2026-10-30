@@ -13,7 +13,7 @@ import { created, ok, pageMeta } from '../utils/response';
 
 const myAudience = (role?: string): SubscriptionAudience => {
   const a = audienceOf(role);
-  if (!a) throw new ApiError(403, 'Plans are only for riders and warehouses.');
+  if (!a) throw new ApiError(403, 'Plans are only for riders, warehouses and service providers.');
   return a;
 };
 
@@ -85,13 +85,15 @@ export const myPlanPayments = asyncHandler(async (req, res) => {
 
 export const adminSubscriptionOverview = asyncHandler(async (_req, res) => {
   const now = new Date();
-  const [switches, plans, activeRiders, activeSellers, riders, sellers, revenue] = await Promise.all([
+  const [switches, plans, activeRiders, activeSellers, activeProviders, riders, sellers, providers, revenue] = await Promise.all([
     subscriptionSwitches(),
     SubscriptionPlan.find().sort({ audience: 1, sort: 1, price: 1 }).lean(),
     User.countDocuments({ role: 'rider', deletedAt: { $exists: false }, subscriptionUntil: { $gt: now } }),
     User.countDocuments({ role: 'seller', deletedAt: { $exists: false }, subscriptionUntil: { $gt: now } }),
+    User.countDocuments({ role: 'provider', deletedAt: { $exists: false }, subscriptionUntil: { $gt: now } }),
     User.countDocuments({ role: 'rider', deletedAt: { $exists: false } }),
     User.countDocuments({ role: 'seller', deletedAt: { $exists: false } }),
+    User.countDocuments({ role: 'provider', deletedAt: { $exists: false } }),
     SubscriptionPayment.aggregate<{ _id: SubscriptionAudience; total: number }>([
       { $match: { status: 'paid', source: 'razorpay' } },
       { $group: { _id: '$audience', total: { $sum: '$amount' } } },
@@ -103,6 +105,7 @@ export const adminSubscriptionOverview = asyncHandler(async (_req, res) => {
     plans,
     rider: { total: riders, active: activeRiders, revenue: earned('rider') },
     seller: { total: sellers, active: activeSellers, revenue: earned('seller') },
+    provider: { total: providers, active: activeProviders, revenue: earned('provider') },
   });
 });
 
@@ -112,6 +115,7 @@ export const adminSetSwitches = asyncHandler(async (req, res) => {
   const $set: Record<string, boolean> = {};
   if (typeof body.rider === 'boolean') $set['subscriptions.rider'] = body.rider;
   if (typeof body.seller === 'boolean') $set['subscriptions.seller'] = body.seller;
+  if (typeof body.provider === 'boolean') $set['subscriptions.provider'] = body.provider;
   await Settings.updateOne({ key: 'global' }, { $set });
   clearSettingsCache();
   ok(res, await subscriptionSwitches());
@@ -154,11 +158,11 @@ export const adminSubscribers = asyncHandler(async (req, res) => {
   else if (status === 'never') filter.subscriptionUntil = { $in: [null] };
   if (q) {
     const rx = new RegExp(escapeRegex(q), 'i');
-    filter.$or = [{ name: rx }, { phone: rx }, { sellerId: rx }];
+    filter.$or = [{ name: rx }, { phone: rx }, { sellerId: rx }, { providerId: rx }];
   }
   const [rows, total] = await Promise.all([
     User.find(filter)
-      .select('name phone sellerId isActive subscriptionUntil warehouse warehouses sellerWarehouses createdAt')
+      .select('name phone sellerId providerId providerApplication isActive subscriptionUntil warehouse warehouses sellerWarehouses createdAt')
       .populate('warehouses', 'name')
       .populate('sellerWarehouses', 'name')
       .sort({ subscriptionUntil: -1, name: 1 })
@@ -179,7 +183,7 @@ export const adminGrantDays = asyncHandler(async (req, res) => {
   const { days, note } = req.body as { days: number; note?: string };
   const user = await User.findById(req.params.id).select('role').lean();
   const audience = audienceOf(user?.role);
-  if (!user || !audience) throw new ApiError(404, 'Rider or warehouse not found');
+  if (!user || !audience) throw new ApiError(404, 'Rider, warehouse or provider not found');
   const period = await addPlanDays(user._id, days);
   await SubscriptionPayment.create({ user: user._id, audience, source: 'admin', planName: 'Given by admin', days, amount: 0, status: 'paid', note, ...period });
   ok(res, { subscriptionUntil: period.endsAt });
@@ -188,7 +192,7 @@ export const adminGrantDays = asyncHandler(async (req, res) => {
 /** Ends a running plan right now. */
 export const adminEndPlan = asyncHandler(async (req, res) => {
   const user = await User.findOneAndUpdate(
-    { _id: req.params.id, role: { $in: ['rider', 'seller'] } },
+    { _id: req.params.id, role: { $in: ['rider', 'seller', 'provider'] } },
     { $set: { subscriptionUntil: new Date(), subscriptionRemindedFor: null } },
     { new: true },
   )
@@ -205,7 +209,7 @@ export const adminPlanPayments = asyncHandler(async (req, res) => {
   if (user) filter.user = user;
   const [rows, total] = await Promise.all([
     SubscriptionPayment.find(filter)
-      .populate('user', 'name phone sellerId role')
+      .populate('user', 'name phone sellerId providerId role')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)

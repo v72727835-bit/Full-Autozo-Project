@@ -8,7 +8,7 @@ import { razorpayEnabled } from './razorpay.service';
 import { loadSettings } from './settings.service';
 
 /**
- * Paid plans for riders and warehouses (sellers). The super admin switches each one on or off and
+ * Paid plans for riders, warehouses (sellers) and service providers. The super admin switches each one on or off and
  * sets the plans; while a switch is on, a rider without an active plan gets no new orders and a
  * warehouse without one cannot see orders or add products. Switched off, everyone works for free.
  */
@@ -17,11 +17,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** The "plan ends soon" push goes out this long before the end. */
 export const REMIND_BEFORE_MS = 3 * DAY_MS;
 
-export const audienceOf = (role?: string): SubscriptionAudience | null => (role === 'rider' ? 'rider' : role === 'seller' ? 'seller' : null);
+export const audienceOf = (role?: string): SubscriptionAudience | null => (role === 'rider' ? 'rider' : role === 'seller' ? 'seller' : role === 'provider' ? 'provider' : null);
 
 export async function subscriptionSwitches(): Promise<Record<SubscriptionAudience, boolean>> {
   const { settings } = await loadSettings();
-  return { rider: !!settings.subscriptions?.rider, seller: !!settings.subscriptions?.seller };
+  return { rider: !!settings.subscriptions?.rider, seller: !!settings.subscriptions?.seller, provider: !!settings.subscriptions?.provider };
 }
 
 export const planActive = (until?: Date | null, now = new Date()): boolean => !!until && new Date(until).getTime() > now.getTime();
@@ -29,6 +29,11 @@ export const planActive = (until?: Date | null, now = new Date()): boolean => !!
 /** True when plans are switched on for this audience and the user has no running plan. */
 export async function needsPlan(audience: SubscriptionAudience, user: { subscriptionUntil?: Date | null }): Promise<boolean> {
   return (await subscriptionSwitches())[audience] && !planActive(user.subscriptionUntil);
+}
+
+/** Added to provider queries that pick who may be rung for a booking. Empty while provider plans are off. */
+export async function providerPlanFilter(): Promise<FilterQuery<IUser>> {
+  return (await subscriptionSwitches()).provider ? { subscriptionUntil: { $gt: new Date() } } : {};
 }
 
 /** Added to rider queries that pick who may get new orders. Empty while rider plans are off. */
@@ -39,6 +44,7 @@ export async function riderPlanFilter(): Promise<FilterQuery<IUser>> {
 export const PLAN_MESSAGE: Record<SubscriptionAudience, string> = {
   rider: 'Your plan is not active. Buy a plan to get new orders.',
   seller: 'Your plan is not active. Buy a plan to see orders and add products.',
+  provider: 'Your plan is not active. Buy a plan to add services and get new bookings.',
 };
 
 export const planRequiredError = (audience: SubscriptionAudience) => new ApiError(402, PLAN_MESSAGE[audience], { code: 'subscription_required' });
@@ -109,7 +115,7 @@ export async function sendPlanReminders(): Promise<number> {
     const days = Math.max(1, Math.ceil((new Date(u.subscriptionUntil!).getTime() - now.getTime()) / DAY_MS));
     await pushToUsers([u._id], {
       title: 'Your plan ends soon',
-      body: `Your Autozo plan ends in ${days} day${days === 1 ? '' : 's'}. Renew it to keep ${u.role === 'rider' ? 'getting orders' : 'your orders and products running'}.`,
+      body: `Your Autozo plan ends in ${days} day${days === 1 ? '' : 's'}. Renew it to keep ${u.role === 'rider' ? 'getting orders' : u.role === 'provider' ? 'getting bookings' : 'your orders and products running'}.`,
       data: { type: 'subscription' },
     }).catch(() => 0);
     await User.updateOne({ _id: u._id, subscriptionUntil: u.subscriptionUntil }, { $set: { subscriptionRemindedFor: u.subscriptionUntil } });

@@ -564,6 +564,7 @@ export interface ProviderApplication {
   phone: string;
   email?: string;
   providerId?: string;
+  isActive?: boolean;
   providerStatus: 'pending' | 'approved' | 'rejected';
   providerRejectReason?: string;
   providerApplication?: {
@@ -598,6 +599,7 @@ export interface ServiceRow {
   slug: string;
   description?: string;
   images: string[];
+  video?: string;
   price: number;
   mrp?: number;
   priceUnit: 'fixed' | 'hourly' | 'visit';

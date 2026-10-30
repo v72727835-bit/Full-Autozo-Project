@@ -769,9 +769,9 @@ export const bulkProductsBody = z.object({
 });
 
 /* ---------- rider / warehouse plans ---------- */
-const audience = z.enum(['rider', 'seller']);
+const audience = z.enum(['rider', 'seller', 'provider']);
 export const startPlanBody = z.object({ planId: objectId });
-export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional() });
+export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional(), provider: z.boolean().optional() });
 export const planBody = z.object({
   audience,
   name: z.string().trim().min(2).max(60),
@@ -901,6 +901,7 @@ export const providerServiceBody = z.object({
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().max(4000).optional(),
   images: z.array(z.string().trim().max(500)).max(8).optional(),
+  video: z.string().trim().max(500).optional(),
   price: z.number().min(0).max(10_000_000),
   mrp: z.number().min(0).max(10_000_000).optional(),
   priceUnit: z.enum(['fixed', 'hourly', 'visit']).default('fixed'),
@@ -928,6 +929,24 @@ export const dispatchIdParam = z.object({ dispatchId: objectId });
 /* ---- admin: providers ---- */
 export const providersQuery = pagination.extend({ status: z.enum(['pending', 'approved', 'rejected']).optional() });
 export const providerRejectBody = z.object({ reason: z.string().trim().min(3).max(300) });
+export const adminProviderUpdateBody = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    phone,
+    email: z.union([z.string().trim().toLowerCase().email(), z.literal('')]),
+    password,
+    isActive: z.boolean(),
+    firm: z.string().trim().min(2).max(120),
+    category: z.string().trim().max(80),
+    line1: z.string().trim().max(200),
+    city: z.string().trim().max(60),
+    state: z.string().trim().max(60),
+    pincode: z.union([z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'), z.literal('')]),
+    about: z.string().trim().max(1000),
+    location: latLng,
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 export const adminProviderBody = z.object({
   name: z.string().trim().min(2).max(80),
   phone,

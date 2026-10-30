@@ -31,6 +31,7 @@ export function ServiceDetailScreen() {
   const [payment, setPayment] = useState<'cod' | 'online'>('cod');
   const [note, setNote] = useState('');
   const [booking, setBooking] = useState(false);
+  const [photo, setPhoto] = useState(0);
 
   useEffect(() => {
     fetchService(params.idOrSlug).then(setService).catch((e) => setError(getErrorMessage(e)));
@@ -79,7 +80,16 @@ export function ServiceDetailScreen() {
     <View style={{ flex: 1, backgroundColor: c.surfaceSunken }}>
       <AppHeader title={service.title} showBack />
       <ScrollView contentContainerStyle={{ padding: gutter, paddingBottom: ms(120) }}>
-        {service.images?.[0] ? <SmartImage uri={service.images[0]} style={styles.hero} full /> : null}
+        {service.images?.[0] ? <SmartImage uri={service.images[photo] ?? service.images[0]} style={styles.hero} full /> : null}
+        {service.images && service.images.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.xs, marginTop: space.xs }}>
+            {service.images.map((u, i) => (
+              <Pressable key={u} onPress={() => setPhoto(i)} style={[styles.thumbWrap, { borderColor: i === photo ? c.brand : c.border }]}>
+                <SmartImage uri={u} style={styles.thumb} />
+              </Pressable>
+            ))}
+          </ScrollView>
+        ) : null}
         <Txt variant="h2" style={{ marginTop: space.md }}>{service.title}</Txt>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xs }}>
           <Txt variant="price" tone="brand">{priceLabel(service.price, service.priceUnit)}</Txt>
@@ -91,6 +101,9 @@ export function ServiceDetailScreen() {
         </Txt>
 
         {service.description ? <Txt variant="body" style={{ marginTop: space.md }}>{service.description}</Txt> : null}
+        {service.video ? (
+          <Button label="Watch video of the work" icon="play-circle-outline" variant="secondary" style={{ marginTop: space.md }} onPress={() => Linking.openURL(service.video!)} />
+        ) : null}
 
         {service.availability && service.availability.length > 0 ? (
           <View style={[styles.box, { borderColor: c.border, backgroundColor: c.surface }]}>
@@ -148,6 +161,8 @@ export function ServiceDetailScreen() {
 
 const styles = StyleSheet.create({
   hero: { width: '100%', height: ms(190), borderRadius: radius.lg },
+  thumbWrap: { borderWidth: 2, borderRadius: radius.sm, overflow: 'hidden' },
+  thumb: { width: ms(64), height: ms(48) },
   box: { borderWidth: 1, borderRadius: radius.md, padding: space.md, marginTop: space.md, gap: space.xxs },
   addr: { borderWidth: 1, borderRadius: radius.md, padding: space.md, marginBottom: space.sm },
   pay: { flex: 1, borderWidth: 1, borderRadius: radius.md, padding: space.md, alignItems: 'center' },

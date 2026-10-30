@@ -28,7 +28,7 @@ export interface ISubscriptionPayment {
 const schema = new Schema<ISubscriptionPayment>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    audience: { type: String, enum: ['rider', 'seller'], required: true, index: true },
+    audience: { type: String, enum: ['rider', 'seller', 'provider'], required: true, index: true },
     source: { type: String, enum: ['razorpay', 'admin'], required: true },
     plan: { type: Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
     planName: { type: String, required: true },

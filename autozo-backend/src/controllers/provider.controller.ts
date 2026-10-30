@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Types } from 'mongoose';
 import { AdminAlert } from '../models/AdminAlert';
+import { DeviceToken } from '../models/DeviceToken';
 import { Service } from '../models/Service';
 import { ServiceBooking, BookingStatus } from '../models/ServiceBooking';
 import { ServiceCategory } from '../models/ServiceCategory';
@@ -269,12 +270,12 @@ export const declineRing = asyncHandler(async (req, res) => {
 
 export const adminListProviders = asyncHandler(async (req, res) => {
   const { page, limit, status } = req.query as unknown as { page: number; limit: number; status?: string };
-  const filter = { role: 'provider', providerStatus: status ?? { $in: ['pending', 'approved', 'rejected'] } };
+  const filter = { role: 'provider', deletedAt: { $exists: false }, providerStatus: status ?? { $in: ['pending', 'approved', 'rejected'] } };
   const [rows, total, pending] = await Promise.all([
     User.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)
-      .select('name phone email providerId providerStatus providerRejectReason providerApplication createdAt').lean(),
+      .select('name phone email isActive providerId providerStatus providerRejectReason providerApplication createdAt').lean(),
     User.countDocuments(filter),
-    User.countDocuments({ role: 'provider', providerStatus: 'pending' }),
+    User.countDocuments({ role: 'provider', providerStatus: 'pending', deletedAt: { $exists: false } }),
   ]);
   ok(res, rows, { ...pageMeta(page, limit, total), pending });
 });
@@ -319,6 +320,82 @@ export const adminCreateProvider = asyncHandler(async (req, res) => {
     providerLocation: b.location ? { type: 'Point', coordinates: [b.location.lng, b.location.lat] } : undefined,
   });
   created(res, { _id: user._id, name: user.name, phone: user.phone, email: user.email, providerId: user.providerId });
+});
+
+/**
+ * Admin edits a provider: profile, business details, base location, block/unblock, and the login
+ * (phone = login id, new password). A new password or a block signs them out everywhere.
+ */
+export const adminUpdateProvider = asyncHandler(async (req, res) => {
+  const b = req.body as {
+    name?: string; phone?: string; email?: string; password?: string; isActive?: boolean;
+    firm?: string; category?: string; line1?: string; city?: string; state?: string; pincode?: string; about?: string;
+    location?: { lat: number; lng: number };
+  };
+  const user = await User.findOne({ _id: req.params.id, role: 'provider', deletedAt: { $exists: false } });
+  if (!user) throw new ApiError(404, 'Provider not found');
+
+  const clashOr = [...(b.phone ? [{ phone: b.phone }] : []), ...(b.email ? [{ email: b.email }] : [])];
+  if (clashOr.length) {
+    const clash = await User.exists({ role: 'provider', _id: { $ne: user._id }, $or: clashOr });
+    if (clash) throw new ApiError(409, 'That phone or email is already used by another provider');
+  }
+
+  if (b.name !== undefined) user.name = b.name;
+  if (b.phone !== undefined) user.phone = b.phone;
+  if (b.email !== undefined) user.email = b.email || undefined;
+  let signOut = false;
+  if (b.password) { user.password = b.password; signOut = true; }
+  if (b.isActive !== undefined) { user.isActive = b.isActive; if (!b.isActive) signOut = true; }
+
+  const app = user.providerApplication ?? { firm: user.name, line1: '', city: '', state: '', pincode: '', lat: 0, lng: 0, submittedAt: new Date() };
+  for (const k of ['firm', 'category', 'line1', 'city', 'state', 'pincode', 'about'] as const) {
+    if (b[k] !== undefined) (app as Record<string, unknown>)[k] = b[k];
+  }
+  if (b.location) {
+    app.lat = b.location.lat;
+    app.lng = b.location.lng;
+    user.providerLocation = { type: 'Point', coordinates: [b.location.lng, b.location.lat] };
+    // Their listings are found by location, so move them too.
+    await Service.updateMany({ provider: user._id }, { $set: { location: { type: 'Point', coordinates: [b.location.lng, b.location.lat] } } });
+  }
+  user.providerApplication = app;
+  await user.save();
+  if (signOut) {
+    await User.updateOne({ _id: user._id }, { $set: { refreshTokens: [] } });
+    if (b.isActive === false) await DeviceToken.deleteMany({ user: user._id });
+  }
+  ok(res, { _id: user._id, name: user.name, phone: user.phone, email: user.email, isActive: user.isActive, providerId: user.providerId });
+});
+
+/**
+ * Deletes a provider. Not while they hold a live booking. With booking history the account is
+ * closed (blocked, hidden, listings off, phone/email freed) so old bookings keep their provider;
+ * without any history it is removed for good.
+ */
+export const adminDeleteProvider = asyncHandler(async (req, res) => {
+  const user = await User.findOne({ _id: req.params.id, role: 'provider', deletedAt: { $exists: false } }).select('name phone email');
+  if (!user) throw new ApiError(404, 'Provider not found');
+  const live = await ServiceBooking.exists({ provider: user._id, status: { $in: ['accepted', 'on_the_way', 'in_progress'] } });
+  if (live) throw new ApiError(409, `${user.name} has a booking in progress. Let it finish or cancel it before deleting this provider.`);
+
+  await DeviceToken.deleteMany({ user: user._id });
+  await AdminAlert.deleteMany({ type: 'provider_registered', user: user._id });
+  if (await ServiceBooking.exists({ provider: user._id })) {
+    await Service.updateMany({ provider: user._id }, { $set: { isActive: false } });
+    await User.updateOne(
+      { _id: user._id },
+      {
+        // Free the phone/email so the same person can be registered again later.
+        $set: { isActive: false, deletedAt: new Date(), refreshTokens: [], providerBusy: true, phone: `${user.phone}-deleted-${Date.now()}` },
+        $unset: { email: 1, providerId: 1 },
+      },
+    );
+    return ok(res, { deleted: true, kept: true });
+  }
+  await Service.deleteMany({ provider: user._id });
+  await User.deleteOne({ _id: user._id });
+  ok(res, { deleted: true });
 });
 
 /* ============ Admin: service categories ============ */

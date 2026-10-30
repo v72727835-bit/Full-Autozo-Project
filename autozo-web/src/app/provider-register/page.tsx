@@ -1,29 +1,62 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState } from 'react';
-import { registerProvider } from '../../api/services';
+import React, { useEffect, useState } from 'react';
+import { fetchServiceCategories, registerProvider, ServiceCategory } from '../../api/services';
 import { INDIA_STATES } from '../../components/AddressForm';
 import { BackButton } from '../../components/BackButton';
+import { Icon, IconName } from '../../components/Icon';
 import { LocationPicker, PickedPlace } from '../../components/LocationPicker';
 import { PasswordField } from '../../components/PasswordField';
 import { Alert, Button, Field, Input, Textarea } from '../../components/ui';
 import { useSettings } from '../../context/SettingsContext';
 import { appDownloads } from '../../lib/apps';
 import { getErrorMessage } from '../../lib/client';
+import { PANEL_URL } from '../../lib/config';
+import s from './register.module.css';
 
-/** A service provider registers itself; the Autozo team approves it, then it signs in to its own panel. */
+const PERKS: { icon: IconName; text: string }[] = [
+  { icon: 'pin', text: 'Bookings from customers near you' },
+  { icon: 'rupee', text: 'Set your own prices' },
+  { icon: 'clock', text: 'Choose your days & timings' },
+  { icon: 'bell', text: 'New bookings ring on your phone' },
+];
+
+const STEPS = ['Fill this form', 'Autozo team approves you', 'Add services & get bookings'];
+
+function Section({ icon, title, sub, children }: { icon: IconName; title: string; sub?: string; children: React.ReactNode }) {
+  return (
+    <section className={s.section}>
+      <div className={s.sectionHead}>
+        <span className={s.sectionIcon}><Icon name={icon} size={18} /></span>
+        <div>
+          <div className={s.sectionTitle}>{title}</div>
+          {sub ? <div className={s.sectionSub}>{sub}</div> : null}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** A service provider registers itself; the Autozo team approves it, then it signs in to its own panel or app. */
 export default function ProviderRegisterPage() {
   const [f, setF] = useState({
     name: '', phone: '', email: '', password: '', confirm: '',
     firm: '', category: '', line1: '', city: '', state: 'Uttar Pradesh', pincode: '', about: '',
   });
   const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>();
+  const [cats, setCats] = useState<ServiceCategory[]>([]);
+  const [other, setOther] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const set = (k: keyof typeof f, v: string) => setF((cur) => ({ ...cur, [k]: v }));
   const apps = appDownloads(useSettings());
+
+  useEffect(() => {
+    fetchServiceCategories().then(setCats).catch(() => undefined);
+  }, []);
 
   const picked = (p: PickedPlace) => {
     setLocation({ lat: p.lat, lng: p.lng });
@@ -35,9 +68,10 @@ export default function ProviderRegisterPage() {
     setError('');
     const phone = f.phone.replace(/[\s-]/g, '').replace(/^(\+91|91)(?=\d{10}$)/, '');
     if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter a valid 10-digit mobile number (it starts with 6, 7, 8 or 9).');
+    if (!f.category.trim()) return setError('Pick what kind of service you offer.');
+    if (!location) return setError('Please mark your base location on the map (or tap "Use my location") so nearby customers find you first.');
     if (f.password.length < 6) return setError('Password must be at least 6 characters.');
     if (f.password !== f.confirm) return setError('The two passwords do not match.');
-    if (!location) return setError('Please mark your base location on the map (or tap "Use my location") so nearby customers find you first.');
     setBusy(true);
     try {
       setDone(
@@ -47,7 +81,7 @@ export default function ProviderRegisterPage() {
           email: f.email.trim() || undefined,
           password: f.password,
           firm: f.firm.trim(),
-          category: f.category.trim() || undefined,
+          category: f.category.trim(),
           line1: f.line1.trim(),
           city: f.city.trim(),
           state: f.state,
@@ -56,6 +90,7 @@ export default function ProviderRegisterPage() {
           about: f.about.trim() || undefined,
         }),
       );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -63,52 +98,105 @@ export default function ProviderRegisterPage() {
     }
   };
 
-  return (
-    <div className="page rise">
-      <BackButton />
-      <h1 className="h1" style={{ margin: '12px 0 4px' }}>Become a service provider</h1>
-      <p className="body-sm" style={{ marginBottom: 20 }}>
-        Fill this once. The Autozo team reviews it and, after approval, you can sign in to the provider panel (or the
-        provider app) to add your services, set prices and times, and start getting bookings. New bookings ring on your
-        phone until you accept them.{' '}
-        <a href={apps.provider} style={{ fontWeight: 700 }}>Download the provider app</a>.
-      </p>
+  if (done) {
+    return (
+      <div className={`page rise ${s.wrap}`}>
+        <BackButton />
+        <div className={s.done} style={{ marginTop: 12 }}>
+          <span className={s.doneIcon}><Icon name="check-circle" size={34} /></span>
+          <h1 className="h1" style={{ margin: '0 0 6px' }}>Registration received!</h1>
+          <p className="body-sm" style={{ maxWidth: 460, margin: '0 auto' }}>
+            {done} We usually review new providers within a day. Once approved, sign in with your mobile number and password
+            to add your services, prices and timings.
+          </p>
+          <div className={s.doneActions}>
+            <a href={apps.provider} className="btn btn-md btn-primary">
+              <Icon name="download" size={16} /> Download the provider app
+            </a>
+            <a href={PANEL_URL} className="btn btn-md btn-outline">Open provider panel</a>
+            <Link href="/services" className="btn btn-md btn-ghost">Browse services</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      {done ? (
-        <Alert tone="ok" icon="check-circle">
-          {done} We will review it shortly. Meanwhile, <a href={apps.provider} style={{ fontWeight: 700 }}>download the provider app</a>
-          {' '}to sign in once you are approved. <Link href="/services" style={{ fontWeight: 700 }}>Browse services</Link>
-        </Alert>
-      ) : (
-        <form className="card card-pad" onSubmit={submit}>
-          {error ? <Alert tone="bad">{error}</Alert> : null}
-          <Field label="Your full name" required>
-            <Input value={f.name} onChange={(e) => set('name', e.target.value)} autoComplete="name" required minLength={2} />
+  return (
+    <div className={`page rise ${s.wrap}`}>
+      <BackButton />
+
+      <div className={s.hero}>
+        <span className={s.kicker}><Icon name="bolt" size={13} /> Partner with Autozo</span>
+        <h1 className={s.title}>Grow your business with Autozo Services</h1>
+        <p className={s.lead}>
+          Plumber, electrician, car wash, salon, cleaning, repairs — list your services on Autozo and get bookings from
+          customers in your area.
+        </p>
+        <div className={s.perks}>
+          {PERKS.map((p) => (
+            <div key={p.text} className={s.perk}>
+              <span className={s.perkIcon}><Icon name={p.icon} size={17} /></span>
+              {p.text}
+            </div>
+          ))}
+        </div>
+        <div className={s.already}>
+          Already approved? <a href={PANEL_URL}>Sign in to the provider panel</a> or <a href={apps.provider}>download the app</a>.
+        </div>
+      </div>
+
+      <div className={s.steps}>
+        {STEPS.map((t, i) => (
+          <div key={t} className={s.step}>
+            <span className={s.stepNum}>{i + 1}</span>
+            {t}
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={submit} noValidate>
+        {error ? <Alert tone="bad">{error}</Alert> : null}
+
+        <Section icon="user" title="Your details" sub="Your mobile number is your login.">
+          <Field label="Full name" required>
+            <Input value={f.name} onChange={(e) => set('name', e.target.value)} autoComplete="name" required minLength={2} placeholder="e.g. Ramesh Kumar" />
           </Field>
           <div className="two-col">
-            <Field label="Mobile number (your login)" required>
+            <Field label="Mobile number" required>
               <Input value={f.phone} onChange={(e) => set('phone', e.target.value.replace(/[^\d+\s-]/g, ''))} inputMode="tel" autoComplete="tel" placeholder="9876543210" maxLength={14} required />
             </Field>
-            <Field label="Email">
-              <Input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} autoComplete="email" />
+            <Field label="Email (optional)">
+              <Input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} autoComplete="email" placeholder="you@example.com" />
             </Field>
           </div>
-          <div className="two-col">
-            <Field label="Password" required>
-              <PasswordField value={f.password} onChange={(v) => set('password', v)} onGenerate={(v) => set('confirm', v)} required />
-            </Field>
-            <Field label="Confirm password" required>
-              <PasswordField id="confirm" value={f.confirm} onChange={(v) => set('confirm', v)} canGenerate={false} required />
-            </Field>
+        </Section>
+
+        <Section icon="store" title="Your business" sub="Tell customers what you do.">
+          <Field label="Business / shop name" required>
+            <Input value={f.firm} onChange={(e) => set('firm', e.target.value)} required minLength={2} placeholder="e.g. Kumar Plumbing Works" />
+          </Field>
+          <span className="label" style={{ display: 'block', marginBottom: 8 }}>What service do you offer? *</span>
+          <div className={s.chips}>
+            {cats.map((c) => (
+              <button type="button" key={c._id} className={`${s.chip} ${!other && f.category === c.name ? s.chipOn : ''}`} onClick={() => { setOther(false); set('category', c.name); }}>
+                {c.name}
+              </button>
+            ))}
+            <button type="button" className={`${s.chip} ${other ? s.chipOn : ''}`} onClick={() => { setOther(true); set('category', ''); }}>
+              Other
+            </button>
           </div>
-          <div className="two-col">
-            <Field label="Business / firm name" required>
-              <Input value={f.firm} onChange={(e) => set('firm', e.target.value)} required minLength={2} />
+          {other || cats.length === 0 ? (
+            <Field label="Type your service">
+              <Input value={f.category} onChange={(e) => set('category', e.target.value)} placeholder="e.g. Water tank cleaning" autoFocus={other} />
             </Field>
-            <Field label="What do you do?">
-              <Input value={f.category} onChange={(e) => set('category', e.target.value)} placeholder="e.g. Plumbing, Salon, Car wash" />
-            </Field>
-          </div>
+          ) : null}
+          <Field label="About your work (optional)">
+            <Textarea value={f.about} onChange={(e) => set('about', e.target.value)} rows={3} maxLength={1000} placeholder="Years of experience, areas you cover, tools you bring…" />
+          </Field>
+        </Section>
+
+        <Section icon="pin" title="Where you work" sub="Nearby customers are matched to you from this location.">
           <Field label="Base address" required>
             <Input value={f.line1} onChange={(e) => set('line1', e.target.value)} required minLength={5} placeholder="Building, street, area" />
           </Field>
@@ -127,17 +215,29 @@ export default function ProviderRegisterPage() {
               ))}
             </select>
           </Field>
-          <Field label="Your base location on map" required>
+          <Field label="Mark your location on the map" required>
             <LocationPicker value={location} onPick={picked} />
           </Field>
-          <Field label="About your services (optional)">
-            <Textarea value={f.about} onChange={(e) => set('about', e.target.value)} rows={3} maxLength={1000} placeholder="Experience, areas you cover, anything customers should know" />
-          </Field>
-          <Button type="submit" size="lg" full loading={busy}>
-            Submit for approval
-          </Button>
-        </form>
-      )}
+        </Section>
+
+        <Section icon="lock" title="Create your password" sub="You will use this with your mobile number to sign in.">
+          <div className="two-col">
+            <Field label="Password" required>
+              <PasswordField value={f.password} onChange={(v) => set('password', v)} onGenerate={(v) => set('confirm', v)} required />
+            </Field>
+            <Field label="Confirm password" required>
+              <PasswordField id="confirm" value={f.confirm} onChange={(v) => set('confirm', v)} canGenerate={false} required />
+            </Field>
+          </div>
+        </Section>
+
+        <p className={s.note}>
+          By submitting, you agree that Autozo may verify your details before approving your account. You can sign in only after approval.
+        </p>
+        <Button type="submit" size="lg" full loading={busy}>
+          Submit for approval
+        </Button>
+      </form>
     </div>
   );
 }

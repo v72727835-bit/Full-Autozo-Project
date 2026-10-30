@@ -27,6 +27,8 @@ export interface IService {
   slug: string;
   description?: string;
   images: string[];
+  /** Optional short video of the work (uploaded file or YouTube link). */
+  video?: string;
   price: number;
   mrp?: number;
   priceUnit: PriceUnit;
@@ -63,6 +65,7 @@ const serviceSchema = new Schema<IService>(
     slug: { type: String, unique: true, lowercase: true, trim: true },
     description: { type: String, trim: true, maxlength: 4000 },
     images: { type: [String], default: [] },
+    video: { type: String, trim: true },
     price: { type: Number, required: true, min: 0 },
     mrp: { type: Number, min: 0 },
     priceUnit: { type: String, enum: PRICE_UNITS, default: 'fixed' },

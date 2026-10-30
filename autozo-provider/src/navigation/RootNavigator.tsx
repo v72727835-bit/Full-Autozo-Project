@@ -1,6 +1,6 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
-import React, { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, AppState, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CrossFade, FadeSlide, Pulse } from '../components/anim';
 
 const LOGO = require('../assets/logo-mark.png');
@@ -11,27 +11,43 @@ import DashboardScreen from '../screens/DashboardScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import AccountScreen from '../screens/AccountScreen';
+import PlanScreen, { planLocked } from '../screens/PlanScreen';
+import { fetchMyPlan, MyPlan } from '../api/provider';
 import LoginScreen from '../screens/LoginScreen';
 import { accents, colors, softShadow } from '../theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
-type Tab = 'dashboard' | 'bookings' | 'services' | 'account';
+type Tab = 'dashboard' | 'bookings' | 'services' | 'plan' | 'account';
 
 const TABS: { key: Tab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Home', icon: 'grid-outline' },
   { key: 'bookings', label: 'Bookings', icon: 'receipt-outline' },
   { key: 'services', label: 'Services', icon: 'construct-outline' },
+  { key: 'plan', label: 'My plan', icon: 'card-outline' },
   { key: 'account', label: 'Account', icon: 'shield-checkmark-outline' },
 ];
 
 function Shell() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const { me } = useAuth();
+  const [plan, setPlan] = useState<MyPlan | null>(null);
+
+  // The plan is read on start and whenever the app comes back (e.g. from the payment page).
+  const loadPlan = useCallback(async () => {
+    try { setPlan(await fetchMyPlan()); } catch { /* keep the last known plan */ }
+  }, []);
+  useEffect(() => {
+    loadPlan();
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') loadPlan(); });
+    return () => sub.remove();
+  }, [loadPlan]);
+  const locked = planLocked(plan);
 
   let body: React.ReactNode;
   if (tab === 'dashboard') body = <DashboardScreen />;
   else if (tab === 'bookings') body = <BookingsScreen />;
   else if (tab === 'services') body = <ServicesScreen />;
+  else if (tab === 'plan') body = <PlanScreen plan={plan} onReload={loadPlan} />;
   else body = <AccountScreen />;
 
   const firm = me?.providerApplication?.firm || 'My services';
@@ -47,6 +63,13 @@ function Shell() {
         </View>
         <View style={styles.brandMark} />
       </View>
+
+      {locked && tab !== 'plan' ? (
+        <Pressable style={styles.planBar} onPress={() => setTab('plan')}>
+          <Text style={styles.planBarText}>Your plan is not active. Buy a plan to add services and get bookings.</Text>
+          <Text style={styles.planBarCta}>Buy plan</Text>
+        </Pressable>
+      ) : null}
 
       <CrossFade dep={tab} style={{ flex: 1 }}>{body}</CrossFade>
 
@@ -97,4 +120,7 @@ const styles = StyleSheet.create({
   tabIcon: { width: 46, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8, gap: 2 },
   tabText: { fontSize: 11, color: colors.muted, fontWeight: '600' },
+  planBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginBottom: 6, padding: 12, borderRadius: 12, backgroundColor: colors.dangerSoft },
+  planBarText: { flex: 1, color: colors.danger, fontWeight: '600', fontSize: 13 },
+  planBarCta: { color: colors.danger, fontWeight: '800' },
 });

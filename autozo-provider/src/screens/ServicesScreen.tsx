@@ -1,8 +1,9 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { getErrorMessage } from '../api/client';
-import { createService, deleteService, providerServices, serviceCategories, updateService } from '../api/provider';
+import { createService, deleteService, providerServices, serviceCategories, updateService, uploadImages, uploadVideo } from '../api/provider';
 import { useAuth } from '../context/AuthContext';
 import { colors, radius } from '../theme';
 import { Availability, ServiceCategory, ServiceRow } from '../types';
@@ -14,9 +15,9 @@ const UNIT_OPTS = [['fixed', 'Fixed'], ['hourly', 'Per hour'], ['visit', 'Per vi
 type Form = {
   category: string; title: string; description: string; price: string; mrp: string;
   priceUnit: 'fixed' | 'hourly' | 'visit'; durationMins: string; serviceRadiusKm: string;
-  isActive: boolean; availability: Availability[];
+  isActive: boolean; availability: Availability[]; images: string[]; video: string;
 };
-const blank: Form = { category: '', title: '', description: '', price: '', mrp: '', priceUnit: 'fixed', durationMins: '60', serviceRadiusKm: '10', isActive: true, availability: [] };
+const blank: Form = { category: '', title: '', description: '', price: '', mrp: '', priceUnit: 'fixed', durationMins: '60', serviceRadiusKm: '10', isActive: true, availability: [], images: [], video: '' };
 
 export default function ServicesScreen() {
   const { me } = useAuth();
@@ -28,6 +29,7 @@ export default function ServicesScreen() {
   const [editing, setEditing] = useState<ServiceRow | null>(null);
   const [form, setForm] = useState<Form>(blank);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState<'' | 'photo' | 'video'>('');
 
   const load = () => providerServices().then(setRows).catch((e) => { setError(getErrorMessage(e)); setRows([]); });
   useEffect(() => { load(); serviceCategories().then(setCats).catch(() => undefined); }, []);
@@ -39,7 +41,7 @@ export default function ServicesScreen() {
       category: typeof s.category === 'object' ? s.category._id : s.category,
       title: s.title, description: s.description ?? '', price: String(s.price), mrp: s.mrp ? String(s.mrp) : '',
       priceUnit: s.priceUnit, durationMins: String(s.durationMins), serviceRadiusKm: String(s.serviceRadiusKm),
-      isActive: s.isActive, availability: s.availability ?? [],
+      isActive: s.isActive, availability: s.availability ?? [], images: s.images ?? [], video: s.video ?? '',
     });
     setOpen(true);
   };
@@ -56,11 +58,31 @@ export default function ServicesScreen() {
         category: form.category, title: form.title.trim(), description: form.description.trim() || undefined,
         price: Number(form.price) || 0, mrp: form.mrp ? Number(form.mrp) : undefined, priceUnit: form.priceUnit,
         durationMins: Number(form.durationMins) || 60, serviceRadiusKm: Number(form.serviceRadiusKm) || 10,
-        isActive: form.isActive, availability: form.availability,
+        isActive: form.isActive, availability: form.availability, images: form.images, video: form.video,
       };
       if (editing) await updateService(editing._id, body); else await createService(body);
       setOpen(false); load();
     } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
+  };
+
+  const addPhotos = async () => {
+    const res = await launchImageLibrary({ mediaType: 'photo', selectionLimit: Math.max(1, 8 - form.images.length), quality: 0.6, maxWidth: 1080, maxHeight: 1080 });
+    if (res.didCancel || !res.assets?.length) return;
+    setUploading('photo'); setError('');
+    try {
+      const urls = await uploadImages(res.assets.map((a, i) => ({ uri: a.uri ?? '', name: a.fileName ?? `photo-${Date.now()}-${i}.jpg`, type: a.type ?? 'image/jpeg' })));
+      setForm((f) => ({ ...f, images: [...f.images, ...urls].slice(0, 8) }));
+    } catch (e) { setError(getErrorMessage(e)); } finally { setUploading(''); }
+  };
+  const addVideo = async () => {
+    const res = await launchImageLibrary({ mediaType: 'video', selectionLimit: 1 });
+    const a = res.assets?.[0];
+    if (res.didCancel || !a) return;
+    setUploading('video'); setError('');
+    try {
+      const url = await uploadVideo({ uri: a.uri ?? '', name: a.fileName ?? `video-${Date.now()}.mp4`, type: a.type ?? 'video/mp4' });
+      setForm((f) => ({ ...f, video: url }));
+    } catch (e) { setError(getErrorMessage(e)); } finally { setUploading(''); }
   };
 
   const remove = (s: ServiceRow) => { deleteService(s._id).then(load).catch((e) => setError(getErrorMessage(e))); };
@@ -74,6 +96,7 @@ export default function ServicesScreen() {
         {rows.length === 0 ? <Empty text={approved ? 'No services yet. Tap + to add one.' : 'You can add services once your account is approved.'} /> : (
           rows.map((s) => (
             <Card key={s._id} style={st.card}>
+              {s.images?.[0] ? <Image source={{ uri: s.images[0] }} style={st.listThumb} /> : <View style={[st.listThumb, st.noThumb]}><Ionicons name="image-outline" size={20} color={colors.muted} /></View>}
               <View style={{ flex: 1 }}>
                 <Text style={st.title}>{s.title}</Text>
                 <Text style={st.sub}>₹{s.price}{s.priceUnit === 'hourly' ? '/hr' : s.priceUnit === 'visit' ? '/visit' : ''} · {s.durationMins}m · {s.isActive ? 'Active' : 'Hidden'} · {s.bookingCount} booking(s)</Text>
@@ -97,6 +120,36 @@ export default function ServicesScreen() {
           <View style={{ height: 10 }} />
           <Input label="Title" value={form.title} onChangeText={(v) => setForm({ ...form, title: v })} placeholder="e.g. Full car wash" />
           <Input label="Description" value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} multiline />
+
+          <Text style={st.label}>Photos ({form.images.length}/8)</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 12 }}>
+            {form.images.map((u) => (
+              <View key={u}>
+                <Image source={{ uri: u }} style={st.thumb} />
+                <Pressable style={st.thumbX} onPress={() => setForm((f) => ({ ...f, images: f.images.filter((x) => x !== u) }))}>
+                  <Ionicons name="close" size={14} color="#fff" />
+                </Pressable>
+              </View>
+            ))}
+            {form.images.length < 8 ? (
+              <Pressable style={st.addTile} onPress={addPhotos} disabled={!!uploading}>
+                {uploading === 'photo' ? <ActivityIndicator color={colors.primary} /> : <><Ionicons name="camera-outline" size={24} color={colors.primary} /><Text style={st.addText}>Add photo</Text></>}
+              </Pressable>
+            ) : null}
+          </ScrollView>
+
+          <Text style={st.label}>Video (optional)</Text>
+          {form.video ? (
+            <View style={[st.videoRow]}>
+              <Ionicons name="videocam" size={20} color={colors.primary} />
+              <Text style={{ flex: 1, color: colors.text }} numberOfLines={1}>{form.video.split('/').pop()}</Text>
+              <Pressable onPress={() => setForm((f) => ({ ...f, video: '' }))}><Ionicons name="trash-outline" size={20} color={colors.danger} /></Pressable>
+            </View>
+          ) : (
+            <View style={{ marginBottom: 12 }}>
+              <Btn title={uploading === 'video' ? 'Uploading video…' : 'Upload a video (max 15 MB)'} tone="outline" onPress={addVideo} disabled={!!uploading} />
+            </View>
+          )}
           <Input label="Price (₹)" value={form.price} onChangeText={(v) => setForm({ ...form, price: v })} keyboardType="numeric" />
           <Input label="MRP (optional)" value={form.mrp} onChangeText={(v) => setForm({ ...form, mrp: v })} keyboardType="numeric" />
           <Text style={st.label}>Price unit</Text>
@@ -123,7 +176,7 @@ export default function ServicesScreen() {
           </View>
 
           <ErrorText message={error} />
-          <Btn title={editing ? 'Save' : 'Create'} onPress={save} disabled={busy || !form.category || form.title.trim().length < 2} />
+          <Btn title={editing ? 'Save' : 'Create'} onPress={save} disabled={busy || !!uploading || !form.category || form.title.trim().length < 2} />
           <View style={{ height: 8 }} />
           <Btn title="Cancel" tone="outline" onPress={() => setOpen(false)} />
         </ScrollView>
@@ -141,4 +194,11 @@ const st = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 6 },
   day: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
   dayText: { color: colors.text, fontWeight: '600' },
+  listThumb: { width: 52, height: 52, borderRadius: 10 },
+  noThumb: { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  thumb: { width: 84, height: 84, borderRadius: 12 },
+  thumbX: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+  addTile: { width: 84, height: 84, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.primary, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  addText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
+  videoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
 });

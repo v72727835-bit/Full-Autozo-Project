@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 
-export type SubscriptionAudience = 'rider' | 'seller';
+export type SubscriptionAudience = 'rider' | 'seller' | 'provider';
 
 /** A paid plan the super admin offers to riders or to warehouses (sellers). Price is in rupees. */
 export interface ISubscriptionPlan {
@@ -18,7 +18,7 @@ export interface ISubscriptionPlan {
 
 const schema = new Schema<ISubscriptionPlan>(
   {
-    audience: { type: String, enum: ['rider', 'seller'], required: true, index: true },
+    audience: { type: String, enum: ['rider', 'seller', 'provider'], required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 60 },
     price: { type: Number, required: true, min: 1 },
     days: { type: Number, required: true, min: 1 },

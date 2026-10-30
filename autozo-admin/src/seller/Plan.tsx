@@ -11,16 +11,33 @@ const longDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { da
 
 export const planLocked = (plan: MyPlan | null) => !!plan && plan.required && !plan.active;
 
+/** Who the plan screens are for: a warehouse (default) or a service provider. */
+type PlanKind = 'warehouse' | 'provider';
+const COPY: Record<PlanKind, { keep: string; locked: string; sub: string; pick: string }> = {
+  warehouse: {
+    keep: 'keep your orders running',
+    locked: 'Your plan is not active. Buy a plan to see orders and add products.',
+    sub: 'A running plan keeps your orders and product listing open.',
+    pick: 'Pick a plan below to see orders and add products.',
+  },
+  provider: {
+    keep: 'keep getting bookings',
+    locked: 'Your plan is not active. Buy a plan to add services and get new bookings.',
+    sub: 'A running plan lets you add services and get new bookings.',
+    pick: 'Pick a plan below to add services and get bookings.',
+  },
+};
+
 /** The strip above every page while the warehouse has no running plan (or it ends within 3 days). */
-export function PlanBanner({ plan }: { plan: MyPlan | null }) {
+export function PlanBanner({ plan, kind = 'warehouse' }: { plan: MyPlan | null; kind?: PlanKind }) {
   if (!plan?.required) return null;
   if (plan.active && plan.daysLeft > 3) return null;
   return (
     <div className="error-banner" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
       <span style={{ flex: 1 }}>
         {plan.active
-          ? `Your plan ends in ${plan.daysLeft} day${plan.daysLeft === 1 ? '' : 's'}. Renew it to keep your orders running.`
-          : 'Your plan is not active. Buy a plan to see orders and add products.'}
+          ? `Your plan ends in ${plan.daysLeft} day${plan.daysLeft === 1 ? '' : 's'}. Renew it to ${COPY[kind].keep}.`
+          : COPY[kind].locked}
       </span>
       <NavLink to="/plan" className="btn btn-primary btn-sm">
         {plan.active ? 'Renew plan' : 'Buy plan'}
@@ -30,7 +47,7 @@ export function PlanBanner({ plan }: { plan: MyPlan | null }) {
 }
 
 /** "My plan": the current plan, and the plans the super admin offers, each paid with Razorpay. */
-export default function PlanView({ plan, me, onPaid }: { plan: MyPlan; me: { name: string; phone: string; email?: string }; onPaid: (p: MyPlan) => void }) {
+export default function PlanView({ plan, me, onPaid, kind = 'warehouse' }: { plan: MyPlan; me: { name: string; phone: string; email?: string }; onPaid: (p: MyPlan) => void; kind?: PlanKind }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
@@ -57,7 +74,7 @@ export default function PlanView({ plan, me, onPaid }: { plan: MyPlan; me: { nam
       <div className="page-header">
         <div>
           <h1 className="page-title">My plan</h1>
-          <div className="page-subtitle">A running plan keeps your orders and product listing open.</div>
+          <div className="page-subtitle">{COPY[kind].sub}</div>
         </div>
       </div>
       <ErrorBanner message={error} />
@@ -76,7 +93,7 @@ export default function PlanView({ plan, me, onPaid }: { plan: MyPlan; me: { nam
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <Badge tone="danger">{plan.until ? 'Ended' : 'No plan'}</Badge>
-            <span>{plan.until ? `Your plan ended on ${longDate(plan.until)}.` : 'You do not have a plan yet.'} Pick a plan below to see orders and add products.</span>
+            <span>{plan.until ? `Your plan ended on ${longDate(plan.until)}.` : 'You do not have a plan yet.'} {COPY[kind].pick}</span>
           </div>
         )}
       </div>

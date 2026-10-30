@@ -5,7 +5,7 @@ import { Service } from '../models/Service';
 import { ServiceBooking } from '../models/ServiceBooking';
 import { User, riderWarehouseIds } from '../models/User';
 import { pushToUsers } from './firebase.service';
-import { riderPlanFilter } from './subscription.service';
+import { providerPlanFilter, riderPlanFilter } from './subscription.service';
 
 /**
  * The ring engine. On a new service booking (providers) or a packed order
@@ -28,6 +28,18 @@ const MAX_CANDIDATES = 20;
 const oid = (v: Types.ObjectId | string) => new Types.ObjectId(String(v));
 
 /* ---------------- candidate finding ---------------- */
+
+/** Who may be rung for a booking: approved, active, not paused or busy, and (when plans are on) with a running plan. */
+async function eligibleProviderFilter() {
+  return {
+    role: 'provider',
+    providerStatus: 'approved',
+    isActive: true,
+    providerPaused: { $ne: true },
+    providerBusy: { $ne: true },
+    ...(await providerPlanFilter()),
+  };
+}
 
 /** Approved, un-paused, free providers who offer an active listing in this category, nearest first. */
 async function bookingCandidates(
@@ -54,14 +66,7 @@ async function bookingCandidates(
   const dist = new Map(rows.map((r) => [String(r._id), r.distM]));
   const ids = rows.map((r) => r._id).filter((id) => !exclude.has(String(id)));
   if (!ids.length) return [];
-  const providers = await User.find({
-    _id: { $in: ids },
-    role: 'provider',
-    providerStatus: 'approved',
-    isActive: true,
-    providerPaused: { $ne: true },
-    providerBusy: { $ne: true },
-  })
+  const providers = await User.find({ _id: { $in: ids }, ...(await eligibleProviderFilter()) })
     .select('_id')
     .lean();
   return providers
@@ -90,9 +95,15 @@ async function orderCandidates(orderId: Types.ObjectId, exclude: Set<string>): P
 async function candidatesFor(d: IDispatch, radiusKm: number, exclude: Set<string>): Promise<{ user: string; distanceKm: number }[]> {
   if (d.kind === 'order' && d.order) return orderCandidates(oid(d.order), exclude);
   if (d.kind === 'service_booking' && d.booking) {
-    const booking = await ServiceBooking.findById(d.booking).select('category').lean();
+    const booking = await ServiceBooking.findById(d.booking).select('category provider').lean();
     if (!booking) return [];
-    return bookingCandidates(d.center.coordinates, oid(booking.category), radiusKm, exclude);
+    const near = await bookingCandidates(d.center.coordinates, oid(booking.category), radiusKm, exclude);
+    // The provider the customer actually picked is always rung first, wherever they are
+    // (and even when neither side shared a map location).
+    const own = String(booking.provider);
+    if (exclude.has(own) || near.some((c) => c.user === own)) return near;
+    const ok = await User.exists({ _id: booking.provider, ...(await eligibleProviderFilter()) });
+    return ok ? [{ user: own, distanceKm: 0 }, ...near] : near;
   }
   return [];
 }
@@ -151,15 +162,18 @@ async function ringRound(d: IDispatch & { _id: Types.ObjectId; save: () => Promi
 
 /** Start ringing providers for a new service booking. */
 export async function startBookingDispatch(bookingId: Types.ObjectId | string): Promise<void> {
-  const booking = await ServiceBooking.findById(bookingId).select('bookingNumber address snapshot').lean();
+  const booking = await ServiceBooking.findById(bookingId).select('bookingNumber address snapshot service').lean();
   if (!booking) return;
   const loc = booking.address.location;
+  // No pin on the customer's address: search around the booked service's own location instead.
+  const svc = loc ? null : await Service.findById(booking.service).select('location').lean();
+  const fallback = svc?.location?.coordinates as [number, number] | undefined;
   const d = await Dispatch.create({
     kind: 'service_booking',
     booking: bookingId,
     ringSeconds: RING_SECONDS,
     radiusKm: START_RADIUS_KM,
-    center: { type: 'Point', coordinates: loc ? [loc.lng, loc.lat] : [0, 0] },
+    center: { type: 'Point', coordinates: loc ? [loc.lng, loc.lat] : fallback ?? [0, 0] },
   });
   await ServiceBooking.updateOne({ _id: bookingId }, { $set: { dispatch: d._id } });
   await ringRound(d as never, `${booking.snapshot.title} ${num(booking.bookingNumber)} in ${booking.address.city}.`);
