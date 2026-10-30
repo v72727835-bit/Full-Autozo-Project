@@ -25,7 +25,7 @@ import { authorize, customerOnly, protect } from '../middleware/auth';
 import { catalogCache, invalidateOnWrite } from '../middleware/cache';
 import { validate } from '../middleware/validate';
 import * as uploads from '../controllers/upload.controller';
-import { uploadSellerImages, uploadSellerVideo } from '../middleware/upload';
+import { uploadProviderImages, uploadSellerImages, uploadSellerVideo } from '../middleware/upload';
 import * as v from '../validators/schemas';
 
 const router = Router();
@@ -103,7 +103,7 @@ router.post('/seller/auth/login', authLimiter, validate({ body: v.loginBody }), 
 router.get('/seller/me', ...sellerOnly, seller.getMe);
 
 /* Rider and warehouse plans: see the plan, pay for it with Razorpay, confirm the payment */
-const planUser = [protect, authorize('rider', 'seller')];
+const planUser = [protect, authorize('rider', 'seller', 'provider')];
 router.get('/subscription', ...planUser, plans.myPlan);
 router.get('/subscription/payments', ...planUser, plans.myPlanPayments);
 router.post('/subscription/pay', ...planUser, validate({ body: v.startPlanBody }), plans.startPlanPayment);
@@ -139,13 +139,17 @@ router.patch('/seller/products/:id', ...sellerOnly, invalidateOnWrite, validate(
 
 /* ============ Service provider panel ============ */
 const providerOnly = [protect, authorize('provider')];
+/** Adding services and taking bookings need a running plan while provider plans are switched on. */
+const providerWithPlan = [...providerOnly, requirePlan('provider')];
 router.post('/provider/register', authLimiter, validate({ body: v.providerRegisterBody }), provider.registerProvider);
 router.post('/provider/auth/login', authLimiter, validate({ body: v.loginBody }), provider.providerLogin);
 router.get('/provider/me', ...providerOnly, provider.getMe);
 router.get('/provider/dashboard', ...providerOnly, provider.dashboard);
 router.post('/provider/availability', ...providerOnly, validate({ body: v.providerAvailabilityBody }), provider.setAvailability);
 router.get('/provider/services', ...providerOnly, provider.listMyServices);
-router.post('/provider/services', ...providerOnly, invalidateOnWrite, validate({ body: v.providerServiceBody }), provider.createService);
+router.post('/provider/uploads/images', ...providerOnly, uploadProviderImages, uploads.uploadImages);
+router.post('/provider/uploads/video', ...providerOnly, uploadSellerVideo, uploads.uploadVideo);
+router.post('/provider/services', ...providerWithPlan, invalidateOnWrite, validate({ body: v.providerServiceBody }), provider.createService);
 router.patch('/provider/services/:id', ...providerOnly, invalidateOnWrite, validate({ params: v.idParam, body: v.providerServiceUpdateBody }), provider.updateService);
 router.delete('/provider/services/:id', ...providerOnly, invalidateOnWrite, validate({ params: v.idParam }), provider.deleteService);
 router.get('/provider/bookings', ...providerOnly, validate({ query: v.providerBookingsQuery }), provider.listMyBookings);
@@ -154,7 +158,7 @@ router.patch('/provider/bookings/:id/status', ...providerOnly, validate({ params
 router.post('/provider/bookings/:id/cancel', ...providerOnly, validate({ params: v.idParam, body: v.cancelBookingBody }), provider.cancelMyBooking);
 /* Persistent ring: poll, accept, decline */
 router.get('/provider/ring', ...providerOnly, provider.myRing);
-router.post('/provider/ring/:dispatchId/accept', ...providerOnly, validate({ params: v.dispatchIdParam }), provider.acceptRing);
+router.post('/provider/ring/:dispatchId/accept', ...providerWithPlan, validate({ params: v.dispatchIdParam }), provider.acceptRing);
 router.post('/provider/ring/:dispatchId/decline', ...providerOnly, validate({ params: v.dispatchIdParam }), provider.declineRing);
 
 /* ============ Service bookings (customer) ============ */

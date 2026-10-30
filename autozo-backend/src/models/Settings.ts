@@ -50,8 +50,8 @@ export interface ISettings {
     minWithdraw: number;
   };
   /** Paid plans: when switched on, riders get no new orders and warehouses cannot add products or see orders without one. */
-  subscriptions: { rider: boolean; seller: boolean };
-  appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string };
+  subscriptions: { rider: boolean; seller: boolean; provider?: boolean };
+  appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string; provider?: string };
   /** Company details printed on every bill (logo, signature, seal, GSTIN, declaration...). */
   company: {
     name?: string; tagline?: string; address?: string; phone?: string; email?: string; website?: string; gstin?: string; fssai?: string;
@@ -130,8 +130,9 @@ const settingsSchema = new Schema<ISettings>(
     subscriptions: {
       rider: { type: Boolean, default: false },
       seller: { type: Boolean, default: false },
+      provider: { type: Boolean, default: false },
     },
-    appLinks: { android: String, ios: String, rider: String, warehouse: String },
+    appLinks: { android: String, ios: String, rider: String, warehouse: String, provider: String },
     company: {
       name: { type: String, trim: true }, tagline: { type: String, trim: true }, address: { type: String, trim: true }, phone: { type: String, trim: true },
       email: { type: String, trim: true }, website: { type: String, trim: true }, gstin: { type: String, trim: true }, fssai: { type: String, trim: true },

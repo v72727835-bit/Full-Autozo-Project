@@ -769,9 +769,9 @@ export const bulkProductsBody = z.object({
 });
 
 /* ---------- rider / warehouse plans ---------- */
-const audience = z.enum(['rider', 'seller']);
+const audience = z.enum(['rider', 'seller', 'provider']);
 export const startPlanBody = z.object({ planId: objectId });
-export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional() });
+export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional(), provider: z.boolean().optional() });
 export const planBody = z.object({
   audience,
   name: z.string().trim().min(2).max(60),
@@ -901,6 +901,7 @@ export const providerServiceBody = z.object({
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().max(4000).optional(),
   images: z.array(z.string().trim().max(500)).max(8).optional(),
+  video: z.string().trim().max(500).optional(),
   price: z.number().min(0).max(10_000_000),
   mrp: z.number().min(0).max(10_000_000).optional(),
   priceUnit: z.enum(['fixed', 'hourly', 'visit']).default('fixed'),

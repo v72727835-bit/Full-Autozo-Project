@@ -580,7 +580,7 @@ export interface OrderRiders { warehouse: string; radiusKm: number | null; dista
 export const sellerOrderRiders = async (orderId: string): Promise<OrderRiders> => (await api.get(`/seller/orders/${orderId}/riders`)).data.data;
 
 /* ---------- rider & warehouse plans ---------- */
-export type PlanAudience = 'rider' | 'seller';
+export type PlanAudience = 'rider' | 'seller' | 'provider';
 export interface Plan {
   _id: string;
   audience: PlanAudience;
@@ -596,12 +596,15 @@ export interface PlanOverview {
   plans: Plan[];
   rider: { total: number; active: number; revenue: number };
   seller: { total: number; active: number; revenue: number };
+  provider?: { total: number; active: number; revenue: number };
 }
 export interface PlanMember {
   _id: string;
   name: string;
   phone: string;
   sellerId?: string;
+  providerId?: string;
+  providerApplication?: { firm?: string; city?: string };
   isActive: boolean;
   subscriptionUntil?: string | null;
   planActive: boolean;
@@ -736,6 +739,10 @@ export const providerCreateService = async (body: Record<string, unknown>): Prom
   (await api.post('/provider/services', body)).data.data;
 export const providerUpdateService = async (id: string, body: Record<string, unknown>): Promise<ServiceRow> =>
   (await api.patch(`/provider/services/${id}`, body)).data.data;
+export const providerUploadImages = (files: File[], opts?: UploadOptions): Promise<string[]> =>
+  sendImages('/provider/uploads/images', files, { maxBytes: 900 * 1024, ...opts });
+export const providerUploadVideo = (file: File, onProgress?: (fraction: number) => void): Promise<string> =>
+  sendVideo('/provider/uploads/video', file, onProgress);
 export const providerDeleteService = async (id: string): Promise<void> => {
   await api.delete(`/provider/services/${id}`);
 };

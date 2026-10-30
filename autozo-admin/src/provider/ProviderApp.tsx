@@ -4,8 +4,10 @@ import { usePathname } from 'next/navigation';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, NavLink, useNavigate } from '../navigation';
 import {
+  MyPlan,
   ProviderDashboard,
   ProviderMe,
+  fetchMyPlan,
   providerAcceptRing,
   providerBookings,
   providerCreateService,
@@ -18,10 +20,13 @@ import {
   providerSetAvailability,
   providerSetBookingStatus,
   providerUpdateService,
+  providerUploadImages,
+  providerUploadVideo,
   serviceCategories,
 } from '../api/admin';
+import PlanView, { PlanBanner } from '../seller/Plan';
 import { getErrorMessage } from '../api/client';
-import { IconBell, IconBox, IconDashboard, IconReceipt, IconShield } from '../components/icons';
+import { IconBell, IconBox, IconDashboard, IconReceipt, IconRupee, IconShield } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { askNotificationPermission, playChime } from '../lib/alerts';
@@ -47,8 +52,10 @@ export default function ProviderApp() {
   const [error, setError] = useState('');
   const [available, setAvailable] = useState(true);
   const [ring, setRing] = useState<RingItem[]>([]);
+  const [plan, setPlan] = useState<MyPlan | null>(null);
 
   useEffect(() => {
+    fetchMyPlan().then(setPlan).catch(() => undefined);
     providerMe().then((m) => { setMe(m); setAvailable(!m.providerBusy); }).catch((e) => setError(getErrorMessage(e)));
     askNotificationPermission();
   }, []);
@@ -101,6 +108,7 @@ export default function ProviderApp() {
     { to: '/', label: 'Dashboard', icon: <IconDashboard />, end: true },
     { to: '/services', label: 'My services', icon: <IconBox /> },
     { to: '/bookings', label: 'Bookings', icon: <IconReceipt /> },
+    { to: '/plan', label: 'My plan', icon: <IconRupee /> },
     { to: '/account', label: 'Account', icon: <IconShield /> },
   ];
 
@@ -109,6 +117,7 @@ export default function ProviderApp() {
     case '/': page = <DashboardView approved={approved} />; break;
     case '/services': page = <ServicesView approved={approved} />; break;
     case '/bookings': page = <BookingsView />; break;
+    case '/plan': page = plan ? <PlanView plan={plan} me={me} onPaid={setPlan} kind="provider" /> : <CenterSpinner />; break;
     case '/account': page = <AccountView me={me} onLogout={logout} />; break;
     default: return <Navigate to="/" replace />;
   }
@@ -159,6 +168,7 @@ export default function ProviderApp() {
           </div>
         </header>
         <div className="content">
+          {approved && pathname !== '/plan' ? <PlanBanner plan={plan} kind="provider" /> : null}
           {!approved ? <div className="card" style={{ marginBottom: 14 }}><div className="empty-state">Your account is awaiting admin approval. You can look around, but you can’t add services or take bookings until you’re approved.</div></div> : null}
           {page}
         </div>
@@ -219,7 +229,7 @@ function DashboardView({ approved }: { approved: boolean }) {
 /* ------------------------------ Services ------------------------------ */
 const blankService = {
   category: '', title: '', description: '', price: 0, mrp: 0, priceUnit: 'fixed' as 'fixed' | 'hourly' | 'visit',
-  durationMins: 60, serviceRadiusKm: 10, isActive: true, images: '', availability: [] as { day: string; open: string; close: string }[],
+  durationMins: 60, serviceRadiusKm: 10, isActive: true, images: [] as string[], video: '', availability: [] as { day: string; open: string; close: string }[],
 };
 
 function ServicesView({ approved }: { approved: boolean }) {
@@ -231,6 +241,26 @@ function ServicesView({ approved }: { approved: boolean }) {
   const [editing, setEditing] = useState<ServiceRow | null>(null);
   const [form, setForm] = useState<typeof blankService>(blankService);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState('');
+
+  const addPhotos = async (files: FileList | null) => {
+    const list = Array.from(files ?? []).slice(0, Math.max(0, 8 - form.images.length));
+    if (!list.length) return;
+    setUploading('Uploading photos…'); setError('');
+    try {
+      const urls = await providerUploadImages(list, { onProgress: (f) => setUploading(`Uploading photos… ${Math.round(f * 100)}%`) });
+      setForm((cur) => ({ ...cur, images: [...cur.images, ...urls].slice(0, 8) }));
+    } catch (e) { setError(getErrorMessage(e)); } finally { setUploading(''); }
+  };
+  const addVideo = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploading('Uploading video…'); setError('');
+    try {
+      const url = await providerUploadVideo(file, (f) => setUploading(`Uploading video… ${Math.round(f * 100)}%`));
+      setForm((cur) => ({ ...cur, video: url }));
+    } catch (e) { setError(getErrorMessage(e)); } finally { setUploading(''); }
+  };
 
   const load = () => {
     setLoading(true);
@@ -245,7 +275,7 @@ function ServicesView({ approved }: { approved: boolean }) {
       category: typeof s.category === 'object' ? s.category._id : s.category,
       title: s.title, description: s.description ?? '', price: s.price, mrp: s.mrp ?? 0, priceUnit: s.priceUnit,
       durationMins: s.durationMins, serviceRadiusKm: s.serviceRadiusKm, isActive: s.isActive,
-      images: (s.images ?? []).join(', '), availability: s.availability ?? [],
+      images: s.images ?? [], video: s.video ?? '', availability: s.availability ?? [],
     });
     setOpen(true);
   };
@@ -257,7 +287,8 @@ function ServicesView({ approved }: { approved: boolean }) {
         category: form.category, title: form.title.trim(), description: form.description.trim() || undefined,
         price: Number(form.price), mrp: Number(form.mrp) || undefined, priceUnit: form.priceUnit,
         durationMins: Number(form.durationMins), serviceRadiusKm: Number(form.serviceRadiusKm), isActive: form.isActive,
-        images: form.images.split(',').map((x) => x.trim()).filter(Boolean),
+        images: form.images,
+        video: form.video,
         availability: form.availability,
       };
       if (editing) await providerUpdateService(editing._id, body);
@@ -336,7 +367,39 @@ function ServicesView({ approved }: { approved: boolean }) {
             <Field label="Duration (min)"><input type="number" value={form.durationMins} onChange={(e) => setForm({ ...form, durationMins: Number(e.target.value) })} /></Field>
             <Field label="Service radius (km)"><input type="number" value={form.serviceRadiusKm} onChange={(e) => setForm({ ...form, serviceRadiusKm: Number(e.target.value) })} /></Field>
           </div>
-          <Field label="Image URLs (comma separated, optional)"><input value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} /></Field>
+          <div className="field">
+            <span className="label">Photos ({form.images.length}/8)</span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {form.images.map((u) => (
+                <div key={u} style={{ position: 'relative' }}>
+                  <img src={u} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--line, #e6e8ee)' }} />
+                  <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((x) => x !== u) })} aria-label="Remove photo"
+                    style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, border: 0, background: '#111', color: '#fff', cursor: 'pointer' }}>×</button>
+                </div>
+              ))}
+              {form.images.length < 8 ? (
+                <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
+                  + Add photos
+                  <input type="file" accept="image/*" multiple hidden onChange={(e) => { void addPhotos(e.target.files); e.target.value = ''; }} />
+                </label>
+              ) : null}
+            </div>
+          </div>
+          <div className="field">
+            <span className="label">Video (optional, max 15 MB)</span>
+            {form.video ? (
+              <div className="row-flex" style={{ gap: 8, alignItems: 'center' }}>
+                <video src={form.video} controls style={{ width: 220, borderRadius: 10 }} />
+                <Button size="sm" variant="ghost" onClick={() => setForm({ ...form, video: '' })}>Remove</Button>
+              </div>
+            ) : (
+              <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', alignSelf: 'flex-start' }}>
+                + Upload video
+                <input type="file" accept="video/mp4,video/webm" hidden onChange={(e) => { void addVideo(e.target.files); e.target.value = ''; }} />
+              </label>
+            )}
+          </div>
+          {uploading ? <div className="cell-muted" style={{ marginBottom: 8 }}>{uploading}</div> : null}
           <div className="field">
             <span className="label">Available days & times (optional)</span>
             {WEEKDAYS.map((day) => {
@@ -363,7 +426,7 @@ function ServicesView({ approved }: { approved: boolean }) {
             <span>Visible to customers</span>
           </label>
           <div className="row-flex" style={{ marginTop: 12 }}>
-            <Button disabled={busy || !form.category || form.title.trim().length < 2} onClick={save}>{editing ? 'Save' : 'Create'}</Button>
+            <Button disabled={busy || !!uploading || !form.category || form.title.trim().length < 2} onClick={save}>{editing ? 'Save' : 'Create'}</Button>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
           </div>
         </Modal>

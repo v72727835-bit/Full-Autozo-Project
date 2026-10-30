@@ -23,6 +23,7 @@ import { PageMeta } from '../types';
 const WHO: Record<PlanAudience, { one: string; many: string; locked: string }> = {
   rider: { one: 'Rider', many: 'Riders', locked: 'Without a plan a rider gets no new orders (a delivery already in hand can still be finished).' },
   seller: { one: 'Warehouse', many: 'Warehouses', locked: 'Without a plan a warehouse cannot see its orders or add new products.' },
+  provider: { one: 'Service provider', many: 'Service providers', locked: 'Without a plan a provider cannot add services and is not rung for new bookings.' },
 };
 
 const dateOnly = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-');
@@ -73,13 +74,13 @@ export default function SubscriptionsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Subscriptions</h1>
-          <div className="page-subtitle">Paid plans for riders and warehouses. Prices are in rupees and paid online with your Razorpay keys.</div>
+          <div className="page-subtitle">Paid plans for riders, warehouses and service providers. Prices are in rupees and paid online with your Razorpay keys.</div>
         </div>
       </div>
       <ErrorBanner message={error} />
 
-      <div className="grid grid-2">
-        {(['rider', 'seller'] as PlanAudience[]).map((a) => (
+      <div className="grid grid-3">
+        {(['rider', 'seller', 'provider'] as PlanAudience[]).map((a) => (
           <div key={a} className="card card-pad">
             <label className="checkbox-row" style={{ fontSize: 15, fontWeight: 700 }}>
               <input type="checkbox" checked={overview.switches[a]} disabled={saving === a} onChange={(e) => toggle(a, e.target.checked)} />
@@ -90,10 +91,10 @@ export default function SubscriptionsPage() {
             </div>
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13.5 }}>
               <span>
-                <b>{overview[a].active}</b> of {overview[a].total} with a running plan
+                <b>{overview[a]?.active ?? 0}</b> of {overview[a]?.total ?? 0} with a running plan
               </span>
               <span>
-                Collected <b>{money(overview[a].revenue)}</b>
+                Collected <b>{money(overview[a]?.revenue ?? 0)}</b>
               </span>
             </div>
           </div>
@@ -106,6 +107,7 @@ export default function SubscriptionsPage() {
         options={[
           { value: 'rider', label: 'Rider plans' },
           { value: 'seller', label: 'Warehouse plans' },
+          { value: 'provider', label: 'Service provider plans' },
         ]}
       />
       <div style={{ height: 16 }} />
@@ -305,7 +307,7 @@ function MembersCard({ audience, onChanged, onError }: { audience: PlanAudience;
               <thead>
                 <tr>
                   <th>{WHO[audience].one}</th>
-                  <th>Warehouse</th>
+                  <th>{audience === 'provider' ? 'Business' : 'Warehouse'}</th>
                   <th>Plan</th>
                   <th>Ends</th>
                   <th />
@@ -316,9 +318,9 @@ function MembersCard({ audience, onChanged, onError }: { audience: PlanAudience;
                   <tr key={m._id}>
                     <td className="cell-name">
                       {m.name}
-                      <div className="cell-muted">{m.phone}{m.sellerId ? ` · ${m.sellerId}` : ''}</div>
+                      <div className="cell-muted">{m.phone}{m.sellerId ? ` · ${m.sellerId}` : ''}{m.providerId ? ` · ${m.providerId}` : ''}</div>
                     </td>
-                    <td className="cell-muted">{(audience === 'rider' ? m.warehouses : m.sellerWarehouses)?.map((w) => w.name).join(', ') || '-'}</td>
+                    <td className="cell-muted">{audience === 'provider' ? [m.providerApplication?.firm, m.providerApplication?.city].filter(Boolean).join(', ') || '-' : (audience === 'rider' ? m.warehouses : m.sellerWarehouses)?.map((w) => w.name).join(', ') || '-'}</td>
                     <td>{m.planActive ? <Badge tone="success">Running</Badge> : m.subscriptionUntil ? <Badge tone="danger">Ended</Badge> : <Badge tone="muted">None</Badge>}</td>
                     <td>{dateOnly(m.subscriptionUntil)}</td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>

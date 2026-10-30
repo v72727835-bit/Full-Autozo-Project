@@ -36,3 +36,30 @@ export const cancelBooking = async (id: string, reason?: string): Promise<void> 
 export const providerRing = async (): Promise<RingItem[]> => (await api.get('/provider/ring')).data.data;
 export const acceptRing = async (dispatchId: string): Promise<BookingRow> => (await api.post(`/provider/ring/${dispatchId}/accept`)).data.data;
 export const declineRing = async (dispatchId: string): Promise<void> => { await api.post(`/provider/ring/${dispatchId}/decline`); };
+
+/* ---------- photos & video for services ---------- */
+export async function uploadImages(files: { uri: string; name: string; type: string }[]): Promise<string[]> {
+  const form = new FormData();
+  files.forEach((f) => form.append('images', f as unknown as Blob));
+  const { data } = await api.post('/provider/uploads/images', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000 });
+  return data.data.urls;
+}
+export async function uploadVideo(file: { uri: string; name: string; type: string }): Promise<string> {
+  const form = new FormData();
+  form.append('video', file as unknown as Blob);
+  const { data } = await api.post('/provider/uploads/video', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+  return (data.data?.url ?? data.data) as string;
+}
+
+/* ---------- my plan ---------- */
+export interface MyPlan {
+  required: boolean;
+  active: boolean;
+  until: string | null;
+  daysLeft: number;
+  plans: { _id: string; name: string; price: number; days: number; description?: string }[];
+  canPayOnline: boolean;
+}
+export const fetchMyPlan = async (): Promise<MyPlan> => (await api.get('/subscription')).data.data;
+export const startPlanPayment = async (planId: string): Promise<{ razorpayOrderId: string; amount: number; keyId: string; planName: string }> =>
+  (await api.post('/subscription/pay', { planId })).data.data;

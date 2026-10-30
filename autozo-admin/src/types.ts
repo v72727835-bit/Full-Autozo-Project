@@ -598,6 +598,7 @@ export interface ServiceRow {
   slug: string;
   description?: string;
   images: string[];
+  video?: string;
   price: number;
   mrp?: number;
   priceUnit: 'fixed' | 'hourly' | 'visit';

@@ -57,6 +57,11 @@ const handler = (up: typeof uploader, limitMsg: string): RequestHandler => (req,
   });
 };
 export const uploadProductImages = handler(uploader, 'Each image must be 5 MB or smaller');
+/** Service providers: a few photos per service, phone-sized (the app resizes to 1080px first). */
+export const uploadProviderImages = handler(
+  makeUploader(1024 * 1024),
+  'Each image must be 1 MB or smaller. Pick a smaller photo or reduce it with a free image-size tool and upload again.',
+);
 export const uploadSellerImages = handler(
   sellerUploader,
   'Each image must be 200 KB or smaller. Reduce it with a free image-size tool (for example "pi7 image tool") and upload again.',

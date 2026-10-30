@@ -18,6 +18,7 @@ export default function ServiceDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [service, setService] = useState<ServiceListing | null>(null);
+  const [photo, setPhoto] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [booking, setBooking] = useState(false);
@@ -91,9 +92,22 @@ export default function ServiceDetailPage() {
     <div className="page rise">
       <BackButton />
 
-      {service.images?.[0] ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={service.images[0]} alt={service.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 14, marginTop: 8 }} />
+      {service.images?.length ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={service.images[Math.min(photo, service.images.length - 1)]} alt={service.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 14, marginTop: 8 }} />
+          {service.images.length > 1 ? (
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginTop: 8 }}>
+              {service.images.map((u, i) => (
+                <button key={u} type="button" onClick={() => setPhoto(i)} aria-label={`Photo ${i + 1}`}
+                  style={{ padding: 0, border: i === photo ? '2px solid var(--brand)' : '1px solid var(--line)', borderRadius: 10, background: 'none', cursor: 'pointer', flexShrink: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 8, display: 'block' }} />
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       <h1 className="h1" style={{ margin: '14px 0 4px' }}>{service.title}</h1>
@@ -108,6 +122,17 @@ export default function ServiceDetailPage() {
       </div>
 
       {service.description ? <p style={{ marginTop: 14, whiteSpace: 'pre-wrap' }}>{service.description}</p> : null}
+
+      {service.video ? (
+        <div className="card card-pad" style={{ marginTop: 14 }}>
+          <strong>Watch the work</strong>
+          {/youtube\.com|youtu\.be/.test(service.video) ? (
+            <p className="body-sm" style={{ marginTop: 6 }}><a href={service.video} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>Open the video on YouTube</a></p>
+          ) : (
+            <video src={service.video} controls preload="metadata" style={{ width: '100%', borderRadius: 12, marginTop: 8 }} />
+          )}
+        </div>
+      ) : null}
 
       {service.availability && service.availability.length > 0 ? (
         <div className="card card-pad" style={{ marginTop: 14 }}>
