@@ -4,40 +4,28 @@ import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { fetchServiceCategories, registerProvider, ServiceCategory } from '../../api/services';
 import { INDIA_STATES } from '../../components/AddressForm';
-import { BackButton } from '../../components/BackButton';
-import { Icon, IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
 import { LocationPicker, PickedPlace } from '../../components/LocationPicker';
 import { PasswordField } from '../../components/PasswordField';
-import { Alert, Button, Field, Input, Textarea } from '../../components/ui';
+import { FormGroup, PartnerDone, PartnerShell, partnerStyles as p } from '../../components/PartnerShell';
+import { Alert, Button, Field, Input } from '../../components/ui';
 import { useSettings } from '../../context/SettingsContext';
 import { appDownloads } from '../../lib/apps';
 import { getErrorMessage } from '../../lib/client';
 import { PANEL_URL } from '../../lib/config';
-import s from './register.module.css';
 
-const PERKS: { icon: IconName; text: string }[] = [
-  { icon: 'pin', text: 'Bookings from customers near you' },
-  { icon: 'rupee', text: 'Set your own prices' },
-  { icon: 'clock', text: 'Choose your days & timings' },
-  { icon: 'bell', text: 'New bookings ring on your phone' },
-];
-
-const STEPS = ['Fill this form', 'Autozo team approves you', 'Add services & get bookings'];
-
-function Section({ icon, title, sub, children }: { icon: IconName; title: string; sub?: string; children: React.ReactNode }) {
-  return (
-    <section className={s.section}>
-      <div className={s.sectionHead}>
-        <span className={s.sectionIcon}><Icon name={icon} size={18} /></span>
-        <div>
-          <div className={s.sectionTitle}>{title}</div>
-          {sub ? <div className={s.sectionSub}>{sub}</div> : null}
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
+const HERO = {
+  kicker: 'Partner with Autozo',
+  title: 'Grow your business with Autozo Services',
+  lead: 'Plumber, electrician, car wash, salon, cleaning, repairs: list your services and get bookings from customers in your area.',
+  perks: [
+    { icon: 'pin' as const, text: 'Bookings from customers near you' },
+    { icon: 'rupee' as const, text: 'Set your own prices' },
+    { icon: 'clock' as const, text: 'Choose your days & timings' },
+    { icon: 'bell' as const, text: 'New bookings ring on your phone' },
+  ],
+  steps: ['Fill this form', 'Autozo team approves you', 'Add services & get bookings'],
+};
 
 /** A service provider registers itself; the Autozo team approves it, then it signs in to its own panel or app. */
 export default function ProviderRegisterPage() {
@@ -100,89 +88,70 @@ export default function ProviderRegisterPage() {
 
   if (done) {
     return (
-      <div className={`page rise ${s.wrap}`}>
-        <BackButton />
-        <div className={s.done} style={{ marginTop: 12 }}>
-          <span className={s.doneIcon}><Icon name="check-circle" size={34} /></span>
-          <h1 className="h1" style={{ margin: '0 0 6px' }}>Registration received!</h1>
-          <p className="body-sm" style={{ maxWidth: 460, margin: '0 auto' }}>
-            {done} We usually review new providers within a day. Once approved, sign in with your mobile number and password
-            to add your services, prices and timings.
-          </p>
-          <div className={s.doneActions}>
-            <a href={apps.provider} className="btn btn-md btn-primary">
-              <Icon name="download" size={16} /> Download the provider app
-            </a>
-            <a href={PANEL_URL} className="btn btn-md btn-outline">Open provider panel</a>
-            <Link href="/services" className="btn btn-md btn-ghost">Browse services</Link>
-          </div>
-        </div>
-      </div>
+      <PartnerShell active="provider" {...HERO}>
+        <PartnerDone
+          title="Registration received!"
+          actions={
+            <>
+              <a href={apps.provider} className="btn btn-md btn-primary"><Icon name="download" size={16} /> Download the provider app</a>
+              <a href={PANEL_URL} className="btn btn-md btn-outline">Open provider panel</a>
+              <Link href="/services" className="btn btn-md btn-ghost">Browse services</Link>
+            </>
+          }
+        >
+          {done} We usually review new providers within a day. Once approved, sign in with your mobile number and password to add your services, prices and timings.
+        </PartnerDone>
+      </PartnerShell>
     );
   }
 
   return (
-    <div className={`page rise ${s.wrap}`}>
-      <BackButton />
-
-      <div className={s.hero}>
-        <span className={s.kicker}><Icon name="bolt" size={13} /> Partner with Autozo</span>
-        <h1 className={s.title}>Grow your business with Autozo Services</h1>
-        <p className={s.lead}>
-          Plumber, electrician, car wash, salon, cleaning, repairs — list your services on Autozo and get bookings from
-          customers in your area.
-        </p>
-        <div className={s.perks}>
-          {PERKS.map((p) => (
-            <div key={p.text} className={s.perk}>
-              <span className={s.perkIcon}><Icon name={p.icon} size={17} /></span>
-              {p.text}
-            </div>
-          ))}
-        </div>
-        <div className={s.already}>
-          Already approved? <a href={PANEL_URL}>Sign in to the provider panel</a> or <a href={apps.provider}>download the app</a>.
-        </div>
-      </div>
-
-      <div className={s.steps}>
-        {STEPS.map((t, i) => (
-          <div key={t} className={s.step}>
-            <span className={s.stepNum}>{i + 1}</span>
-            {t}
-          </div>
-        ))}
-      </div>
-
-      <form onSubmit={submit} noValidate>
+    <PartnerShell
+      active="provider"
+      {...HERO}
+      extra={<>Already approved? <a href={PANEL_URL}>Sign in to the provider panel</a> or <a href={apps.provider}>download the app</a>.</>}
+    >
+      <form className={p.card} onSubmit={submit} noValidate>
+        <h2 className={p.cardTitle}>Register as a service provider</h2>
+        <p className={p.cardSub}>Takes about 2 minutes. Fields with * are required.</p>
         {error ? <Alert tone="bad">{error}</Alert> : null}
 
-        <Section icon="user" title="Your details" sub="Your mobile number is your login.">
-          <Field label="Full name" required>
-            <Input value={f.name} onChange={(e) => set('name', e.target.value)} autoComplete="name" required minLength={2} placeholder="e.g. Ramesh Kumar" />
-          </Field>
-          <div className="two-col">
-            <Field label="Mobile number" required>
+        <FormGroup n={1} title="Your details">
+          <div className={p.row2}>
+            <Field label="Full name" required>
+              <Input value={f.name} onChange={(e) => set('name', e.target.value)} autoComplete="name" required minLength={2} placeholder="e.g. Ramesh Kumar" />
+            </Field>
+            <Field label="Mobile number (your login)" required>
               <Input value={f.phone} onChange={(e) => set('phone', e.target.value.replace(/[^\d+\s-]/g, ''))} inputMode="tel" autoComplete="tel" placeholder="9876543210" maxLength={14} required />
+            </Field>
+          </div>
+          <div className={p.row2}>
+            <Field label="Password" required>
+              <PasswordField value={f.password} onChange={(v) => set('password', v)} onGenerate={(v) => set('confirm', v)} required />
+            </Field>
+            <Field label="Confirm password" required>
+              <PasswordField id="confirm" value={f.confirm} onChange={(v) => set('confirm', v)} canGenerate={false} required />
+            </Field>
+          </div>
+        </FormGroup>
+
+        <FormGroup n={2} title="Your business">
+          <div className={p.row2}>
+            <Field label="Business / shop name" required>
+              <Input value={f.firm} onChange={(e) => set('firm', e.target.value)} required minLength={2} placeholder="e.g. Kumar Plumbing Works" />
             </Field>
             <Field label="Email (optional)">
               <Input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} autoComplete="email" placeholder="you@example.com" />
             </Field>
           </div>
-        </Section>
-
-        <Section icon="store" title="Your business" sub="Tell customers what you do.">
-          <Field label="Business / shop name" required>
-            <Input value={f.firm} onChange={(e) => set('firm', e.target.value)} required minLength={2} placeholder="e.g. Kumar Plumbing Works" />
-          </Field>
           <span className="label" style={{ display: 'block', marginBottom: 8 }}>What service do you offer? *</span>
-          <div className={s.chips}>
+          <div className={p.chips}>
             {cats.map((c) => (
-              <button type="button" key={c._id} className={`${s.chip} ${!other && f.category === c.name ? s.chipOn : ''}`} onClick={() => { setOther(false); set('category', c.name); }}>
+              <button type="button" key={c._id} className={`${p.chip} ${!other && f.category === c.name ? p.chipOn : ''}`} onClick={() => { setOther(false); set('category', c.name); }}>
                 {c.name}
               </button>
             ))}
-            <button type="button" className={`${s.chip} ${other ? s.chipOn : ''}`} onClick={() => { setOther(true); set('category', ''); }}>
+            <button type="button" className={`${p.chip} ${other ? p.chipOn : ''}`} onClick={() => { setOther(true); set('category', ''); }}>
               Other
             </button>
           </div>
@@ -192,52 +161,39 @@ export default function ProviderRegisterPage() {
             </Field>
           ) : null}
           <Field label="About your work (optional)">
-            <Textarea value={f.about} onChange={(e) => set('about', e.target.value)} rows={3} maxLength={1000} placeholder="Years of experience, areas you cover, tools you bring…" />
+            <Input value={f.about} onChange={(e) => set('about', e.target.value)} maxLength={1000} placeholder="Years of experience, areas you cover…" />
           </Field>
-        </Section>
+        </FormGroup>
 
-        <Section icon="pin" title="Where you work" sub="Nearby customers are matched to you from this location.">
+        <FormGroup n={3} title="Where you work">
           <Field label="Base address" required>
             <Input value={f.line1} onChange={(e) => set('line1', e.target.value)} required minLength={5} placeholder="Building, street, area" />
           </Field>
-          <div className="two-col">
+          <div className={p.row3}>
             <Field label="City" required>
               <Input value={f.city} onChange={(e) => set('city', e.target.value)} required autoComplete="address-level2" />
             </Field>
             <Field label="PIN code" required>
               <Input value={f.pincode} onChange={(e) => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" required autoComplete="postal-code" />
             </Field>
+            <Field label="State" required>
+              <select className="input" value={f.state} onChange={(e) => set('state', e.target.value)} required>
+                {INDIA_STATES.map((st) => (
+                  <option key={st} value={st}>{st}</option>
+                ))}
+              </select>
+            </Field>
           </div>
-          <Field label="State" required>
-            <select className="input" value={f.state} onChange={(e) => set('state', e.target.value)} required>
-              {INDIA_STATES.map((st) => (
-                <option key={st} value={st}>{st}</option>
-              ))}
-            </select>
-          </Field>
           <Field label="Mark your location on the map" required>
-            <LocationPicker value={location} onPick={picked} />
+            <LocationPicker value={location} onPick={picked} compact />
           </Field>
-        </Section>
+        </FormGroup>
 
-        <Section icon="lock" title="Create your password" sub="You will use this with your mobile number to sign in.">
-          <div className="two-col">
-            <Field label="Password" required>
-              <PasswordField value={f.password} onChange={(v) => set('password', v)} onGenerate={(v) => set('confirm', v)} required />
-            </Field>
-            <Field label="Confirm password" required>
-              <PasswordField id="confirm" value={f.confirm} onChange={(v) => set('confirm', v)} canGenerate={false} required />
-            </Field>
-          </div>
-        </Section>
-
-        <p className={s.note}>
-          By submitting, you agree that Autozo may verify your details before approving your account. You can sign in only after approval.
-        </p>
+        <p className={p.note}>By submitting, you agree that Autozo may verify your details before approving your account. You can sign in only after approval.</p>
         <Button type="submit" size="lg" full loading={busy}>
           Submit for approval
         </Button>
       </form>
-    </div>
+    </PartnerShell>
   );
 }

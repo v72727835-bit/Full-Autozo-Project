@@ -234,9 +234,10 @@
   color: var(--brand-text);
 }
 
-/* Company pages exist only on desktop. */
-.deskOnly {
-  display: none;
+/* The partner sign-ups at the top of Useful links stand out a little. */
+.joinLink {
+  font-weight: 650;
+  color: var(--brand-text);
 }
 
 .baseBrand {
@@ -280,9 +281,6 @@
   }
   .catGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .deskOnly {
-    display: flex;
   }
 }
 
