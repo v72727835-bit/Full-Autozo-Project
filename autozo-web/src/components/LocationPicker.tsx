@@ -56,7 +56,12 @@ export async function reverse(lat: number, lng: number): Promise<Partial<PickedP
  * street, tap the map or drag the pin to the exact doorstep, or jump to the
  * phone's own position with "Use my current location".
  */
-export function LocationPicker({ value, onPick }: { value?: { lat: number; lng: number }; onPick: (p: PickedPlace) => void }) {
+export function LocationPicker({ value, onPick, compact }: {
+  value?: { lat: number; lng: number };
+  onPick: (p: PickedPlace) => void;
+  /** A shorter map for long forms (registration pages). */
+  compact?: boolean;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import('leaflet').Map | null>(null);
   const pinRef = useRef<import('leaflet').Marker | null>(null);
@@ -173,7 +178,7 @@ export function LocationPicker({ value, onPick }: { value?: { lat: number; lng: 
           ))}
         </ul>
       ) : null}
-      <div className={s.mapBox}>
+      <div className={`${s.mapBox} ${compact ? s.mapBoxCompact : ''}`}>
         <div ref={box} className={s.map} />
       </div>
       <div className={s.foot}>

@@ -7,6 +7,12 @@ import { useLanguage } from '../context/LanguageContext';
 import { useSettings } from '../context/SettingsContext';
 import { appDownloads } from '../lib/apps';
 import { DESKTOP_PAGES, FORMS } from '../lib/pages';
+
+const JOIN_LINKS = [
+  { href: '/contact/delivery-partner', label: 'Become a rider' },
+  { href: '/warehouse-register', label: 'Register your warehouse' },
+  { href: '/provider-register', label: 'Become a service provider' },
+];
 import { Icon } from './Icon';
 import { LanguageMenu } from './LanguageMenu';
 import s from './Footer.module.css';
@@ -112,9 +118,14 @@ export function Footer() {
         <hr className="divider" />
 
         <div className={s.cols}>
-          {/* Company pages: desktop only. */}
-          <nav className={`${s.col} ${s.deskOnly}`} aria-label="Useful links">
+          <nav className={s.col} aria-label="Useful links">
             <div className={s.colTitle}>Useful links</div>
+            {/* The three partner sign-ups, one after another. */}
+            {JOIN_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} className={`${s.colLink} ${s.joinLink}`}>
+                {l.label}
+              </Link>
+            ))}
             {DESKTOP_PAGES.map((l) => (
               <Link key={l.href} href={l.href} className={s.colLink}>
                 {l.label}
@@ -138,17 +149,12 @@ export function Footer() {
 
           <nav className={s.col} aria-label="Get in touch">
             <div className={s.colTitle}>Get in touch</div>
-            {FORMS.map((f) => (
+            {/* The rider form is listed under Useful links with the other sign-ups. */}
+            {FORMS.filter((f) => f.kind !== 'delivery_partner').map((f) => (
               <Link key={f.slug} href={`/contact/${f.slug}`} className={s.colLink}>
                 {f.title}
               </Link>
             ))}
-            <Link href="/warehouse-register" className={s.colLink}>
-              Register your warehouse
-            </Link>
-            <Link href="/provider-register" className={s.colLink}>
-              Become a service provider
-            </Link>
           </nav>
 
           <nav className={s.col} aria-label="Account">
