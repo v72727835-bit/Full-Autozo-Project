@@ -163,7 +163,11 @@ export function Footer() {
         </div>
 
         <div className={s.base}>
-          <span>© {new Date().getFullYear()} Autozo · Robertsganj, Sonbhadra, Uttar Pradesh</span>
+          <span className={s.baseBrand}>
+            <img src="/logo-mark.png" alt="" width={20} height={20} className={s.baseMark} />
+            <span className={s.baseWord}>autozo</span>
+            <span>© {new Date().getFullYear()}{settings?.company?.address ? ` · ${settings.company.address}` : ''}</span>
+          </span>
           <span className={s.baseTools}>
             <LanguageMenu upward />
           </span>

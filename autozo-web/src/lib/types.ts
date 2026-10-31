@@ -437,7 +437,8 @@ export interface PublicSettings {
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string; provider?: string };
   /** Social media pages the admin filled in (full https links only). */
   socialLinks?: Partial<Record<'facebook' | 'instagram' | 'youtube' | 'whatsapp' | 'x' | 'telegram' | 'linkedin', string>>;
-  company?: { name?: string; logo?: string; tagline?: string };
+  /** The registered address is the one the super admin sets in Store Settings → company details (shown in the footer). */
+  company?: { name?: string; logo?: string; tagline?: string; address?: string };
   /** Extra pages the admin added: a name and a full link. */
   socialOther?: { label: string; url: string }[];
   sixDayDays: number;

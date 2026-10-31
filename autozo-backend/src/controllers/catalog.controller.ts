@@ -684,7 +684,7 @@ export const publicSettings = asyncHandler(async (_req, res) => {
     // Only the pages the admin filled in, so an empty one never shows an icon.
     socialLinks: Object.fromEntries(Object.entries(settings.socialLinks ?? {}).filter(([, v]) => typeof v === 'string' && /^https?:\/\//i.test(v))),
     socialOther: (settings.socialOther ?? []).filter((s) => s.label && /^https?:\/\//i.test(s.url)).map((s) => ({ label: s.label, url: s.url })),
-    company: { name: settings.company?.name ?? '', logo: settings.company?.logo ?? '', tagline: settings.company?.tagline ?? '' },
+    company: { name: settings.company?.name ?? '', logo: settings.company?.logo ?? '', tagline: settings.company?.tagline ?? '', address: settings.company?.address ?? '' },
     sixDayDays: settings.sixDay?.days ?? 6,
     codMessage: settings.cod?.message,
     supportPhone: settings.supportPhone ?? '',
