@@ -60,7 +60,7 @@ export function Header() {
           <Link href="/" className={s.logo} aria-label="Autozo home">
             <img src="/logo-mark.png" alt="" width={38} height={38} className={s.mark} />
             <span className={s.word}>
-              Autozo
+              autozo
               <span className={s.promise}>
                 <Icon name="bolt" size={11} strokeWidth={2.4} />
                 {home ? `${shortDelivery(home)}${/delivery/i.test(shortDelivery(home)) ? '' : ' delivery'}` : 'Minutes, not days'}
