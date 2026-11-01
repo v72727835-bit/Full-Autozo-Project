@@ -149,7 +149,10 @@ for raw in open(FLOW):
         pattern, _, text = rest.partition(' ')
         if tap(pattern, editable=True):
             time.sleep(0.8)
-            adb('shell', 'input', 'text', text.replace(' ', '%s'))
+            # A controlled React Native input can drop keys sent in one burst, so type a few at a time.
+            for i in range(0, len(text), 3):
+                adb('shell', 'input', 'text', text[i:i + 3].replace(' ', '%s'))
+                time.sleep(0.35)
             time.sleep(0.5)
             # Close the keyboard so it cannot cover the next field or button.
             if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False):
