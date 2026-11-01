@@ -11,6 +11,8 @@ on:
     paths:
       - e2e/**
       - .github/workflows/app-e2e.yml
+      - blinkit-app-/**
+      - autozo-backend/autozo-mobile/**
 
 concurrency:
   group: app-e2e-${{ github.ref }}
