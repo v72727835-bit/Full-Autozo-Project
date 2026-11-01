@@ -6,7 +6,7 @@ Each command line in a flow file is one step:
     wait <seconds>
     tap <regex>            tap the first element whose text or description matches
     tapif <regex>          same, but skip quietly if it is not on screen
-    type <regex> <text>    tap the field (matched by its text/hint/description) and type
+    type <regex> <text>    tap the input box (by its hint, or the label above it), type, close the keyboard
     key <name>             e.g. back, enter
     hidekb                 close the on-screen keyboard if it is open
     dump <name>            save the screen's view tree to out/<name>.xml
@@ -151,6 +151,10 @@ for raw in open(FLOW):
             time.sleep(0.8)
             adb('shell', 'input', 'text', text.replace(' ', '%s'))
             time.sleep(0.5)
+            # Close the keyboard so it cannot cover the next field or button.
+            if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False):
+                adb('shell', 'input', 'keyevent', '4')
+                time.sleep(1)
     elif cmd == 'hidekb':
         # Close the keyboard only if it is open (a bare "back" would leave the app).
         if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False):
