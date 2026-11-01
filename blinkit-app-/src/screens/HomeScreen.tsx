@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, Easing, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FeedFooter, HomeSectionView, SectionHandlers } from '../components/HomeSections';
+import { CategoryArt } from '../components/CategoryTile';
 import { NoticeBell } from '../components/NoticeBell';
 import { useAuth } from '../context/AuthContext';
 import type { AppNav } from '../navigation/types';
@@ -14,17 +15,16 @@ import { catalogApi, useHomeQuery } from '../store/catalogApi';
 import { useDeliveryPointKey } from '../store/deliveryPoint';
 import type { Category } from '../types';
 import { Banner, EmptyState } from '../ui/Feedback';
-import { Illustration } from '../ui/Illustration';
 import { ProductCardSkeleton, SkeletonBlock } from '../ui/Skeleton';
 import { Txt } from '../ui/Text';
 import { shortDelivery } from '../utils/delivery';
 import { tapConfirm } from '../utils/haptics';
 import { useGrid, useRailCardWidth } from '../utils/layout';
+import { loadPopularTerms } from '../utils/popularTerms';
 
 const ALL: Category = { _id: 'all', name: 'All', slug: 'all', icon: 'shopping-bags', short: 'All' };
 
 /** What the search box suggests, one at a time - the things people type most. */
-const HINTS = ['milk', 'atta', 'paneer', 'chips', 'maggi', 'shampoo', 'eggs', 'chocolate'];
 
 /**
  * The shopfront.
@@ -200,7 +200,8 @@ export function HomeScreen({ active }: TabScreenProps) {
               style={styles.tab}
             >
               <View style={[styles.tabArt, on && styles.tabArtOn]}>
-                <Illustration name={t.icon} size={24} />
+                {/* The uploaded brand / aisle photo, like the website; bundled artwork when there is none. */}
+                <CategoryArt category={t} size={24} />
               </View>
               <Txt
                 variant="caption"
@@ -289,24 +290,40 @@ export function HomeScreen({ active }: TabScreenProps) {
 }
 
 /**
- * `Search "milk"` → `Search "atta"` → ... The word slides up and out every
- * couple of seconds, which both hints at the range and makes an idle screen
- * feel alive.
+ * `Search "Bajaj Pulsar"` → `Search "Volvo"` → ... real products and aisles
+ * from the store. The word slides up and out every couple of seconds, which
+ * both hints at the range and makes an idle screen feel alive.
  */
 function RotatingHint() {
   const [i, setI] = useState(0);
+  const [hints, setHints] = useState<string[]>([]);
   const y = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let alive = true;
+    loadPopularTerms().then((list) => { if (alive) setHints(list); });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (hints.length < 2) return;
     const t = setInterval(() => {
       Animated.timing(y, { toValue: 1, duration: 260, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
-        setI((n) => (n + 1) % HINTS.length);
+        setI((n) => (n + 1) % hints.length);
         y.setValue(-1);
         Animated.timing(y, { toValue: 0, duration: 260, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
       });
     }, 2400);
     return () => clearInterval(t);
-  }, [y]);
+  }, [y, hints.length]);
+
+  if (!hints.length) {
+    return (
+      <View style={styles.hint}>
+        <Txt variant="body" tone="faint">Search products</Txt>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.hint}>
@@ -320,7 +337,7 @@ function RotatingHint() {
         }}
       >
         <Txt variant="body" tone="body" weight="600">
-          “{HINTS[i]}”
+          “{hints[i % hints.length]}”
         </Txt>
       </Animated.View>
     </View>
@@ -392,6 +409,7 @@ const styles = themed(({ c }) => ({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden', // the photo fills the tile edge to edge
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
   tabArtOn: { backgroundColor: 'rgba(255,255,255,0.95)' },
