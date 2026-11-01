@@ -14,7 +14,15 @@ adb install -r -g app.apk
 adb logcat -c
 adb logcat -v time > "$OUT/logcat.txt" 2>&1 &
 LOGCAT=$!
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null
+# Start the app and make sure it is really running (right after an install the
+# launcher intent is sometimes dropped).
+for i in 1 2 3 4 5 6; do
+  adb shell am start -W -n "$PKG/com.bingoor.app.MainActivity" > /dev/null 2>&1
+  sleep 4
+  if [ -n "$(adb shell pidof "$PKG" | tr -d '\r')" ]; then echo "app started"; break; fi
+  echo "app not running yet, retrying ($i)"
+  sleep 3
+done
 sed "s/__OTP__/${OTP:-0000}/" "$FLOW" > /tmp/flow.txt
 python3 e2e/ui.py "$PKG" /tmp/flow.txt "$OUT"
 RC=$?
