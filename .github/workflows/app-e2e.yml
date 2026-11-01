@@ -41,6 +41,12 @@ jobs:
       PORT: '5000'
       NODE_ENV: development
     steps:
+      # The runner's disk is too small for a React Native build plus an emulator image.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/local/lib/node_modules/@angular /opt/hostedtoolcache/CodeQL /usr/share/swift /usr/local/share/powershell
+          sudo docker image prune -af > /dev/null || true
+          df -h /
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -73,6 +79,10 @@ jobs:
           npm install --no-audit --no-fund
           cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/app.apk"
+          # Make room for the emulator image.
+          ./gradlew --stop || true
+          cd .. && rm -rf android/app/build android/build android/.gradle node_modules ~/.gradle/caches/transforms-* ~/.gradle/caches/build-cache-*
+          df -h /
 
       - name: Enable KVM
         run: |
