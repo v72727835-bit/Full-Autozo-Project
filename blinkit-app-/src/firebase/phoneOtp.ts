@@ -37,7 +37,13 @@ function message(e: unknown): string {
   if (code.includes('session-expired') || code.includes('code-expired')) return 'That code has expired. Please request a new one.';
   if (code.includes('quota-exceeded')) return 'We cannot send more OTPs right now. Please try again later.';
   if (code.includes('network')) return 'No internet connection. Please try again.';
-  return 'Could not send the OTP. Please try again.';
+  // Setup problems on the Firebase side: say so, with the code, so it can be fixed rather than retried.
+  if (code.includes('app-not-authorized') || code.includes('invalid-app-credential') || code.includes('missing-client-identifier')) {
+    return `OTP is not set up for this app yet (${code}). Please contact Autozo support.`;
+  }
+  if (code.includes('operation-not-allowed') || code.includes('billing')) return `OTP SMS is switched off right now (${code}). Please contact Autozo support.`;
+  const detail = code || (e as { message?: string })?.message?.slice(0, 80) || '';
+  return `Could not send the OTP. Please try again.${detail ? ` (${detail})` : ''}`;
 }
 
 export interface OtpHandle {

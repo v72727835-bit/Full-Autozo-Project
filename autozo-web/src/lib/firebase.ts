@@ -82,7 +82,8 @@ function otpErrorMessage(e: unknown): string {
   if (code.includes('code-expired') || code.includes('session-expired')) return 'That code has expired. Please request a new one.';
   if (code.includes('captcha')) return 'Could not verify that you are human. Please reload the page and try again.';
   if (code.includes('quota-exceeded')) return 'We cannot send more OTPs right now. Please try again later.';
-  return 'Could not send the OTP. Please try again.';
+  if (code.includes('operation-not-allowed') || code.includes('billing')) return `OTP SMS is switched off right now (${code}). Please contact Autozo support.`;
+  return `Could not send the OTP. Please try again.${code ? ` (${code})` : ''}`;
 }
 
 /* ---------------- Push notifications ---------------- */
