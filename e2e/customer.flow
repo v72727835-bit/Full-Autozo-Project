@@ -4,8 +4,7 @@ shot 01-start
 dump 01-start
 tapif I already have an account
 wait 2
-tapif Continue with phone number
-wait 1
+# The phone form is already open on the sign-in screen ("Continue with phone number" only toggles it).
 type ^9876543210$|Mobile.number.or.email 9876543210
 type Your.password|^Password$ Customer@123
 hidekb

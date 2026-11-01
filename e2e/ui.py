@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-A tiny Android UI driver for the app smoke test (no extra installs: adb + uiautomator).
+A tiny Android UI driver for the app smoke test (adb + uiautomator2).
 
 Each command line in a flow file is one step:
     wait <seconds>
-    tap <regex>            tap the first element whose text or description matches
+    tap <regex>            tap the element whose text or description matches; retried until the screen changes
     tapif <regex>          same, but skip quietly if it is not on screen
-    type <regex> <text>    tap the input box (by its hint, or the label above it), type, close the keyboard
+    type <regex> <text>    fill the input box (matched by its hint, or the label above it) and check it took
     key <name>             e.g. back, enter
     hidekb                 close the on-screen keyboard if it is open
     dump <name>            save the screen's view tree to out/<name>.xml
@@ -14,6 +14,10 @@ Each command line in a flow file is one step:
     shot <name>            screenshot to out/<name>.png
     alive                  fail if the app process has died
 Every step also checks the app is still running and saves a screenshot when it is not.
+
+Emulators are slow and React Native screens keep animating, so every action is
+verified: a tap is repeated until the screen changes, and typed text is read
+back from the box and re-entered if keys were dropped.
 """
 import os
 import re
@@ -22,18 +26,18 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-PKG = sys.argv[1]
-FLOW = sys.argv[2]
-OUT = sys.argv[3] if len(sys.argv) > 3 else 'out'
-os.makedirs(OUT, exist_ok=True)
+BOUNDS = re.compile(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]')
 failures = []
+DEVICE = None  # uiautomator2 device, set in main()
+PKG = ''
+OUT = 'out'
 
 
-def adb(*args, check=True, capture=True):
-    r = subprocess.run(['adb', *args], capture_output=capture, text=True)
+def adb(*args, check=True):
+    r = subprocess.run(['adb', *args], capture_output=True, text=True)
     if check and r.returncode != 0:
         print('adb', args, 'failed:', r.stderr.strip())
-    return r.stdout if capture else ''
+    return r.stdout
 
 
 def shot(name):
@@ -45,17 +49,22 @@ def alive():
     return bool(adb('shell', 'pidof', PKG, check=False).strip())
 
 
-# React Native screens keep animating, so plain `uiautomator dump` waits for an
-# idle state that never comes and returns nothing. uiautomator2 does not wait.
-try:
-    import uiautomator2 as u2
-    DEVICE = u2.connect()
-except Exception as e:  # pragma: no cover - fall back to plain uiautomator
-    print('uiautomator2 unavailable, falling back to uiautomator dump:', e)
-    DEVICE = None
+def keyboard_open():
+    return 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False)
 
+
+def hide_keyboard():
+    # A bare "back" with no keyboard open would leave the screen, so check first.
+    if keyboard_open():
+        adb('shell', 'input', 'keyevent', '4')
+        time.sleep(1)
+
+
+# ---------------------------------------------------------------- screen tree
 
 def hierarchy():
+    # Plain `uiautomator dump` waits for an idle state that animated RN screens
+    # never reach; uiautomator2 does not wait.
     if DEVICE is not None:
         try:
             return DEVICE.dump_hierarchy(compressed=False)
@@ -65,8 +74,7 @@ def hierarchy():
     return adb('shell', 'cat', '/sdcard/ui.xml', check=False)
 
 
-def nodes():
-    xml = hierarchy()
+def parse(xml):
     try:
         root = ET.fromstring(xml[xml.find('<'):]) if '<' in xml else None
     except ET.ParseError:
@@ -74,115 +82,197 @@ def nodes():
     return list(root.iter('node')) if root is not None else []
 
 
+def nodes():
+    return parse(hierarchy())
+
+
+def label(n, with_hint=True):
+    parts = [n.get('text'), n.get('content-desc')] + ([n.get('hint')] if with_hint else [])
+    return ' '.join(p for p in parts if p)
+
+
+def center(n):
+    m = BOUNDS.match(n.get('bounds', ''))
+    if not m:
+        return None
+    x1, y1, x2, y2 = map(int, m.groups())
+    return (x1 + x2) // 2, (y1 + y2) // 2
+
+
+def is_box(n):
+    return 'EditText' in (n.get('class') or '')
+
+
+def signature(ns):
+    """What is on screen, to tell whether a tap did anything."""
+    return tuple(sorted({label(n, with_hint=False) for n in ns if label(n, with_hint=False)}))
+
+
 def clear_system_dialogs(ns):
     """Tap "Wait" on an emulator "<app> isn't responding" dialog that covers the screen."""
     if any("isn't responding" in (n.get('text') or '') for n in ns):
         for n in ns:
-            if (n.get('text') or '') == 'Wait':
-                m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', n.get('bounds', ''))
-                if m:
-                    x1, y1, x2, y2 = map(int, m.groups())
-                    print('  (dismissing a system "not responding" dialog)')
-                    adb('shell', 'input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
-                    time.sleep(1.5)
-                    return True
+            if (n.get('text') or '') == 'Wait' and center(n):
+                print('  (dismissing a system "not responding" dialog)')
+                adb('shell', 'input', 'tap', *map(str, center(n)))
+                time.sleep(1.5)
+                return True
     return False
 
 
-def find(pattern, editable=False):
+def find_node(ns, pattern):
     rx = re.compile(pattern, re.I)
-    ns = nodes()
-    if clear_system_dialogs(ns):
-        ns = nodes()
-    if editable:
-        # Typing goes into an input box: match its hint/text, or the first box after a matching label.
-        boxes = [n for n in ns if 'EditText' in (n.get('class') or '')]
-        hit = next((b for b in boxes if rx.search(' '.join(filter(None, [b.get('text'), b.get('hint'), b.get('content-desc')])))), None)
-        if hit is None:
-            after = False
-            for n in ns:
-                label = ' '.join(filter(None, [n.get('text'), n.get('content-desc')]))
-                if not after and label and rx.search(label):
-                    after = True
-                elif after and 'EditText' in (n.get('class') or ''):
-                    hit = n
-                    break
-        ns = [hit] if hit is not None else []
-        rx = re.compile('.*', re.S)
+    return next((n for n in ns if label(n) and rx.search(label(n)) and center(n)), None)
+
+
+def find_box(ns, pattern):
+    """The input box whose hint/text matches, or else the first box after a matching label."""
+    rx = re.compile(pattern, re.I)
+    boxes = [n for n in ns if is_box(n) and center(n)]
+    hit = next((b for b in boxes if rx.search(label(b))), None)
+    if hit is not None:
+        return hit
+    after = False
     for n in ns:
-        label = ' '.join(filter(None, [n.get('text'), n.get('content-desc'), n.get('hint')]))
-        if (label or editable) and rx.search(label):
-            m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', n.get('bounds', ''))
-            if m:
-                x1, y1, x2, y2 = map(int, m.groups())
-                return (x1 + x2) // 2, (y1 + y2) // 2
+        if not after and not is_box(n) and label(n) and rx.search(label(n)):
+            after = True
+        elif after and is_box(n) and center(n):
+            return n
     return None
 
 
-def tap(pattern, optional=False, editable=False):
-    for _ in range(10):  # the screen may still be loading
-        pos = find(pattern, editable)
-        if pos:
-            adb('shell', 'input', 'tap', str(pos[0]), str(pos[1]))
-            return True
-        time.sleep(1.5)
+def fresh_nodes():
+    ns = nodes()
+    return nodes() if clear_system_dialogs(ns) else ns
+
+
+# ------------------------------------------------------------------- actions
+
+def tap(pattern, optional=False):
+    """Tap the element; if the screen does not change, tap again (up to 3 times)."""
+    for _ in range(10):  # wait up to ~15 s for it to appear
+        ns = fresh_nodes()
+        target = find_node(ns, pattern)
+        if target is None:
+            time.sleep(1.5)
+            continue
+        before = signature(ns)
+        for attempt in range(3):
+            adb('shell', 'input', 'tap', *map(str, center(target)))
+            time.sleep(2)
+            after_ns = fresh_nodes()
+            if signature(after_ns) != before or find_node(after_ns, pattern) is None:
+                return True
+            print(f'  (screen did not change, tapping again: {attempt + 2}/3)')
+            again = find_node(after_ns, pattern)
+            target = again if again is not None else target
+        return True  # tapped; some taps (a toggle, a field) do not change the text on screen
     if not optional:
         failures.append(f'not found on screen: {pattern}')
         print('  !! not found:', pattern)
     return False
 
 
-step = 0
-for raw in open(FLOW):
-    line = raw.strip()
-    if not line or line.startswith('#'):
-        continue
-    step += 1
-    cmd, _, rest = line.partition(' ')
-    print(f'[{step}] {line}', flush=True)
-    if cmd == 'wait':
-        time.sleep(float(rest))
-    elif cmd in ('tap', 'tapif'):
-        tap(rest, optional=cmd == 'tapif')
-        time.sleep(1.5)
-    elif cmd == 'type':
-        pattern, _, text = rest.partition(' ')
-        if tap(pattern, editable=True):
-            time.sleep(0.8)
-            # A controlled React Native input can drop keys sent in one burst, so type a few at a time.
-            for i in range(0, len(text), 3):
-                adb('shell', 'input', 'text', text[i:i + 3].replace(' ', '%s'))
-                time.sleep(0.35)
-            time.sleep(0.5)
-            # Close the keyboard so it cannot cover the next field or button.
-            if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False):
-                adb('shell', 'input', 'keyevent', '4')
-                time.sleep(1)
-    elif cmd == 'hidekb':
-        # Close the keyboard only if it is open (a bare "back" would leave the app).
-        if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False):
-            adb('shell', 'input', 'keyevent', '4')
-            time.sleep(1)
-    elif cmd == 'dump':
-        with open(os.path.join(OUT, f'{rest or "screen"}.xml'), 'w') as f:
-            f.write(hierarchy())
-    elif cmd == 'key':
-        adb('shell', 'input', 'keyevent', {'back': '4', 'enter': '66'}.get(rest, rest))
-        time.sleep(1)
-    elif cmd == 'swipeup':
-        adb('shell', 'input', 'swipe', '540', '1700', '540', '700', '400')
-        time.sleep(1)
-    elif cmd == 'shot':
-        shot(rest)
-    elif cmd == 'alive':
-        pass
-    if not alive():
-        failures.append(f'APP CRASHED after step {step}: {line}')
-        print('  !! APP IS NOT RUNNING after:', line, flush=True)
-        shot(f'crash-step{step}')
-        break
+def box_text(pattern):
+    n = find_box(fresh_nodes(), pattern)
+    return None if n is None else (n.get('text') or '')
 
-print('\nRESULT:', 'OK' if not failures else 'FAILED')
-for f in failures:
-    print(' -', f)
-sys.exit(1 if failures else 0)
+
+def type_into(pattern, text):
+    """Fill the box and read it back; retry, then fall back to typing key by key."""
+    for attempt in range(3):
+        ns = fresh_nodes()
+        box = find_box(ns, pattern)
+        if box is None:
+            time.sleep(1.5)
+            continue
+        secret = box.get('password') == 'true'
+        adb('shell', 'input', 'tap', *map(str, center(box)))
+        time.sleep(0.8)
+        filled = False
+        if DEVICE is not None:
+            try:
+                # Sets the text directly on the focused box: no dropped keys.
+                DEVICE(focused=True).set_text(text)
+                filled = True
+            except Exception as e:
+                print('  set_text failed, typing key by key:', e)
+        if not filled:
+            adb('shell', 'input', 'keyevent', 'KEYCODE_MOVE_END')
+            for _ in range(40):
+                adb('shell', 'input', 'keyevent', '67')  # delete what is there
+            for ch in text:
+                adb('shell', 'input', 'text', '%s' if ch == ' ' else ch)
+                time.sleep(0.15)
+        time.sleep(0.8)
+        hide_keyboard()
+        if secret:
+            # A password box shows dots; check the length when it is exposed, else trust it.
+            got = box_text(pattern) or ''
+            if not got or len(got) == len(text) or got == box.get('hint'):
+                return True
+        elif box_text(pattern) == text:
+            return True
+        print(f'  (text did not take, retrying {attempt + 2}/3)')
+    failures.append(f'could not type into: {pattern}')
+    print('  !! could not type into:', pattern)
+    return False
+
+
+# ---------------------------------------------------------------------- main
+
+def run(flow):
+    step = 0
+    for raw in open(flow, encoding='utf-8'):
+        line = raw.strip()
+        if not line or line.startswith('#'):
+            continue
+        step += 1
+        cmd, _, rest = line.partition(' ')
+        print(f'[{step}] {line}', flush=True)
+        if cmd == 'wait':
+            time.sleep(float(rest))
+        elif cmd in ('tap', 'tapif'):
+            tap(rest, optional=cmd == 'tapif')
+        elif cmd == 'type':
+            pattern, _, text = rest.partition(' ')
+            type_into(pattern, text)
+        elif cmd == 'hidekb':
+            hide_keyboard()
+        elif cmd == 'dump':
+            with open(os.path.join(OUT, f'{rest or "screen"}.xml'), 'w', encoding='utf-8') as f:
+                f.write(hierarchy())
+        elif cmd == 'key':
+            adb('shell', 'input', 'keyevent', {'back': '4', 'enter': '66'}.get(rest, rest))
+            time.sleep(1)
+        elif cmd == 'swipeup':
+            adb('shell', 'input', 'swipe', '540', '1700', '540', '700', '400')
+            time.sleep(1)
+        elif cmd == 'shot':
+            shot(rest)
+        if not alive():
+            failures.append(f'APP CRASHED after step {step}: {line}')
+            print('  !! APP IS NOT RUNNING after:', line, flush=True)
+            shot(f'crash-step{step}')
+            break
+
+
+def main():
+    global DEVICE, PKG, OUT
+    PKG, flow = sys.argv[1], sys.argv[2]
+    OUT = sys.argv[3] if len(sys.argv) > 3 else 'out'
+    os.makedirs(OUT, exist_ok=True)
+    try:
+        import uiautomator2 as u2
+        DEVICE = u2.connect()
+    except Exception as e:
+        print('uiautomator2 unavailable, falling back to uiautomator dump:', e)
+    run(flow)
+    print('\nRESULT:', 'OK' if not failures else 'FAILED')
+    for f in failures:
+        print(' -', f)
+    sys.exit(1 if failures else 0)
+
+
+if __name__ == '__main__':
+    main()
