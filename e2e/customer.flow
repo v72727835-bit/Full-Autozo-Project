@@ -4,7 +4,8 @@ shot 01-start
 dump 01-start
 tapif I already have an account
 wait 2
-# The phone form is already open on the sign-in screen ("Continue with phone number" only toggles it).
+# "Continue with phone number" opens the form; tap it only if the boxes are not showing yet.
+reveal ^9876543210$|Mobile.number.or.email Continue.with.phone.number
 type ^9876543210$|Mobile.number.or.email 9876543210
 type Your.password|^Password$ Customer@123
 hidekb

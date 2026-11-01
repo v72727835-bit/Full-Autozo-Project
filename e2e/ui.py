@@ -7,6 +7,10 @@ Each command line in a flow file is one step:
     tap <regex>            tap the element whose text or description matches; retried until the screen changes
     tapif <regex>          same, but skip quietly if it is not on screen
     type <regex> <text>    fill the input box (matched by its hint, or the label above it) and check it took
+    typekeep <regex> <txt> the same, but leave the keyboard open (inside a sheet, "back" would close the sheet)
+    reveal <box> <button>  tap the button only if that input box is not on screen yet (forms behind a toggle)
+    see <regex>            fail unless it shows up on screen within ~15 s
+    gone <regex>           fail unless it has left the screen within ~15 s
     key <name>             e.g. back, enter
     hidekb                 close the on-screen keyboard if it is open
     dump <name>            save the screen's view tree to out/<name>.xml
@@ -186,12 +190,42 @@ def tap(pattern, optional=False):
     return False
 
 
+def reveal(box_pattern, button_pattern):
+    """Tap a button (once) only when the input box is not on screen yet, e.g. a form behind a toggle."""
+    for _ in range(6):
+        ns = fresh_nodes()
+        if find_box(ns, box_pattern) is not None:
+            return True
+        button = find_node(ns, button_pattern)
+        if button is not None:
+            adb('shell', 'input', 'tap', *map(str, center(button)))
+            time.sleep(2)
+            if find_box(fresh_nodes(), box_pattern) is not None:
+                return True
+        time.sleep(1.5)
+    failures.append(f'input box never appeared: {box_pattern}')
+    print('  !! input box never appeared:', box_pattern)
+    return False
+
+
+def see(pattern, present=True):
+    """Wait for an element to appear (present) or disappear; record a failure if it never does."""
+    for _ in range(10):
+        if (find_node(fresh_nodes(), pattern) is not None) == present:
+            return True
+        time.sleep(1.5)
+    msg = f'{"never appeared" if present else "still on screen"}: {pattern}'
+    failures.append(msg)
+    print('  !!', msg)
+    return False
+
+
 def box_text(pattern):
     n = find_box(fresh_nodes(), pattern)
     return None if n is None else (n.get('text') or '')
 
 
-def type_into(pattern, text):
+def type_into(pattern, text, hide=True):
     """Fill the box and read it back; retry, then fall back to typing key by key."""
     for attempt in range(3):
         ns = fresh_nodes()
@@ -218,7 +252,8 @@ def type_into(pattern, text):
                 adb('shell', 'input', 'text', '%s' if ch == ' ' else ch)
                 time.sleep(0.15)
         time.sleep(0.8)
-        hide_keyboard()
+        if hide:
+            hide_keyboard()
         if secret:
             # A password box shows dots; check the length when it is exposed, else trust it.
             got = box_text(pattern) or ''
@@ -247,9 +282,14 @@ def run(flow):
             time.sleep(float(rest))
         elif cmd in ('tap', 'tapif'):
             tap(rest, optional=cmd == 'tapif')
-        elif cmd == 'type':
+        elif cmd in ('type', 'typekeep'):
             pattern, _, text = rest.partition(' ')
-            type_into(pattern, text)
+            type_into(pattern, text, hide=cmd == 'type')
+        elif cmd == 'reveal':
+            box_pattern, _, button_pattern = rest.partition(' ')
+            reveal(box_pattern, button_pattern)
+        elif cmd in ('see', 'gone'):
+            see(rest, present=cmd == 'see')
         elif cmd == 'hidekb':
             hide_keyboard()
         elif cmd == 'dump':

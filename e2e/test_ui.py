@@ -68,6 +68,23 @@ class RiderScreens(unittest.TestCase):
         self.assertIsNotNone(ui.find_node(ns, 'Sign in as rider'))
 
 
+class Flows(unittest.TestCase):
+    KNOWN = {'wait', 'tap', 'tapif', 'type', 'typekeep', 'reveal', 'see', 'gone', 'hidekb', 'dump', 'key', 'swipeup', 'shot', 'alive'}
+
+    def test_every_flow_line_is_a_known_command_with_a_valid_pattern(self):
+        import re
+        for name in ('customer', 'rider'):
+            with open(os.path.join(HERE, f'{name}.flow'), encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    cmd, _, rest = line.partition(' ')
+                    self.assertIn(cmd, self.KNOWN, f'{name}.flow: {line}')
+                    if cmd in ('tap', 'tapif', 'see', 'gone', 'type', 'typekeep', 'reveal'):
+                        re.compile(rest.partition(' ')[0] if cmd in ('type', 'typekeep', 'reveal') else rest)
+
+
 class FakePhone(unittest.TestCase):
     """The retry logic, against a scripted sequence of screens instead of an emulator."""
 
@@ -102,6 +119,17 @@ class FakePhone(unittest.TestCase):
         self.assertEqual(len(self.taps), 2)
         self.assertEqual(ui.failures, [])
 
+    def test_reveal_opens_a_collapsed_form_once(self):
+        collapsed, opened = self.xml('customer-login-collapsed'), self.xml('customer-login')
+        self.screens = [collapsed, opened]
+        self.assertTrue(ui.reveal('^9876543210$|Mobile.number.or.email', 'Continue.with.phone.number'))
+        self.assertEqual(len(self.taps), 1)
+
+    def test_reveal_leaves_an_open_form_alone(self):
+        self.screens = [self.xml('customer-login')]
+        self.assertTrue(ui.reveal('^9876543210$|Mobile.number.or.email', 'Continue.with.phone.number'))
+        self.assertEqual(self.taps, [], 'the toggle must not be pressed when the boxes already show')
+
     def test_the_battery_dialog_is_answered_with_allow(self):
         dialog = (
             "<hierarchy>"
@@ -116,6 +144,35 @@ class FakePhone(unittest.TestCase):
     def test_a_missing_element_is_reported(self):
         self.screens = [self.xml('customer-onboarding')]
         self.assertFalse(ui.tap('^Sign in as rider$'))
+        self.assertEqual(len(ui.failures), 1)
+
+    def test_typekeep_never_presses_back(self):
+        login = self.xml('customer-login')
+        typed = login.replace('text="9876543210"', 'text="9876500001"', 1)
+        keys = []
+        saved_adb = ui.adb
+
+        def adb(*args, check=True):
+            if args[:2] == ('shell', 'dumpsys'):
+                return 'mInputShown=true'
+            if args[:3] == ('shell', 'input', 'keyevent'):
+                keys.append(args[3])
+            return saved_adb(*args, check=check)
+
+        ui.adb = adb
+        ui.DEVICE = lambda **kw: type('Box', (), {'set_text': lambda box, v: None})()
+        self.screens = [login, typed]
+        self.assertTrue(ui.type_into('^9876543210$|Mobile.number.or.email', '9876500001', hide=False))
+        self.assertNotIn('4', keys, 'back would close a bottom sheet')
+
+    def test_see_waits_for_the_element(self):
+        self.screens = [self.xml('customer-onboarding'), self.xml('customer-login')]
+        self.assertTrue(ui.see('^Sign in$'))
+        self.assertEqual(ui.failures, [])
+
+    def test_gone_fails_when_the_element_stays(self):
+        self.screens = [self.xml('customer-login')]
+        self.assertFalse(ui.see('^Sign in$', present=False))
         self.assertEqual(len(ui.failures), 1)
 
     def test_typed_text_is_read_back_and_retried(self):

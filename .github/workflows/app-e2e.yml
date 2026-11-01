@@ -106,6 +106,12 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: bash e2e/run.sh ${{ matrix.pkg }} e2e/${{ matrix.app }}.flow
 
+      - name: The delivery reached the API
+        if: matrix.app == 'rider'
+        run: |
+          grep -E "POST /api/v1/rider/orders/[^ ]+/deliver" backend.log || true
+          grep -qE "POST /api/v1/rider/orders/[^ ]+/deliver [^ ]*200" backend.log  # morgan colours the status code
+
       - if: always()
         run: cp backend.log e2e-out/ 2>/dev/null || true
 
