@@ -89,14 +89,29 @@ def clear_system_dialogs(ns):
     return False
 
 
-def find(pattern):
+def find(pattern, editable=False):
     rx = re.compile(pattern, re.I)
     ns = nodes()
     if clear_system_dialogs(ns):
         ns = nodes()
+    if editable:
+        # Typing goes into an input box: match its hint/text, or the first box after a matching label.
+        boxes = [n for n in ns if 'EditText' in (n.get('class') or '')]
+        hit = next((b for b in boxes if rx.search(' '.join(filter(None, [b.get('text'), b.get('hint'), b.get('content-desc')])))), None)
+        if hit is None:
+            after = False
+            for n in ns:
+                label = ' '.join(filter(None, [n.get('text'), n.get('content-desc')]))
+                if not after and label and rx.search(label):
+                    after = True
+                elif after and 'EditText' in (n.get('class') or ''):
+                    hit = n
+                    break
+        ns = [hit] if hit is not None else []
+        rx = re.compile('.*', re.S)
     for n in ns:
         label = ' '.join(filter(None, [n.get('text'), n.get('content-desc'), n.get('hint')]))
-        if label and rx.search(label):
+        if (label or editable) and rx.search(label):
             m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', n.get('bounds', ''))
             if m:
                 x1, y1, x2, y2 = map(int, m.groups())
@@ -104,9 +119,9 @@ def find(pattern):
     return None
 
 
-def tap(pattern, optional=False):
+def tap(pattern, optional=False, editable=False):
     for _ in range(10):  # the screen may still be loading
-        pos = find(pattern)
+        pos = find(pattern, editable)
         if pos:
             adb('shell', 'input', 'tap', str(pos[0]), str(pos[1]))
             return True
@@ -132,7 +147,7 @@ for raw in open(FLOW):
         time.sleep(1.5)
     elif cmd == 'type':
         pattern, _, text = rest.partition(' ')
-        if tap(pattern):
+        if tap(pattern, editable=True):
             time.sleep(0.8)
             adb('shell', 'input', 'text', text.replace(' ', '%s'))
             time.sleep(0.5)
