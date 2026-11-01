@@ -2,21 +2,15 @@
 # local API with demo data (never the live server). It signs in, taps through
 # the main screens, and fails if the app crashes; screenshots and logcat are
 # kept as an artifact. Run it from the Actions tab before shipping app changes.
+# It only runs when started by hand, so a push never starts or cancels a run.
 name: App smoke test (emulator)
 
 on:
   workflow_dispatch:
-  push:
-    branches: ['claude/**']
-    paths:
-      - e2e/**
-      - .github/workflows/app-e2e.yml
-      - blinkit-app-/**
-      - autozo-backend/autozo-mobile/**
 
 concurrency:
   group: app-e2e-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   e2e:
@@ -50,6 +44,12 @@ jobs:
           sudo docker image prune -af > /dev/null || true
           df -h /
       - uses: actions/checkout@v4
+
+      # Seconds, not half an hour: the UI driver must pass its own checks against
+      # real emulator screen dumps before anything is built.
+      - name: UI driver self-test
+        run: python3 -m unittest e2e/test_ui.py -v
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -105,6 +105,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: bash e2e/run.sh ${{ matrix.pkg }} e2e/${{ matrix.app }}.flow
+
+      - name: The delivery reached the API
+        if: matrix.app == 'rider'
+        run: |
+          grep -E "POST /api/v1/rider/orders/[^ ]+/deliver" backend.log || true
+          grep -qE "POST /api/v1/rider/orders/[^ ]+/deliver [^ ]*200" backend.log  # morgan colours the status code
 
       - if: always()
         run: cp backend.log e2e-out/ 2>/dev/null || true
