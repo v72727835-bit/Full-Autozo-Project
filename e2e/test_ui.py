@@ -25,7 +25,7 @@ def flow_patterns(name, cmd):
         for line in f:
             c, _, rest = line.strip().partition(' ')
             if c == cmd:
-                out.append(rest.partition(' ')[0] if cmd == 'type' else rest)
+                out.append(rest.partition(' ')[0] if cmd in ('type', 'typekeep') else rest)
     return out
 
 
@@ -83,6 +83,21 @@ class Flows(unittest.TestCase):
                     self.assertIn(cmd, self.KNOWN, f'{name}.flow: {line}')
                     if cmd in ('tap', 'tapif', 'see', 'gone', 'type', 'typekeep', 'reveal'):
                         re.compile(rest.partition(' ')[0] if cmd in ('type', 'typekeep', 'reveal') else rest)
+
+
+class RiderDelivery(unittest.TestCase):
+    """Real dumps from emulator run #11: the deliveries tab and the OTP sheet."""
+
+    def test_the_enter_otp_bar_is_on_the_deliveries_screen(self):
+        self.assertIsNotNone(ui.find_node(screen('rider-deliveries'), '^Enter delivery OTP$'))
+
+    def test_the_otp_box_is_found_although_its_text_repeats_the_hint(self):
+        ns = screen('rider-otp-sheet')
+        pattern = [p for p in flow_patterns('rider', 'typekeep')][0]
+        box = ui.find_box(ns, pattern)
+        self.assertTrue(box is not None and ui.is_box(box), f'no box for {pattern}')
+        self.assertIsNotNone(ui.find_node(ns, '^Mark as delivered$'))
+        self.assertIsNotNone(ui.find_node(ns, 'Confirm delivery'))
 
 
 class FakePhone(unittest.TestCase):
@@ -174,6 +189,15 @@ class FakePhone(unittest.TestCase):
         self.screens = [self.xml('customer-login')]
         self.assertFalse(ui.see('^Sign in$', present=False))
         self.assertEqual(len(ui.failures), 1)
+
+    def test_the_otp_is_typed_into_the_sheet_and_read_back(self):
+        sheet = self.xml('rider-otp-sheet')
+        typed = sheet.replace('text="••••"', 'text="1787"', 1)
+        self.assertNotEqual(sheet, typed)
+        ui.DEVICE = lambda **kw: type('Box', (), {'set_text': lambda box, v: None})()
+        self.screens = [sheet, typed]
+        self.assertTrue(ui.type_into('^••••$', '1787', hide=False))
+        self.assertEqual(ui.failures, [])
 
     def test_typed_text_is_read_back_and_retried(self):
         login = self.xml('customer-login')

@@ -137,21 +137,28 @@ def clear_system_dialogs(ns):
     return False
 
 
+def matches(n, rx):
+    """True when the text, the description or the hint matches on its own, or all of them joined.
+    An empty box reports its hint as its text too, so a joined "•••• ••••" must not hide a "^••••$"."""
+    parts = [p for p in (n.get('text'), n.get('content-desc'), n.get('hint')) if p]
+    return any(rx.search(p) for p in parts) or (len(parts) > 1 and bool(rx.search(' '.join(parts))))
+
+
 def find_node(ns, pattern):
     rx = re.compile(pattern, re.I)
-    return next((n for n in ns if label(n) and rx.search(label(n)) and center(n)), None)
+    return next((n for n in ns if matches(n, rx) and center(n)), None)
 
 
 def find_box(ns, pattern):
     """The input box whose hint/text matches, or else the first box after a matching label."""
     rx = re.compile(pattern, re.I)
     boxes = [n for n in ns if is_box(n) and center(n)]
-    hit = next((b for b in boxes if rx.search(label(b))), None)
+    hit = next((b for b in boxes if matches(b, rx)), None)
     if hit is not None:
         return hit
     after = False
     for n in ns:
-        if not after and not is_box(n) and label(n) and rx.search(label(n)):
+        if not after and not is_box(n) and matches(n, rx):
             after = True
         elif after and is_box(n) and center(n):
             return n
@@ -180,7 +187,8 @@ def tap(pattern, optional=False):
             after_ns = fresh_nodes()
             if signature(after_ns) != before or find_node(after_ns, pattern) is None:
                 return True
-            print(f'  (screen did not change, tapping again: {attempt + 2}/3)')
+            if attempt < 2:
+                print(f'  (screen did not change, tapping again: {attempt + 2}/3)')
             again = find_node(after_ns, pattern)
             target = again if again is not None else target
         return True  # tapped; some taps (a toggle, a field) do not change the text on screen
