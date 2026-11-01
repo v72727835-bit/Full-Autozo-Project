@@ -104,19 +104,32 @@ def is_box(n):
 
 
 def signature(ns):
-    """What is on screen, to tell whether a tap did anything."""
-    return tuple(sorted({label(n, with_hint=False) for n in ns if label(n, with_hint=False)}))
+    """What the app shows, to tell whether a tap did anything (the status-bar clock does not count)."""
+    return tuple(sorted({
+        label(n, with_hint=False) for n in ns
+        if label(n, with_hint=False) and (n.get('package') or '') != 'com.android.systemui'
+    }))
+
+
+# System dialogs that cover the app: the text that identifies one, and the button to press.
+SYSTEM_DIALOGS = [
+    ("isn't responding", 'Wait'),                           # the emulator is slow to boot
+    ('always run in background', 'Allow'),                  # the app asks to skip battery saving (loud ring)
+    ('Allow .* to send you notifications', 'Allow'),
+    ("Allow .* to access this device's location", 'While using the app'),
+]
 
 
 def clear_system_dialogs(ns):
-    """Tap "Wait" on an emulator "<app> isn't responding" dialog that covers the screen."""
-    if any("isn't responding" in (n.get('text') or '') for n in ns):
-        for n in ns:
-            if (n.get('text') or '') == 'Wait' and center(n):
-                print('  (dismissing a system "not responding" dialog)')
-                adb('shell', 'input', 'tap', *map(str, center(n)))
-                time.sleep(1.5)
-                return True
+    for marker, button in SYSTEM_DIALOGS:
+        rx = re.compile(marker, re.I)
+        if any(rx.search(n.get('text') or '') for n in ns):
+            for n in ns:
+                if (n.get('text') or '').strip().lower() == button.lower() and center(n):
+                    print(f'  (system dialog "{marker}": pressing {button})')
+                    adb('shell', 'input', 'tap', *map(str, center(n)))
+                    time.sleep(1.5)
+                    return True
     return False
 
 

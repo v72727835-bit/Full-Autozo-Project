@@ -7,12 +7,10 @@ type Your.rider.password|^Password$ Rider@1234
 hidekb
 tap Sign in as rider
 wait 8
-tapif ^Allow|While using the app|Only this time
-wait 2
-tapif ^Allow|While using the app|Only this time
-wait 3
 shot 02-home
-tapif ^Active
+dump 02-home
+# The active order is under "My deliveries" (the battery / location dialogs are answered by the driver).
+tap ^My deliveries$
 wait 3
 shot 03-active
 tap Complete delivery

@@ -47,6 +47,15 @@ class CustomerScreens(unittest.TestCase):
     def test_a_tap_that_navigates_changes_the_signature(self):
         self.assertNotEqual(ui.signature(screen('customer-onboarding')), ui.signature(screen('customer-login')))
 
+    def test_the_status_bar_clock_does_not_count_as_a_change(self):
+        with open(os.path.join(HERE, 'fixtures', 'customer-onboarding.xml'), encoding='utf-8') as f:
+            xml = f.read()
+        clock = ui.parse(xml)
+        times = [n.get('text') for n in clock if n.get('package') == 'com.android.systemui' and ':' in (n.get('text') or '')]
+        self.assertTrue(times, 'the fixture has a status-bar clock')
+        later = ui.parse(xml.replace(f'text="{times[0]}"', 'text="9:59 "'))
+        self.assertEqual(ui.signature(clock), ui.signature(later))
+
 
 class RiderScreens(unittest.TestCase):
     def test_rider_login_boxes_and_button(self):
@@ -92,6 +101,17 @@ class FakePhone(unittest.TestCase):
         self.assertTrue(ui.tap('I already have an account'))
         self.assertEqual(len(self.taps), 2)
         self.assertEqual(ui.failures, [])
+
+    def test_the_battery_dialog_is_answered_with_allow(self):
+        dialog = (
+            "<hierarchy>"
+            "<node text='Let app always run in background?' package='com.android.settings' bounds='[60,800][1020,900]'/>"
+            "<node text='Deny' package='com.android.settings' bounds='[600,1300][760,1380]'/>"
+            "<node text='Allow' package='com.android.settings' bounds='[800,1300][960,1380]'/>"
+            "</hierarchy>"
+        )
+        self.assertTrue(ui.clear_system_dialogs(ui.parse(dialog)))
+        self.assertEqual(self.taps, [('880', '1340')])
 
     def test_a_missing_element_is_reported(self):
         self.screens = [self.xml('customer-onboarding')]
