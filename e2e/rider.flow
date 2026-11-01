@@ -1,9 +1,10 @@
 # Rider app: sign in, open the active delivery, complete it with the customer's OTP.
 wait 12
 shot 01-start
+dump 01-start
 type Rider.mobile|^9876543210$ 9000000099
 type Your.rider.password|^Password$ Rider@1234
-key back
+hidekb
 tap Sign in as rider
 wait 8
 tapif ^Allow|While using the app|Only this time

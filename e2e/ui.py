@@ -8,6 +8,8 @@ Each command line in a flow file is one step:
     tapif <regex>          same, but skip quietly if it is not on screen
     type <regex> <text>    tap the field (matched by its text/hint/description) and type
     key <name>             e.g. back, enter
+    hidekb                 close the on-screen keyboard if it is open
+    dump <name>            save the screen's view tree to out/<name>.xml
     swipeup                scroll the screen up once
     shot <name>            screenshot to out/<name>.png
     alive                  fail if the app process has died
@@ -43,9 +45,28 @@ def alive():
     return bool(adb('shell', 'pidof', PKG, check=False).strip())
 
 
-def nodes():
+# React Native screens keep animating, so plain `uiautomator dump` waits for an
+# idle state that never comes and returns nothing. uiautomator2 does not wait.
+try:
+    import uiautomator2 as u2
+    DEVICE = u2.connect()
+except Exception as e:  # pragma: no cover - fall back to plain uiautomator
+    print('uiautomator2 unavailable, falling back to uiautomator dump:', e)
+    DEVICE = None
+
+
+def hierarchy():
+    if DEVICE is not None:
+        try:
+            return DEVICE.dump_hierarchy(compressed=False)
+        except Exception as e:
+            print('  dump_hierarchy failed:', e)
     adb('shell', 'uiautomator', 'dump', '/sdcard/ui.xml', check=False)
-    xml = adb('shell', 'cat', '/sdcard/ui.xml', check=False)
+    return adb('shell', 'cat', '/sdcard/ui.xml', check=False)
+
+
+def nodes():
+    xml = hierarchy()
     try:
         root = ET.fromstring(xml[xml.find('<'):]) if '<' in xml else None
     except ET.ParseError:
@@ -97,6 +118,14 @@ for raw in open(FLOW):
             time.sleep(0.8)
             adb('shell', 'input', 'text', text.replace(' ', '%s'))
             time.sleep(0.5)
+    elif cmd == 'hidekb':
+        # Close the keyboard only if it is open (a bare "back" would leave the app).
+        if 'mInputShown=true' in adb('shell', 'dumpsys', 'input_method', check=False):
+            adb('shell', 'input', 'keyevent', '4')
+            time.sleep(1)
+    elif cmd == 'dump':
+        with open(os.path.join(OUT, f'{rest or "screen"}.xml'), 'w') as f:
+            f.write(hierarchy())
     elif cmd == 'key':
         adb('shell', 'input', 'keyevent', {'back': '4', 'enter': '66'}.get(rest, rest))
         time.sleep(1)

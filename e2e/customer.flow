@@ -1,17 +1,19 @@
 # Customer app: sign in, then tap around the way a shopper does.
 wait 12
 shot 01-start
+dump 01-start
 tapif I already have an account
 wait 2
 tapif Continue with phone number
 wait 1
 type ^9876543210$|Mobile.number.or.email 9876543210
 type Your.password|^Password$ Customer@123
-key back
+hidekb
 shot 02-login-filled
 tap ^Sign in$
 wait 8
 shot 03-home
+dump 03-home
 # a category tab in the header strip
 tapif ^Fruits|^Dairy|^Grocery|^Snacks|^Personal|^Home
 wait 3
@@ -24,7 +26,7 @@ shot 05-after-add
 tapif ₹
 wait 4
 shot 06-product
-key back
+tapif ^Go back$
 wait 2
 tap ^Categories$
 wait 4
@@ -32,7 +34,7 @@ shot 07-categories
 tapif Fruits|Vegetables|Dairy|Snacks|Bakery
 wait 4
 shot 08-category-page
-key back
+tapif ^Go back$
 wait 2
 tap ^Cart$
 wait 3

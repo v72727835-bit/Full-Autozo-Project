@@ -92,6 +92,9 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: UI driver
+        run: pip install --quiet uiautomator2
+
       - name: Run on the emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
