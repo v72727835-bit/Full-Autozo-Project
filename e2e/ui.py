@@ -74,9 +74,27 @@ def nodes():
     return list(root.iter('node')) if root is not None else []
 
 
+def clear_system_dialogs(ns):
+    """Tap "Wait" on an emulator "<app> isn't responding" dialog that covers the screen."""
+    if any("isn't responding" in (n.get('text') or '') for n in ns):
+        for n in ns:
+            if (n.get('text') or '') == 'Wait':
+                m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', n.get('bounds', ''))
+                if m:
+                    x1, y1, x2, y2 = map(int, m.groups())
+                    print('  (dismissing a system "not responding" dialog)')
+                    adb('shell', 'input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
+                    time.sleep(1.5)
+                    return True
+    return False
+
+
 def find(pattern):
     rx = re.compile(pattern, re.I)
-    for n in nodes():
+    ns = nodes()
+    if clear_system_dialogs(ns):
+        ns = nodes()
+    for n in ns:
         label = ' '.join(filter(None, [n.get('text'), n.get('content-desc'), n.get('hint')]))
         if label and rx.search(label):
             m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', n.get('bounds', ''))
