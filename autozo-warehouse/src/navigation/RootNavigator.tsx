@@ -10,6 +10,7 @@ import { AccountScreen, CategoriesScreen, CustomersScreen, EarningsScreen, Rider
 import DashboardScreen from '../screens/DashboardScreen';
 import InventoryScreen from '../screens/InventoryScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ProductsScreen from '../screens/ProductsScreen';
 import PlanScreen, { planLocked } from '../screens/PlanScreen';
@@ -141,7 +142,15 @@ export default function RootNavigator() {
       <ActivityIndicator color={colors.primary} style={{ marginTop: 22 }} />
     </View>
   );
-  return me ? <Shell /> : <LoginScreen />;
+  return me ? <Shell /> : <AuthGate />;
+}
+
+/** Signed-out: toggle between the sign-in and the warehouse registration screen. */
+function AuthGate() {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  return mode === 'register'
+    ? <RegisterScreen onBack={() => setMode('login')} />
+    : <LoginScreen onRegister={() => setMode('register')} />;
 }
 
 const styles = StyleSheet.create({

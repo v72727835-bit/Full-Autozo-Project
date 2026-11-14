@@ -15,6 +15,7 @@ import WalletScreen from '../screens/WalletScreen';
 import PlanScreen, { planLocked } from '../screens/PlanScreen';
 import { fetchMyPlan, MyPlan } from '../api/provider';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import { accents, colors, softShadow } from '../theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -106,7 +107,15 @@ export default function RootNavigator() {
       <ActivityIndicator color={colors.primary} style={{ marginTop: 22 }} />
     </View>
   );
-  return me ? <Shell /> : <LoginScreen />;
+  return me ? <Shell /> : <AuthGate />;
+}
+
+/** Signed-out: toggle between the sign-in and the provider registration screen. */
+function AuthGate() {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  return mode === 'register'
+    ? <RegisterScreen onBack={() => setMode('login')} />
+    : <LoginScreen onRegister={() => setMode('register')} />;
 }
 
 const styles = StyleSheet.create({

@@ -43,6 +43,7 @@ export default function LoginScreen({ navigation }: Props) {
     <TextField label="Password" icon="lock-closed-outline" placeholder="Your rider password" value={password} onChangeText={setPassword} error={errors.password} secure inputRef={passwordRef} returnKeyType="done" onSubmitEditing={onSubmit} autoComplete="password" />
     <Button title="Sign in as rider" onPress={onSubmit} loading={submitting} style={{ marginTop: 4 }} />
     <Button title="Forgot password?" variant="outline" onPress={() => navigation.navigate('ForgotPassword')} style={{ marginTop: 8 }} />
+    <Button title="New here? Become a rider" variant="outline" onPress={() => navigation.navigate('BecomeRider')} style={{ marginTop: 8 }} />
     {otpPhone ? (
       <OtpModal
         phone={otpPhone}
