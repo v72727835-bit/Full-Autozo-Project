@@ -11,9 +11,10 @@ import RingOverlay from '../components/RingOverlay';
 import RiderHome from '../screens/RiderHome';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import BecomeRiderScreen from '../screens/BecomeRiderScreen';
 import { colors } from '../theme';
 
-export type AuthStackParamList = { Login: undefined; ForgotPassword: undefined };
+export type AuthStackParamList = { Login: undefined; ForgotPassword: undefined; BecomeRider: undefined };
 export type AppStackParamList = { RiderHome: undefined };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -49,7 +50,7 @@ export default function RootNavigator() {
   if (initializing) return <Splash />;
   if (offline) return <Offline onRetry={retry} />;
   return <NavigationContainer theme={navTheme}>
-    {user?.role === 'rider' ? <><AppStack.Navigator screenOptions={{ headerShown: false }}><AppStack.Screen name="RiderHome" component={RiderHome} /></AppStack.Navigator><RingOverlay /></> : <AuthStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}><AuthStack.Screen name="Login" component={LoginScreen} /><AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /></AuthStack.Navigator>}
+    {user?.role === 'rider' ? <><AppStack.Navigator screenOptions={{ headerShown: false }}><AppStack.Screen name="RiderHome" component={RiderHome} /></AppStack.Navigator><RingOverlay /></> : <AuthStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}><AuthStack.Screen name="Login" component={LoginScreen} /><AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} /><AuthStack.Screen name="BecomeRider" component={BecomeRiderScreen} /></AuthStack.Navigator>}
   </NavigationContainer>;
 }
 

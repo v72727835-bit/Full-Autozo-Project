@@ -5,7 +5,7 @@ import { Button } from '../components/Button';
 import { TextField, TextInputRef } from '../components/TextField';
 import { useAuth } from '../context/AuthContext';
 
-export default function LoginScreen() {
+export default function LoginScreen({ onRegister }: { onRegister?: () => void }) {
   const { signIn } = useAuth();
   const passwordRef = useRef<TextInputRef>(null);
   const [identifier, setIdentifier] = useState('');
@@ -27,6 +27,7 @@ export default function LoginScreen() {
       <TextField label="Phone number or email" icon="person-outline" placeholder="9876543210" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} autoComplete="username" />
       <TextField label="Password" icon="lock-closed-outline" placeholder="Your password" value={password} onChangeText={setPassword} secure inputRef={passwordRef} returnKeyType="done" onSubmitEditing={submit} autoComplete="password" />
       <Button title="Sign in" onPress={submit} loading={busy} style={{ marginTop: 4 }} />
+      {onRegister ? <Button title="Register as a service provider" variant="outline" onPress={onRegister} style={{ marginTop: 10 }} /> : null}
     </AuthLayout>
   );
 }
