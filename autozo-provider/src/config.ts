@@ -20,5 +20,5 @@ const defaultUrl =
 
 export const API_URL: string = (API_URL_OVERRIDE ?? defaultUrl).replace(/\/+$/, '');
 
-/** The Autozo website. Plan payments open its /pay page, where Razorpay's window runs. */
-export const WEB_URL = 'https://shop.autozo.org';
+/** Provider plan payments open the panel's public /pay checkout route. */
+export const WEB_URL = 'https://panel.autozo.org';

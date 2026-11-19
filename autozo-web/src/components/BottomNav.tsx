@@ -20,7 +20,7 @@ interface Tab {
 const TABS: Tab[] = [
   { href: '/', label: 'home', icon: 'home' },
   { href: '/categories', label: 'categories', icon: 'grid' },
-  { href: '/search', label: 'search', icon: 'search' },
+  { href: '/services', label: 'services', icon: 'sliders' },
   { href: '/cart', label: 'cart', icon: 'cart' },
   { href: '/profile', label: 'account', icon: 'user' },
 ];
@@ -32,13 +32,13 @@ export function BottomNav() {
   const { t } = useLanguage();
   const count = cart?.itemCount ?? 0;
 
-  // The festival tab takes the second slot while the admin has it switched on,
-  // so Search drops off rather than crowding five tabs into six.
+  // Search remains available in the mobile header. When the festival is on,
+  // it takes the categories slot so the bottom bar stays at five tabs.
   const tabs: Tab[] = settings?.festival?.enabled
     ? [
         TABS[0],
         { href: '/festival', label: settings.festival?.name || 'Festival', icon: 'gift', raw: true },
-        TABS[1],
+        TABS[2],
         TABS[3],
         TABS[4],
       ]

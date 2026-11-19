@@ -9,6 +9,7 @@ import { StatsProvider } from './context/StatsContext';
 import { Navigate } from './navigation';
 import { Permission, can, isSuperAdmin } from './lib/permissions';
 import dynamic from 'next/dynamic';
+import PublicPayPage from './screens/PublicPayPage';
 
 const AnalyticsPage = dynamic(() => import('./screens/AnalyticsPage'), { ssr: false });
 const BannersPage = dynamic(() => import('./screens/BannersPage'), { ssr: false });
@@ -178,6 +179,9 @@ function CurrentPage({ pathname, user }: { pathname: string; user: ReturnType<ty
 
 export default function AdminApp() {
   const pathname = usePathname() ?? '/';
+  // Provider app plan payments land here on panel.autozo.org. Keep checkout
+  // public so it can verify the signed payment with the token in the URL hash.
+  if (pathname === '/pay') return <PublicPayPage />;
   if (pathname === '/login') return <LoginPage />;
 
   return (
