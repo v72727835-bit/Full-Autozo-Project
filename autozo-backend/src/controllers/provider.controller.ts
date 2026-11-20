@@ -306,11 +306,22 @@ export const adminListProviders = asyncHandler(async (req, res) => {
   const filter = { role: 'provider', deletedAt: { $exists: false }, providerStatus: status ?? { $in: ['pending', 'approved', 'rejected'] } };
   const [rows, total, pending] = await Promise.all([
     User.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)
-      .select('name phone email isActive providerId providerStatus providerRejectReason providerApplication createdAt').lean(),
+      .select('name phone email isActive providerId providerStatus providerRejectReason providerApplication providerRadiusKm createdAt').lean(),
     User.countDocuments(filter),
     User.countDocuments({ role: 'provider', providerStatus: 'pending', deletedAt: { $exists: false } }),
   ]);
-  ok(res, rows, { ...pageMeta(page, limit, total), pending });
+  // How far each provider serves: the radius they set for the whole account, and the range their
+  // services actually use (a provider can also set a different radius on each service).
+  const areas = await Service.aggregate<{ _id: Types.ObjectId; services: number; minKm: number; maxKm: number }>([
+    { $match: { provider: { $in: rows.map((r) => r._id) } } },
+    { $group: { _id: '$provider', services: { $sum: 1 }, minKm: { $min: '$serviceRadiusKm' }, maxKm: { $max: '$serviceRadiusKm' } } },
+  ]);
+  const areaOf = new Map(areas.map((a) => [String(a._id), a]));
+  const withArea = rows.map((r) => {
+    const a = areaOf.get(String(r._id));
+    return { ...r, serviceArea: { radiusKm: r.providerRadiusKm ?? null, services: a?.services ?? 0, minKm: a?.minKm ?? null, maxKm: a?.maxKm ?? null } };
+  });
+  ok(res, withArea, { ...pageMeta(page, limit, total), pending });
 });
 
 export const adminApproveProvider = asyncHandler(async (req, res) => {
@@ -363,7 +374,7 @@ export const adminUpdateProvider = asyncHandler(async (req, res) => {
   const b = req.body as {
     name?: string; phone?: string; email?: string; password?: string; isActive?: boolean;
     firm?: string; category?: string; line1?: string; city?: string; state?: string; pincode?: string; about?: string;
-    location?: { lat: number; lng: number };
+    location?: { lat: number; lng: number }; serviceRadiusKm?: number;
   };
   const user = await User.findOne({ _id: req.params.id, role: 'provider', deletedAt: { $exists: false } });
   if (!user) throw new ApiError(404, 'Provider not found');
@@ -380,6 +391,11 @@ export const adminUpdateProvider = asyncHandler(async (req, res) => {
   let signOut = false;
   if (b.password) { user.password = b.password; signOut = true; }
   if (b.isActive !== undefined) { user.isActive = b.isActive; if (!b.isActive) signOut = true; }
+  if (b.serviceRadiusKm !== undefined) {
+    // One radius for the whole account, applied to every service they offer (same as the provider app's Service area).
+    user.providerRadiusKm = b.serviceRadiusKm;
+    await Service.updateMany({ provider: user._id }, { $set: { serviceRadiusKm: b.serviceRadiusKm } });
+  }
 
   const app = user.providerApplication ?? { firm: user.name, line1: '', city: '', state: '', pincode: '', lat: 0, lng: 0, submittedAt: new Date() };
   for (const k of ['firm', 'category', 'line1', 'city', 'state', 'pincode', 'about'] as const) {

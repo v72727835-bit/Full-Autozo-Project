@@ -577,6 +577,8 @@ export interface ProviderApplication {
   isActive?: boolean;
   providerStatus: 'pending' | 'approved' | 'rejected';
   providerRejectReason?: string;
+  /** How far this provider serves: the radius set for the whole account (null = per-service), and the range their services use. */
+  serviceArea?: { radiusKm: number | null; services: number; minKm: number | null; maxKm: number | null };
   providerApplication?: {
     firm: string;
     category?: string;

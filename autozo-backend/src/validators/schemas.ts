@@ -977,6 +977,7 @@ export const adminProviderUpdateBody = z
     pincode: z.union([z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'), z.literal('')]),
     about: z.string().trim().max(1000),
     location: latLng,
+    serviceRadiusKm: z.number().min(1).max(100),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
