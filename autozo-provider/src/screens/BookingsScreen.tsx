@@ -22,6 +22,7 @@ export default function BookingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [active, setActive] = useState<BookingRow | null>(null);
   const [otp, setOtp] = useState('');
+  const [km, setKm] = useState('');
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async (isRefresh = false) => {
@@ -32,11 +33,15 @@ export default function BookingsScreen() {
   }, []);
   useEffect(() => { load(); const t = setInterval(() => load(), 15000); return () => clearInterval(t); }, [load]);
 
+  /** Pay-after-service per-km job: the real distance sets the final price. */
+  const perKmCash = (b: BookingRow) => b.snapshot.priceUnit === 'per_km' && b.paymentMethod === 'cod';
+  const fareFor = (b: BookingRow, d: number) => Math.round(b.snapshot.price + Math.max(0, d - (b.snapshot.includedKm ?? 0)) * (b.snapshot.perKmRate ?? 0));
+
   const advance = async (b: BookingRow) => {
     const step = FORWARD[b.status];
     if (!step) return;
     setBusy(true); setError('');
-    try { await setBookingStatus(b._id, step.to, step.to === 'completed' ? otp : undefined); setActive(null); setOtp(''); load(); }
+    try { await setBookingStatus(b._id, step.to, step.to === 'completed' ? otp : undefined, step.to === 'completed' && perKmCash(b) && Number(km) > 0 ? Number(km) : undefined); setActive(null); setOtp(''); setKm(''); load(); }
     catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
   };
   const drop = async (b: BookingRow) => {
@@ -88,6 +93,13 @@ export default function BookingsScreen() {
               {active.scheduledAt ? <Text style={[st.val, { marginTop: 8 }]}>Scheduled: {new Date(active.scheduledAt).toLocaleString()}</Text> : null}
               {active.note ? <Text style={[st.val, { marginTop: 8 }]}>Note: {active.note}</Text> : null}
             </Card>
+
+            {active.status === 'in_progress' && perKmCash(active) ? (
+              <View style={{ marginTop: 14 }}>
+                <Input label={`Real distance in km (customer entered ${active.distanceKm ?? '?'} km)`} value={km} onChangeText={(v) => setKm(v.replace(/[^\d.]/g, ''))} keyboardType="numeric" placeholder={String(active.distanceKm ?? '')} />
+                {Number(km) > 0 ? <Text style={st.val}>Final fare: ₹{fareFor(active, Number(km))}</Text> : null}
+              </View>
+            ) : null}
 
             {active.status === 'in_progress' ? (
               <View style={{ marginTop: 14 }}><Input label={`Completion OTP for ${active.bookingNumber} (ask the customer)`} value={otp} onChangeText={(v) => setOtp(v.replace(/\D/g, '').slice(0, 4))} keyboardType="numeric" placeholder="4-digit OTP" /></View>

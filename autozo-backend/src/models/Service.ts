@@ -1,8 +1,9 @@
 import { Schema, Types, model } from 'mongoose';
 import { uniqueSlug } from '../utils/helpers';
 
-/** How a service is priced. `fixed` = one price, `hourly` = per hour, `visit` = per visit/call-out. */
-export const PRICE_UNITS = ['fixed', 'hourly', 'visit'] as const;
+/** How a service is priced. `fixed` = one price, `hourly` = per hour, `visit` = per visit/call-out,
+ * `per_km` = `price` is the base fee covering `includedKm`, then `perKmRate` for every further km (towing, transport). */
+export const PRICE_UNITS = ['fixed', 'hourly', 'visit', 'per_km'] as const;
 export type PriceUnit = (typeof PRICE_UNITS)[number];
 
 export const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
@@ -32,6 +33,10 @@ export interface IService {
   price: number;
   mrp?: number;
   priceUnit: PriceUnit;
+  /** per_km only: km covered by the base fee. */
+  includedKm?: number;
+  /** per_km only: rupees for each km beyond includedKm. */
+  perKmRate?: number;
   /** How long one booking takes, in minutes (for scheduling). */
   durationMins: number;
   /** Weekly opening hours; empty = available any time the provider is online. */
@@ -69,6 +74,8 @@ const serviceSchema = new Schema<IService>(
     price: { type: Number, required: true, min: 0 },
     mrp: { type: Number, min: 0 },
     priceUnit: { type: String, enum: PRICE_UNITS, default: 'fixed' },
+    includedKm: { type: Number, min: 0, max: 1000 },
+    perKmRate: { type: Number, min: 0, max: 100000 },
     durationMins: { type: Number, default: 60, min: 5, max: 24 * 60 },
     availability: { type: [availabilitySchema], default: [] },
     serviceRadiusKm: { type: Number, default: 10, min: 1, max: 100 },

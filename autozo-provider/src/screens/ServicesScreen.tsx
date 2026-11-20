@@ -10,14 +10,14 @@ import { Availability, ServiceCategory, ServiceRow } from '../types';
 import { Btn, Card, Center, Chips, Empty, ErrorText, Input, Section } from '../ui';
 
 const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
-const UNIT_OPTS = [['fixed', 'Fixed'], ['hourly', 'Per hour'], ['visit', 'Per visit']] as const;
+const UNIT_OPTS = [['fixed', 'Fixed'], ['hourly', 'Per hour'], ['visit', 'Per visit'], ['per_km', 'Per km']] as const;
 
 type Form = {
   category: string; title: string; description: string; price: string; mrp: string;
-  priceUnit: 'fixed' | 'hourly' | 'visit'; durationMins: string; serviceRadiusKm: string;
+  priceUnit: 'fixed' | 'hourly' | 'visit' | 'per_km'; includedKm: string; perKmRate: string; durationMins: string; serviceRadiusKm: string;
   isActive: boolean; availability: Availability[]; images: string[]; video: string;
 };
-const blank: Form = { category: '', title: '', description: '', price: '', mrp: '', priceUnit: 'fixed', durationMins: '60', serviceRadiusKm: '10', isActive: true, availability: [], images: [], video: '' };
+const blank: Form = { category: '', title: '', description: '', price: '', mrp: '', priceUnit: 'fixed', includedKm: '', perKmRate: '', durationMins: '60', serviceRadiusKm: '10', isActive: true, availability: [], images: [], video: '' };
 
 export default function ServicesScreen() {
   const { me } = useAuth();
@@ -40,7 +40,7 @@ export default function ServicesScreen() {
     setForm({
       category: typeof s.category === 'object' ? s.category._id : s.category,
       title: s.title, description: s.description ?? '', price: String(s.price), mrp: s.mrp ? String(s.mrp) : '',
-      priceUnit: s.priceUnit, durationMins: String(s.durationMins), serviceRadiusKm: String(s.serviceRadiusKm),
+      priceUnit: s.priceUnit, includedKm: s.includedKm ? String(s.includedKm) : '', perKmRate: s.perKmRate ? String(s.perKmRate) : '', durationMins: String(s.durationMins), serviceRadiusKm: String(s.serviceRadiusKm),
       isActive: s.isActive, availability: s.availability ?? [], images: s.images ?? [], video: s.video ?? '',
     });
     setOpen(true);
@@ -57,6 +57,7 @@ export default function ServicesScreen() {
       const body = {
         category: form.category, title: form.title.trim(), description: form.description.trim() || undefined,
         price: Number(form.price) || 0, mrp: form.mrp ? Number(form.mrp) : undefined, priceUnit: form.priceUnit,
+        ...(form.priceUnit === 'per_km' ? { includedKm: Number(form.includedKm) || 0, perKmRate: Number(form.perKmRate) || 0 } : {}),
         durationMins: Number(form.durationMins) || 60, serviceRadiusKm: Number(form.serviceRadiusKm) || 10,
         isActive: form.isActive, availability: form.availability, images: form.images, video: form.video,
       };
@@ -99,7 +100,7 @@ export default function ServicesScreen() {
               {s.images?.[0] ? <Image source={{ uri: s.images[0] }} style={st.listThumb} /> : <View style={[st.listThumb, st.noThumb]}><Ionicons name="image-outline" size={20} color={colors.muted} /></View>}
               <View style={{ flex: 1 }}>
                 <Text style={st.title}>{s.title}</Text>
-                <Text style={st.sub}>₹{s.price}{s.priceUnit === 'hourly' ? '/hr' : s.priceUnit === 'visit' ? '/visit' : ''} · {s.durationMins}m · {s.isActive ? 'Active' : 'Hidden'} · {s.bookingCount} booking(s)</Text>
+                <Text style={st.sub}>₹{s.price}{s.priceUnit === 'hourly' ? '/hr' : s.priceUnit === 'visit' ? '/visit' : s.priceUnit === 'per_km' ? ` (first ${s.includedKm ?? 0} km) + ₹${s.perKmRate ?? 0}/km` : ''} · {s.durationMins}m · {s.isActive ? 'Active' : 'Hidden'} · {s.bookingCount} booking(s)</Text>
               </View>
               <Pressable onPress={() => startEdit(s)} style={st.iconBtn}><Ionicons name="create-outline" size={20} color={colors.primary} /></Pressable>
               <Pressable onPress={() => remove(s)} style={st.iconBtn}><Ionicons name="trash-outline" size={20} color={colors.danger} /></Pressable>
@@ -150,10 +151,17 @@ export default function ServicesScreen() {
               <Btn title={uploading === 'video' ? 'Uploading video…' : 'Upload a video (max 15 MB)'} tone="outline" onPress={addVideo} disabled={!!uploading} />
             </View>
           )}
-          <Input label="Price (₹)" value={form.price} onChangeText={(v) => setForm({ ...form, price: v })} keyboardType="numeric" />
+          <Input label={form.priceUnit === 'per_km' ? 'Base fee (₹) for the first km below' : 'Price (₹)'} value={form.price} onChangeText={(v) => setForm({ ...form, price: v })} keyboardType="numeric" />
           <Input label="MRP (optional)" value={form.mrp} onChangeText={(v) => setForm({ ...form, mrp: v })} keyboardType="numeric" />
           <Text style={st.label}>Price unit</Text>
           <Chips value={form.priceUnit} options={UNIT_OPTS} onChange={(v) => setForm({ ...form, priceUnit: v })} />
+          {form.priceUnit === 'per_km' ? (
+            <>
+              <Input label="Km covered by the base fee" value={form.includedKm} onChangeText={(v) => setForm({ ...form, includedKm: v })} keyboardType="numeric" />
+              <Input label="Price for every extra km (₹)" value={form.perKmRate} onChangeText={(v) => setForm({ ...form, perKmRate: v })} keyboardType="numeric" />
+              <Text style={st.label}>The customer enters the distance; the fare is worked out for them. {Number(form.price) > 0 && Number(form.perKmRate) > 0 ? `Example: 20 km = ₹${Math.round(Number(form.price) + Math.max(0, 20 - (Number(form.includedKm) || 0)) * Number(form.perKmRate))}` : ''}</Text>
+            </>
+          ) : null}
           <View style={{ height: 10 }} />
           <Input label="Duration (minutes)" value={form.durationMins} onChangeText={(v) => setForm({ ...form, durationMins: v })} keyboardType="numeric" />
           <Input label="Service radius (km)" value={form.serviceRadiusKm} onChangeText={(v) => setForm({ ...form, serviceRadiusKm: v })} keyboardType="numeric" />

@@ -150,6 +150,7 @@ export const suggestQuery = z.object({
   lng: z.coerce.number().min(-180).max(180).optional(),
 });
 
+export const serviceQuoteQuery = z.object({ km: z.coerce.number().positive().max(2000) });
 export const idOrSlugParam = z.object({ idOrSlug: z.string().trim().min(1).max(120) });
 
 /* ---------- reviews ---------- */
@@ -918,7 +919,7 @@ export const providerRegisterBody = z.object({
 });
 
 /* ---- provider service listings ---- */
-export const providerServiceBody = z.object({
+const providerServiceShape = z.object({
   category: objectId,
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().max(4000).optional(),
@@ -926,7 +927,9 @@ export const providerServiceBody = z.object({
   video: z.string().trim().max(500).optional(),
   price: z.number().min(0).max(10_000_000),
   mrp: z.number().min(0).max(10_000_000).optional(),
-  priceUnit: z.enum(['fixed', 'hourly', 'visit']).default('fixed'),
+  priceUnit: z.enum(['fixed', 'hourly', 'visit', 'per_km']).default('fixed'),
+  includedKm: z.number().min(0).max(1000).optional(),
+  perKmRate: z.number().min(0).max(100000).optional(),
   durationMins: z.number().int().min(5).max(1440).default(60),
   availability: z.array(availabilitySlot).max(21).optional(),
   serviceRadiusKm: z.number().min(1).max(100).optional(),
@@ -934,7 +937,11 @@ export const providerServiceBody = z.object({
   tags: z.array(z.string().trim().max(40)).max(20).optional(),
   isActive: z.boolean().optional(),
 });
-export const providerServiceUpdateBody = providerServiceBody
+export const providerServiceBody = providerServiceShape.refine(
+  (v) => v.priceUnit !== 'per_km' || (v.perKmRate ?? 0) > 0,
+  { message: 'Enter the price per km for a per-km service', path: ['perKmRate'] },
+);
+export const providerServiceUpdateBody = providerServiceShape
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 
@@ -946,6 +953,8 @@ export const providerBookingsQuery = pagination.extend({
 });
 export const providerBookingStatusBody = z.object({
   status: z.enum(['on_the_way', 'in_progress', 'completed']),
+  /** Real trip length, confirmed on completion for a pay-after-service per-km booking. */
+  distanceKm: z.number().gt(0).max(2000).optional(),
   // Accept "12 34", " 1234" or a number from any client; only the four digits matter.
   otp: z.preprocess(
     (v) => (v == null || v === '' ? undefined : String(v).replace(/\D/g, '')),
@@ -1025,6 +1034,8 @@ export const createBookingBody = z.object({
   serviceId: objectId,
   scheduledAt: z.string().datetime().optional(),
   note: z.string().trim().max(500).optional(),
+  /** Trip length for a per-km service (towing etc.); ignored for other prices. */
+  distanceKm: z.number().gt(0).max(2000).optional(),
   paymentMethod: z.enum(['cod', 'online']).default('cod'),
   address: z.object({
     name: z.string().trim().min(2).max(80),

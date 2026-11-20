@@ -18,7 +18,9 @@ export interface ServiceListing {
   video?: string;
   price: number;
   mrp?: number;
-  priceUnit: 'fixed' | 'hourly' | 'visit';
+  priceUnit: 'fixed' | 'hourly' | 'visit' | 'per_km';
+  includedKm?: number;
+  perKmRate?: number;
   durationMins: number;
   rating: number;
   ratingCount: number;
@@ -89,6 +91,8 @@ export async function createBooking(body: {
   serviceId: string;
   scheduledAt?: string;
   note?: string;
+  /** Trip length, for a per-km service. */
+  distanceKm?: number;
   paymentMethod: 'cod' | 'online';
   address: BookingAddress;
 }): Promise<Booking | BookingPayStart> {
@@ -110,5 +114,11 @@ export async function cancelBooking(id: string, reason?: string): Promise<void> 
   await api.post(`/bookings/${id}/cancel`, reason ? { reason } : {});
 }
 
-export const priceLabel = (price: number, unit: string): string =>
-  `₹${price}${unit === 'hourly' ? '/hr' : unit === 'visit' ? '/visit' : ''}`;
+/** Fare for a trip on a per-km service: the base fee covers the first km, then a rate for each extra one. */
+export const fareFor = (s: { price: number; includedKm?: number; perKmRate?: number }, km: number): number =>
+  Math.round(s.price + Math.max(0, km - (s.includedKm ?? 0)) * (s.perKmRate ?? 0));
+
+export const priceLabel = (price: number, unit: string, s?: { includedKm?: number; perKmRate?: number }): string =>
+  unit === 'per_km'
+    ? `₹${price} + ₹${s?.perKmRate ?? 0}/km after ${s?.includedKm ?? 0} km`
+    : `₹${price}${unit === 'hourly' ? '/hr' : unit === 'visit' ? '/visit' : ''}`;

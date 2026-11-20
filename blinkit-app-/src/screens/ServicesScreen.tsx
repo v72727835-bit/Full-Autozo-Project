@@ -89,7 +89,7 @@ export function ServicesScreen() {
                 <Txt variant="h4" numberOfLines={1}>{item.title}</Txt>
                 {providerName(item) ? <Txt variant="bodySm" tone="muted">by {providerName(item)}</Txt> : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.xs }}>
-                  <Txt variant="price" tone="brand">{priceLabel(item.price, item.priceUnit)}</Txt>
+                  <Txt variant="price" tone="brand">{priceLabel(item.price, item.priceUnit, item)}</Txt>
                   <Txt variant="caption" tone="muted">
                     {item.ratingCount > 0 ? `★ ${item.rating.toFixed(1)} (${item.ratingCount})` : 'New'} · ~{item.durationMins}m
                   </Txt>

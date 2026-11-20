@@ -1,3 +1,4 @@
+import { fareForKm } from '../services/fare.service';
 import crypto from 'crypto';
 import { Types } from 'mongoose';
 import { AdminAlert } from '../models/AdminAlert';
@@ -164,6 +165,12 @@ export const setServiceRadius = asyncHandler(async (req, res) => {
 
 export const updateService = asyncHandler(async (req, res) => {
   await requireApproved(req.user!.id);
+  const patch = req.body as Record<string, unknown>;
+  // A per-km listing must end up with a rate, counting what it already has.
+  const current = await Service.findOne({ _id: req.params.id, provider: req.user!.id }).select('priceUnit perKmRate').lean();
+  if (current && (patch.priceUnit ?? current.priceUnit) === 'per_km' && !((patch.perKmRate ?? current.perKmRate) as number) ) {
+    throw new ApiError(400, 'Enter the price per km for a per-km service');
+  }
   const service = await Service.findOneAndUpdate(
     { _id: req.params.id, provider: req.user!.id },
     { $set: req.body as Record<string, unknown> },
@@ -212,7 +219,7 @@ export const getMyBooking = asyncHandler(async (req, res) => {
 
 /** Move a held booking forward: accepted → on_the_way → in_progress → completed (OTP). */
 export const setBookingStatus = asyncHandler(async (req, res) => {
-  const { status, otp } = req.body as { status: BookingStatus; otp?: string };
+  const { status, otp, distanceKm } = req.body as { status: BookingStatus; otp?: string; distanceKm?: number };
   const booking = await ServiceBooking.findOne({ _id: req.params.id, provider: req.user!.id });
   if (!booking) throw new ApiError(404, 'Booking not found');
   if (PROVIDER_FORWARD[booking.status] !== status) throw new ApiError(409, `You can't move this booking to "${status}" from "${booking.status}".`);
@@ -220,6 +227,11 @@ export const setBookingStatus = asyncHandler(async (req, res) => {
     if (!otp) throw new ApiError(400, `Enter the 4-digit completion OTP the customer sees on booking ${booking.bookingNumber}.`);
     // Each booking has its own OTP, so name the booking: a customer with several bookings may read out the wrong one.
     if (otp !== booking.completionOtp) throw new ApiError(400, `Wrong OTP for booking ${booking.bookingNumber}. Ask the customer to open this booking in "My service bookings" and read its OTP.`);
+    // Pay-after-service per-km job: the real trip length sets the final price. Online was paid up front, so it stays.
+    if (booking.snapshot.priceUnit === 'per_km' && distanceKm && booking.paymentMethod === 'cod') {
+      booking.distanceKm = distanceKm;
+      booking.price = fareForKm({ baseFee: booking.snapshot.price, includedKm: booking.snapshot.includedKm ?? 0, perKmRate: booking.snapshot.perKmRate ?? 0 }, distanceKm);
+    }
     booking.completedAt = new Date();
     // Online money goes to the wallet; cash bookings without a plan owe the commission.
     const { commission, earning } = await settleCompletedBooking(booking as never);

@@ -82,6 +82,7 @@ router.get('/products/:id/reviews', catalogCache, validate({ params: v.idParam, 
 /* Services vertical: public catalog */
 router.get('/service-categories', catalogCache, services.listCategories);
 router.get('/services', catalogCache, validate({ query: v.servicesQuery }), services.listServices);
+router.get('/services/:idOrSlug/quote', validate({ params: v.idOrSlugParam, query: v.serviceQuoteQuery }), services.quoteService);
 router.get('/services/:idOrSlug', catalogCache, validate({ params: v.idOrSlugParam }), services.getService);
 
 router.get('/settings/public', catalogCache, catalog.publicSettings);
