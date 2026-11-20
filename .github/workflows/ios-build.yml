@@ -31,21 +31,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Picks which apps to build (the `matrix` context cannot be used in a job-level `if`).
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          APP: ${{ inputs.app }}
+        run: |
+          all='[{"app":"customer","dir":"blinkit-app-","scheme":"AutozoApp"},{"app":"provider","dir":"autozo-provider","scheme":"AutozoProvider"},{"app":"warehouse","dir":"autozo-warehouse","scheme":"AutozoWarehouse"},{"app":"rider","dir":"autozo-backend/autozo-mobile","scheme":"AutozoApp"}]'
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ "$APP" = "all" ]; then pick="$all"; else pick=$(echo "$all" | jq -c --arg a "$APP" 'map(select(.app==$a))'); fi
+          else
+            pick=$(echo "$all" | jq -c 'map(select(.app=="customer"))')
+          fi
+          echo "matrix=$pick" >> "$GITHUB_OUTPUT"
+
   ios:
+    needs: plan
     runs-on: macos-15
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { app: customer, dir: blinkit-app-, scheme: AutozoApp }
-          - { app: provider, dir: autozo-provider, scheme: AutozoProvider }
-          - { app: warehouse, dir: autozo-warehouse, scheme: AutozoWarehouse }
-          - { app: rider, dir: autozo-backend/autozo-mobile, scheme: AutozoApp }
-    # Hand-run: the chosen app (or all). Otherwise: the customer app only.
-    if: >-
-      (github.event_name == 'workflow_dispatch' && (inputs.app == 'all' || inputs.app == matrix.app)) ||
-      (github.event_name != 'workflow_dispatch' && matrix.app == 'customer')
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
     defaults:
       run:
         working-directory: ${{ matrix.dir }}
