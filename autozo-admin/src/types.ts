@@ -577,6 +577,8 @@ export interface ProviderApplication {
   isActive?: boolean;
   providerStatus: 'pending' | 'approved' | 'rejected';
   providerRejectReason?: string;
+  /** How far this provider serves: the radius set for the whole account (null = per-service), and the range their services use. */
+  serviceArea?: { radiusKm: number | null; services: number; minKm: number | null; maxKm: number | null };
   providerApplication?: {
     firm: string;
     category?: string;
@@ -612,7 +614,9 @@ export interface ServiceRow {
   video?: string;
   price: number;
   mrp?: number;
-  priceUnit: 'fixed' | 'hourly' | 'visit';
+  priceUnit: 'fixed' | 'hourly' | 'visit' | 'per_km';
+  includedKm?: number;
+  perKmRate?: number;
   durationMins: number;
   serviceRadiusKm: number;
   availability: { day: string; open: string; close: string }[];
@@ -636,7 +640,8 @@ export interface ServiceBookingRow {
   scheduledAt?: string;
   note?: string;
   completionOtp?: string;
-  snapshot: { title: string; image?: string; price: number; priceUnit: string; durationMins: number };
+  distanceKm?: number;
+  snapshot: { title: string; image?: string; price: number; priceUnit: string; durationMins: number; includedKm?: number; perKmRate?: number };
   address: {
     name: string; phone: string; line1: string; line2?: string; landmark?: string;
     city: string; state: string; pincode: string; location?: { lat: number; lng: number };

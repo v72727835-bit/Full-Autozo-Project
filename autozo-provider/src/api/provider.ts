@@ -53,7 +53,7 @@ export const deleteService = async (id: string): Promise<void> => { await api.de
 /* ---------- bookings ---------- */
 export const providerBookings = (p: { page?: number; limit?: number; status?: string }) => paged<BookingRow>('/provider/bookings', p);
 export const providerBooking = async (id: string): Promise<BookingRow> => (await api.get(`/provider/bookings/${id}`)).data.data;
-export const setBookingStatus = async (id: string, status: string, otp?: string): Promise<void> => { await api.patch(`/provider/bookings/${id}/status`, { status, otp }); };
+export const setBookingStatus = async (id: string, status: string, otp?: string, distanceKm?: number): Promise<void> => { await api.patch(`/provider/bookings/${id}/status`, { status, otp, distanceKm }); };
 export const cancelBooking = async (id: string, reason?: string): Promise<void> => { await api.post(`/provider/bookings/${id}/cancel`, reason ? { reason } : {}); };
 
 /* ---------- wallet ---------- */

@@ -48,7 +48,14 @@ export default function ProviderRegisterPage() {
 
   const picked = (p: PickedPlace) => {
     setLocation({ lat: p.lat, lng: p.lng });
-    setF((cur) => ({ ...cur, city: cur.city || p.city || '', pincode: cur.pincode || p.pincode || '' }));
+    // The pin decides the city, state and PIN, so they follow it; the address line is only filled when still empty.
+    setF((cur) => ({
+      ...cur,
+      city: p.city || cur.city,
+      state: p.state || cur.state,
+      pincode: p.pincode || cur.pincode,
+      line1: cur.line1.trim() ? cur.line1 : [p.line1, p.area].filter(Boolean).join(', ') || cur.line1,
+    }));
   };
 
   const submit = async (e: React.FormEvent) => {

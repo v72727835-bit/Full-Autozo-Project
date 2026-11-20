@@ -8,7 +8,7 @@ import { BackButton } from '../../../components/BackButton';
 import { Alert, Button, Field, PageLoader, Rating, Select, Textarea } from '../../../components/ui';
 import { useAuth } from '../../../context/AuthContext';
 import { getErrorMessage } from '../../../lib/client';
-import { confirmBookingPayment, createBooking, fetchService, priceLabel, ServiceListing } from '../../../api/services';
+import { confirmBookingPayment, createBooking, fareFor, fetchService, priceLabel, ServiceListing } from '../../../api/services';
 import { payWithRazorpay } from '../../../lib/razorpay';
 import s from './service.module.css';
 
@@ -25,6 +25,7 @@ export default function ServiceDetailPage() {
   const [booking, setBooking] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
   const [note, setNote] = useState('');
+  const [km, setKm] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'online'>('cod');
   const [submitting, setSubmitting] = useState(false);
   const [bookError, setBookError] = useState('');
@@ -59,12 +60,14 @@ export default function ServiceDetailPage() {
     city: string; state: string; pincode: string; location?: { lat: number; lng: number };
   }) => {
     setBookError('');
+    if (service.priceUnit === 'per_km' && !(Number(km) > 0)) { setBookError('Enter how many km you need this service for.'); return; }
     setSubmitting(true);
     try {
       const created = await createBooking({
         serviceId: service._id,
         scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
         note: note.trim() || undefined,
+        ...(service.priceUnit === 'per_km' ? { distanceKm: Number(km) } : {}),
         paymentMethod,
         address: addr,
       });
@@ -123,7 +126,7 @@ export default function ServiceDetailPage() {
             {providerName ? `by ${providerName}` : ''}{service.city ? ` · ${service.city}` : ''}
           </div>
           <div className={s.priceRow}>
-            <span className={s.price}>{priceLabel(service.price, service.priceUnit)}</span>
+            <span className={s.price}>{priceLabel(service.price, service.priceUnit, service)}</span>
             {service.mrp && service.mrp > service.price ? <span className={s.mrp}>₹{service.mrp}</span> : null}
             {service.ratingCount > 0 ? <Rating value={service.rating} count={service.ratingCount} /> : null}
           </div>
@@ -147,6 +150,12 @@ export default function ServiceDetailPage() {
           <Field label="Preferred date & time (optional)">
             <input className="input" type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
           </Field>
+          {service.priceUnit === 'per_km' ? (
+            <Field label="How many km? (e.g. distance to tow)">
+              <input className="input" inputMode="decimal" value={km} onChange={(e) => setKm(e.target.value.replace(/[^\d.]/g, ''))} placeholder="e.g. 18" />
+              {Number(km) > 0 ? <span className="body-sm" style={{ display: 'block', marginTop: 4 }}>Fare for {km} km: <strong>₹{fareFor(service, Number(km))}</strong> (the provider confirms the real km after the trip)</span> : null}
+            </Field>
+          ) : null}
           <Field label="Payment">
             <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as 'cod' | 'online')}>
               <option value="cod">Pay after the service (cash)</option>

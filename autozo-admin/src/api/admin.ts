@@ -824,8 +824,8 @@ export const providerBookings = (params: { page?: number; limit?: number; status
   paged<ServiceBookingRow>('/provider/bookings', params);
 export const providerBooking = async (id: string): Promise<ServiceBookingRow> =>
   (await api.get(`/provider/bookings/${id}`)).data.data;
-export const providerSetBookingStatus = async (id: string, status: string, otp?: string): Promise<void> => {
-  await api.patch(`/provider/bookings/${id}/status`, { status, otp });
+export const providerSetBookingStatus = async (id: string, status: string, otp?: string, distanceKm?: number): Promise<void> => {
+  await api.patch(`/provider/bookings/${id}/status`, { status, otp, distanceKm });
 };
 export const providerCancelBooking = async (id: string, reason?: string): Promise<void> => {
   await api.post(`/provider/bookings/${id}/cancel`, { reason });

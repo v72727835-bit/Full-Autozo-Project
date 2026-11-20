@@ -18,6 +18,7 @@ import { Header } from '../components/Header';
 import { LocationGate } from '../components/LocationGate';
 import { OrderProgressToast } from '../components/OrderProgressToast';
 import { PushRegister } from '../components/PushRegister';
+import { ReferralCapture } from '../components/ReferralCapture';
 import { PwaRegister } from '../components/PwaRegister';
 import { RateOrderPrompt } from '../components/RateOrderPrompt';
 import { API_URL } from '../lib/config';
@@ -103,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <CartProvider>
                  <WishlistProvider>
                   <ToastProvider>
+                    <ReferralCapture />
                     <Header />
                     <LocationGate />
                     <main id="main" style={{ minHeight: '60vh' }}>

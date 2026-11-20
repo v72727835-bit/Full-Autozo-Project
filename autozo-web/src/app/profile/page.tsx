@@ -12,6 +12,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { Crumbs } from '../../components/Crumbs';
 import { Icon, IconName } from '../../components/Icon';
+import { ShareCard } from '../../components/ShareCard';
 import { RequireAuth } from '../../components/RequireAuth';
 import { Alert, Button, Field, Input } from '../../components/ui';
 import s from './profile.module.css';
@@ -120,6 +121,8 @@ function ProfileInner() {
           </Link>
         ))}
       </div>
+
+      <ShareCard />
 
       <div className={s.forms}>
         <section className="card card-pad">

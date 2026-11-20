@@ -35,7 +35,7 @@ export interface IServiceBooking {
   /** The provider who owns the listing. Set at creation. */
   provider: Types.ObjectId;
   /** Snapshot taken at booking time. */
-  snapshot: { title: string; image?: string; price: number; priceUnit: string; durationMins: number };
+  snapshot: { title: string; image?: string; price: number; priceUnit: string; durationMins: number; includedKm?: number; perKmRate?: number };
   /** When the customer wants the service; absent = as soon as possible. */
   scheduledAt?: Date;
   address: {
@@ -89,6 +89,8 @@ const serviceBookingSchema = new Schema<IServiceBooking>(
       image: String,
       price: { type: Number, required: true },
       priceUnit: { type: String, required: true },
+      includedKm: Number,
+      perKmRate: Number,
       durationMins: { type: Number, required: true },
     },
     scheduledAt: Date,

@@ -2,7 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
-import { createBooking, fetchService, priceLabel, ServiceListing } from '../api/services';
+import { createBooking, fareFor, fetchService, priceLabel, ServiceListing } from '../api/services';
 import { fetchAddresses } from '../api/user';
 import { WEB_URL } from '../config';
 import { tokenStore } from '../storage/tokens';
@@ -30,6 +30,7 @@ export function ServiceDetailScreen() {
   const [addrId, setAddrId] = useState<string>('');
   const [payment, setPayment] = useState<'cod' | 'online'>('cod');
   const [note, setNote] = useState('');
+  const [km, setKm] = useState('');
   const [booking, setBooking] = useState(false);
   const [photo, setPhoto] = useState(0);
 
@@ -49,11 +50,14 @@ export function ServiceDetailScreen() {
 
   const book = async () => {
     if (!addr) { toast.error('Please add a delivery address first.'); return; }
+    const perKm = service.priceUnit === 'per_km';
+    if (perKm && !(Number(km) > 0)) { toast.error('Enter how many km you need this service for.'); return; }
     setBooking(true);
     try {
       const created = await createBooking({
         serviceId: service._id,
         note: note.trim() || undefined,
+        ...(perKm ? { distanceKm: Number(km) } : {}),
         paymentMethod: payment,
         address: {
           name: addr.name, phone: addr.phone, line1: addr.line1, line2: addr.line2, landmark: addr.landmark,
@@ -92,7 +96,7 @@ export function ServiceDetailScreen() {
         ) : null}
         <Txt variant="h2" style={{ marginTop: space.md }}>{service.title}</Txt>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xs }}>
-          <Txt variant="price" tone="brand">{priceLabel(service.price, service.priceUnit)}</Txt>
+          <Txt variant="price" tone="brand">{priceLabel(service.price, service.priceUnit, service)}</Txt>
           {service.mrp && service.mrp > service.price ? <Txt variant="bodySm" tone="muted" style={{ textDecorationLine: 'line-through' }}>₹{service.mrp}</Txt> : null}
           <Txt variant="caption" tone="muted">~{service.durationMins} min</Txt>
         </View>
@@ -141,6 +145,21 @@ export function ServiceDetailScreen() {
           })}
         </View>
 
+        {service.priceUnit === 'per_km' ? (
+          <>
+            <Txt variant="h4" style={{ marginTop: space.lg, marginBottom: space.xs }}>How many km? (e.g. distance to tow)</Txt>
+            <TextInput
+              value={km}
+              onChangeText={(v) => setKm(v.replace(/[^\d.]/g, ''))}
+              keyboardType="decimal-pad"
+              placeholder="e.g. 18"
+              placeholderTextColor={c.inkFaint}
+              style={[styles.note, { minHeight: ms(48), backgroundColor: c.surface, borderColor: c.border, color: c.ink }]}
+            />
+            {Number(km) > 0 ? <Txt variant="label" tone="brand" style={{ marginTop: space.xs }}>Fare for {km} km: ₹{fareFor(service, Number(km))} (provider confirms the real km after the trip)</Txt> : null}
+          </>
+        ) : null}
+
         <Txt variant="h4" style={{ marginTop: space.lg, marginBottom: space.xs }}>Notes (optional)</Txt>
         <TextInput
           value={note}
@@ -153,7 +172,7 @@ export function ServiceDetailScreen() {
       </ScrollView>
 
       <View style={[styles.bar, { backgroundColor: c.surface, borderTopColor: c.border }]}>
-        <Button label={`Book · ${priceLabel(service.price, service.priceUnit)}`} size="lg" loading={booking} onPress={book} />
+        <Button label={service.priceUnit === 'per_km' && Number(km) > 0 ? `Book · ₹${fareFor(service, Number(km))}` : `Book · ${priceLabel(service.price, service.priceUnit, service)}`} size="lg" loading={booking} onPress={book} />
       </View>
     </View>
   );

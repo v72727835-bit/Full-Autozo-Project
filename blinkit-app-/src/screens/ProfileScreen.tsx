@@ -14,6 +14,7 @@ import type { AppNav } from '../navigation/types';
 import { colors, gutter, ms, radius, space, themed, useTheme } from '../theme';
 import type { ThemePreference } from '../theme';
 import type { IconName } from '../ui/Button';
+import { ShareCard } from '../components/ShareCard';
 import { LogoMark } from '../ui/Logo';
 import { Divider } from '../ui/Surface';
 import { Txt } from '../ui/Text';
@@ -160,6 +161,7 @@ export function ProfileScreen(_props: TabScreenProps) {
         </SafeAreaView>
 
         {/* -------------------------------------------------- menus -- */}
+        <View style={{ paddingHorizontal: gutter }}><ShareCard /></View>
         <Section title="Your account" items={account} />
         <AppearancePicker />
         <Section title="Settings" items={settings} />

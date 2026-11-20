@@ -1,3 +1,4 @@
+import { fareForKm, ruleOf } from '../services/fare.service';
 import crypto from 'crypto';
 import { Types } from 'mongoose';
 import { Service } from '../models/Service';
@@ -65,6 +66,16 @@ export const listServices = asyncHandler(async (req, res) => {
   ok(res, rows, pageMeta(page, limit, total));
 });
 
+/** What a service costs for a trip of `km` (a per-km service adds up; any other just shows its price). */
+export const quoteService = asyncHandler(async (req, res) => {
+  const { km } = req.query as unknown as { km: number };
+  const service = await Service.findOne({ ...idOrSlugFilter(req.params.idOrSlug), isActive: true }).select('price priceUnit includedKm perKmRate').lean();
+  if (!service) throw new ApiError(404, 'Service not found');
+  if (service.priceUnit !== 'per_km') return ok(res, { km, fare: service.price, priceUnit: service.priceUnit });
+  const rule = ruleOf(service);
+  ok(res, { km, fare: fareForKm(rule, km), priceUnit: 'per_km', baseFee: rule.baseFee, includedKm: rule.includedKm, perKmRate: rule.perKmRate, extraKm: Math.max(0, km - rule.includedKm) });
+});
+
 export const getService = asyncHandler(async (req, res) => {
   const service = await Service.findOne({ ...idOrSlugFilter(req.params.idOrSlug), isActive: true })
     .populate('category', 'name slug').populate('provider', 'name providerId').lean();
@@ -76,7 +87,7 @@ export const getService = asyncHandler(async (req, res) => {
 
 export const createBooking = asyncHandler(async (req, res) => {
   const b = req.body as {
-    serviceId: string; scheduledAt?: string; note?: string; paymentMethod: 'cod' | 'online';
+    serviceId: string; scheduledAt?: string; note?: string; distanceKm?: number; paymentMethod: 'cod' | 'online';
     address: { name: string; phone: string; line1: string; line2?: string; landmark?: string; city: string; state: string; pincode: string; location?: { lat: number; lng: number } };
   };
   const service = await Service.findOne({ _id: b.serviceId, isActive: true }).lean();
@@ -92,6 +103,10 @@ export const createBooking = asyncHandler(async (req, res) => {
       throw new ApiError(400, `This provider serves up to ${radius} km from their location. Your address is about ${Math.ceil(away)} km away.`);
     }
   }
+  // A per-km service (towing...) costs by the trip length the customer gives; any other ignores it.
+  const perKm = service.priceUnit === 'per_km';
+  if (perKm && !b.distanceKm) throw new ApiError(400, 'Enter how many km you need this service for.');
+  const price = perKm ? fareForKm(ruleOf(service), b.distanceKm!) : service.price;
   if (b.paymentMethod === 'online' && !(await razorpayEnabled())) throw new ApiError(400, 'Online payment is not switched on. Please choose pay-after-service.');
 
   const booking = await ServiceBooking.create({
@@ -100,10 +115,11 @@ export const createBooking = asyncHandler(async (req, res) => {
     service: service._id,
     category: service.category,
     provider: service.provider,
-    snapshot: { title: service.title, image: service.images?.[0], price: service.price, priceUnit: service.priceUnit, durationMins: service.durationMins },
+    snapshot: { title: service.title, image: service.images?.[0], price: service.price, priceUnit: service.priceUnit, durationMins: service.durationMins, ...(perKm ? { includedKm: service.includedKm ?? 0, perKmRate: service.perKmRate ?? 0 } : {}) },
     scheduledAt: b.scheduledAt ? new Date(b.scheduledAt) : undefined,
     address: b.address,
-    price: service.price,
+    ...(perKm ? { distanceKm: b.distanceKm } : {}),
+    price,
     paymentMethod: b.paymentMethod,
     note: b.note,
     completionOtp: String(crypto.randomInt(1000, 10000)),
@@ -114,7 +130,7 @@ export const createBooking = asyncHandler(async (req, res) => {
 
   // Online: take payment first, then ring providers once it is verified.
   if (b.paymentMethod === 'online') {
-    const rzp = await createRazorpayOrder(service.price, booking.bookingNumber, { bookingId: String(booking._id) });
+    const rzp = await createRazorpayOrder(price, booking.bookingNumber, { bookingId: String(booking._id) });
     booking.razorpayOrderId = rzp.id;
     await booking.save();
     return created(res, {

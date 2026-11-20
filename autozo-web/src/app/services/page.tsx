@@ -113,7 +113,7 @@ export default function ServicesPage() {
                 <div style={{ fontWeight: 700, lineHeight: 1.3 }}>{s.title}</div>
                 {providerName(s) ? <div className="body-sm" style={{ color: '#888', marginTop: 2 }}>by {providerName(s)}</div> : null}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                  <strong>{priceLabel(s.price, s.priceUnit)}</strong>
+                  <strong>{priceLabel(s.price, s.priceUnit, s)}</strong>
                   {s.ratingCount > 0 ? <Rating value={s.rating} count={s.ratingCount} /> : <span className="body-sm" style={{ color: '#aaa' }}>New</span>}
                 </div>
               </div>

@@ -2,8 +2,8 @@ import { api, tokens } from '../lib/client';
 import { unregisterPush } from '../components/PushRegister';
 import { UserProfile } from '../lib/types';
 
-export const register = async (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string) => {
-  const { data } = await api.post('/auth/register', { name, phone, password, email, firebaseIdToken });
+export const register = async (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string, referralCode?: string) => {
+  const { data } = await api.post('/auth/register', { name, phone, password, email, firebaseIdToken, referralCode: referralCode || undefined });
   tokens.save(data.data.accessToken, data.data.refreshToken, data.data.user);
   return data.data.user as UserProfile;
 };
