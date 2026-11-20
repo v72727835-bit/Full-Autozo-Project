@@ -430,8 +430,11 @@ export const adminPasswordBody = z.object({
 
 /* ---------- settings, notices, care chat, stock alerts, riders ---------- */
 
+/** A #RRGGBB colour, or '' to clear it (back to the built-in colour). */
+const themeColor = z.union([z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a colour like #0E8A3E'), z.literal('')]);
 export const adminSettingsBody = z
   .object({
+    theme: z.object({ brand: themeColor, accent: themeColor, darkBrand: themeColor }).partial(),
     festival: z
       .object({
         enabled: z.boolean(),
