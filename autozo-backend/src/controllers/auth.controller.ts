@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { findReferrer } from '../services/referral.service';
 import { getIntegrations } from '../services/integrations.service';
 import { localPhone, requireOtp, verifyPhoneToken } from '../services/firebase.service';
 import { User, UserDoc } from '../models/User';
@@ -31,7 +32,7 @@ async function otpOnLogin(user: UserDoc, firebaseIdToken?: string) {
 }
 
 export const register = asyncHandler(async (req, res) => {
-  const { name, phone, email, password, firebaseIdToken } = req.body;
+  const { name, phone, email, password, firebaseIdToken, referralCode } = req.body;
 
   const clash = await User.findOne({ role: 'customer', $or: [{ phone }, ...(email ? [{ email }] : [])] }).select('phone email');
   if (clash) {
@@ -39,7 +40,8 @@ export const register = asyncHandler(async (req, res) => {
   }
 
   const phoneVerified = await requireOtp('signup', phone, firebaseIdToken);
-  const user = await User.create({ name, phone, email, password, role: 'customer', phoneVerified });
+  const referredBy = await findReferrer(referralCode);
+  const user = await User.create({ name, phone, email, password, role: 'customer', phoneVerified, ...(referredBy ? { referredBy } : {}) });
   const tokens = await issueTokens(user);
   created(res, { user, ...tokens });
 });

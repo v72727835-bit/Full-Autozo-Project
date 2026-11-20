@@ -4,6 +4,7 @@ import { getErrorMessage } from '../api/client';
 import { setServiceRadius } from '../api/provider';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
+import { ShareCard } from '../components/ShareCard';
 import { Btn, Card, Section } from '../ui';
 
 const MIN_KM = 1;
@@ -47,6 +48,7 @@ export default function AccountScreen() {
   return (
     <View style={{ flex: 1, padding: 14 }}>
       <Section title="My account" />
+      <ShareCard />
       <Card>
         {rows.map(([k, v]) => (
           <View key={k} style={st.row}>

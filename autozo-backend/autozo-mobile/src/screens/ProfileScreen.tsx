@@ -8,6 +8,7 @@ import { getErrorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { RiderProfile, RiderWallet } from '../types';
 import { colors, radius, shadow } from '../theme';
+import { ShareCard } from '../components/ShareCard';
 import { FadeSlide } from '../components/anim';
 
 const LOGO = require('../assets/logo-mark.png');
@@ -65,6 +66,7 @@ export default function ProfileScreen() {
         </>
       ) : null}
 
+      <ShareCard />
       <Button title="Log out" variant="outline" onPress={() => void signOut()} style={{ marginTop: 22 }} />
       <Text style={styles.version}>Autozo Rider</Text>
     </ScrollView>

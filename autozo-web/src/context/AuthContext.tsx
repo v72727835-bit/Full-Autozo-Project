@@ -11,7 +11,7 @@ interface AuthApiShape {
   user: UserProfile | null;
   loading: boolean;
   login: (identifier: string, password: string, firebaseIdToken?: string) => Promise<void>;
-  register: (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string) => Promise<void>;
+  register: (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string, referralCode?: string) => Promise<void>;
   loginWithSocial: (provider: 'google' | 'facebook', accessToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (u: UserProfile | null) => void;
@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(await authApi.socialLogin(provider, accessToken));
   };
 
-  const register = async (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string) => {
-    const u = await authApi.register(name, phone, password, email, firebaseIdToken);
+  const register = async (name: string, phone: string, password: string, email?: string, firebaseIdToken?: string, referralCode?: string) => {
+    const u = await authApi.register(name, phone, password, email, firebaseIdToken, referralCode);
     setUser(u);
   };
 

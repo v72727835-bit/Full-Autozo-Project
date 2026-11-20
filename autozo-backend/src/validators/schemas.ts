@@ -33,6 +33,8 @@ export const registerBody = z.object({
   password,
   /** Firebase ID token proving the phone number (sent once the OTP step is on). */
   firebaseIdToken: z.string().min(20).max(4000).optional(),
+  /** Someone's share code; a wrong one never blocks the signup. */
+  referralCode: z.string().max(40).optional(),
 });
 
 export const loginBody = z.object({

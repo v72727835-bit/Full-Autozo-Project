@@ -302,6 +302,8 @@ export function EarningsScreen() {
   );
 }
 
+import { ShareCard } from '../components/ShareCard';
+
 /* ---------------- Account ---------------- */
 export function AccountScreen() {
   const { me, signOut } = useAuth();
@@ -321,6 +323,7 @@ export function AccountScreen() {
     <ScrollView keyboardShouldPersistTaps="handled">
       <H title="My account" center />
       <View style={{ padding: 16, paddingTop: 8 }}>
+        <ShareCard />
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 16 }}>{u?.name}</Text>
           <Text style={{ color: colors.muted }}>Phone (your login): {u?.phone}</Text>

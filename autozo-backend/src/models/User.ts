@@ -118,6 +118,9 @@ export interface IUser {
   providerLocation?: { type: 'Point'; coordinates: [number, number] };
   /** How far from providerLocation the provider serves, in km (1-100). Applied to every service they list. */
   providerRadiusKm?: number;
+  /** Personal share code (lazily made); anyone who signs up with it is credited to this user. */
+  referralCode?: string;
+  referredBy?: Types.ObjectId;
   /** Last time the provider app checked in; recent = online and ringable. Cleared on logout. */
   providerOnlineAt?: Date | null;
   /** A provider busy on a job (or who turned themselves off) gets no new rings. */
@@ -266,6 +269,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     },
     providerLocation: { type: pointSchema, default: undefined },
     providerRadiusKm: { type: Number, min: 1, max: 100 },
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     providerOnlineAt: { type: Date, default: null },
     providerBusy: { type: Boolean, default: false },
     providerPaused: { type: Boolean, default: false },

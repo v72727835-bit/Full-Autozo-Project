@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage } from '../../lib/client';
+import { clearReferral, savedReferral } from '../../lib/referral';
 import { otpRequiredPhone } from '../../lib/otp';
 import { OtpDialog } from '../../components/OtpDialog';
 import { AuthShell } from '../../components/AuthShell';
@@ -21,6 +22,8 @@ function SignupInner() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [referral, setReferral] = useState('');
+  useEffect(() => { setReferral(savedReferral()); }, []);
   const [copied, setCopied] = useState(false);
   // Set once the account exists: the login details are shown before the customer moves on.
   const [created, setCreated] = useState<{ phone: string; password: string } | null>(null);
@@ -45,7 +48,8 @@ function SignupInner() {
     }
     setLoading(true);
     try {
-      await register(name.trim(), phone.trim(), password);
+      await register(name.trim(), phone.trim(), password, undefined, undefined, referral);
+      clearReferral();
       setCreated({ phone: phone.trim(), password });
     } catch (err) {
       if (otpRequiredPhone(err) !== null) setNeedOtp(true);
@@ -108,6 +112,9 @@ function SignupInner() {
         <Field label="Confirm password" required>
           <PasswordField value={confirm} onChange={setConfirm} id="confirm" minLength={8} maxLength={15} placeholder="Type it again" canGenerate={false} required />
         </Field>
+        <Field label="Referral code (optional)">
+          <Input value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} maxLength={12} autoComplete="off" placeholder="Friend's code" />
+        </Field>
         <Button type="submit" size="lg" full loading={loading}>
           Create an account
         </Button>
@@ -118,7 +125,8 @@ function SignupInner() {
           onClose={() => setNeedOtp(false)}
           onVerified={async (token) => {
             try {
-              await register(name.trim(), phone.trim(), password, undefined, token);
+              await register(name.trim(), phone.trim(), password, undefined, token, referral);
+              clearReferral();
               setNeedOtp(false);
               setCreated({ phone: phone.trim(), password });
             } catch (err) {
