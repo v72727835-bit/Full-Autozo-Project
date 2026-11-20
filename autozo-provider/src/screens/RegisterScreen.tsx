@@ -3,6 +3,7 @@ import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import React, { useEffect, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
+import { reverseGeocode } from '../api/geo';
 import { registerProvider, serviceCategories } from '../api/provider';
 import { AuthLayout, ErrorBanner } from '../components/AuthLayout';
 import { Button } from '../components/Button';
@@ -64,7 +65,22 @@ export default function RegisterScreen({ onBack }: Props) {
         }
       }
       Geolocation.getCurrentPosition(
-        (pos) => { setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false); },
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setLocation({ lat, lng });
+          // Fill the address from the pin: city, state and PIN follow it; the address line only when still empty.
+          void reverseGeocode(lat, lng).then((place) => {
+            if (!place.found) return;
+            setF((cur) => ({
+              ...cur,
+              city: place.city || cur.city,
+              state: place.state || cur.state,
+              pincode: place.pincode || cur.pincode,
+              line1: cur.line1.trim() ? cur.line1 : [place.line1, place.area].filter(Boolean).join(', ') || cur.line1,
+            }));
+          }).finally(() => setLocating(false));
+        },
         () => { setLocating(false); setError('Could not get your location. Turn on GPS / location and try again.'); },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
       );

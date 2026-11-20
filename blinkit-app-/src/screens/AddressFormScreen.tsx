@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getErrorMessage, getFieldErrors } from '../api/client';
+import { reverseGeocode } from '../api/geo';
 import { AddressInput, createAddress, updateAddress } from '../api/user';
 import { useAuth } from '../context/AuthContext';
 import type { AppNav, AppRoute } from '../navigation/types';
@@ -85,9 +86,26 @@ export function AddressFormScreen() {
     setLocating(true);
     Geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setErrors((e) => ({ ...e, location: '' }));
-        setLocating(false);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLocation({ lat, lng });
+        setErrors((e) => ({ ...e, location: '', city: '', state: '', pincode: '' }));
+        // Fill the address from the pin: city, state and PIN follow it; the house and street only when still empty.
+        void reverseGeocode(lat, lng).then((place) => {
+          if (!place.found) {
+            toast.error('Pinned, but we could not read the address. Please type the city, state and PIN code.');
+            return;
+          }
+          setForm((cur) => ({
+            ...cur,
+            city: place.city || cur.city,
+            state: place.state || cur.state,
+            pincode: place.pincode || cur.pincode,
+            line1: cur.line1.trim() ? cur.line1 : place.line1 || cur.line1,
+            line2: cur.line2.trim() ? cur.line2 : place.area || cur.line2,
+          }));
+          toast.success('Address filled from your location. Please check it and add your flat / house number.');
+        }).finally(() => setLocating(false));
       },
       () => {
         setFormError('Could not get your location. Turn on GPS and try again.');
