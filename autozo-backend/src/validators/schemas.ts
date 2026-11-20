@@ -225,6 +225,7 @@ const geoPoint = z.object({ lat: z.number().min(-90).max(90), lng: z.number().mi
 
 export const adminProductBody = z.object({
   shop: objectId,
+  shops: z.array(objectId).min(1).max(50).optional(),
   category: objectId,
   name: z.string().trim().min(2).max(150),
   brand: z.string().trim().max(60).optional(),
@@ -255,6 +256,11 @@ export const adminProductBody = z.object({
   standardCategories: z.array(objectId).max(10).optional(),
 });
 export const adminProductUpdateBody = adminProductBody.partial();
+
+export const adminProductGroupBody = z.object({
+  ids: z.array(objectId).min(1).max(50),
+  patch: adminProductBody.omit({ shop: true, shops: true }).partial(),
+});
 
 export const adminProductsQuery = pagination.extend({
   q: z.string().trim().max(60).optional(),
@@ -971,6 +977,7 @@ export const adminProviderUpdateBody = z
     pincode: z.union([z.string().trim().regex(/^\d{6}$/, 'Pincode must be 6 digits'), z.literal('')]),
     about: z.string().trim().max(1000),
     location: latLng,
+    serviceRadiusKm: z.number().min(1).max(100),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');

@@ -185,6 +185,9 @@ export interface Product {
   sortCode?: number | null;
   seller?: { _id: string; name: string; sellerId?: string; sellerProfile?: { firm?: string } } | string;
   shop: { _id: string; name: string } | string;
+  shops?: Array<{ _id: string; name: string } | string>;
+  productIds?: string[];
+  warehouseCount?: number;
   category: { _id: string; name: string } | string;
   createdAt: string;
 }
@@ -574,6 +577,8 @@ export interface ProviderApplication {
   isActive?: boolean;
   providerStatus: 'pending' | 'approved' | 'rejected';
   providerRejectReason?: string;
+  /** How far this provider serves: the radius set for the whole account (null = per-service), and the range their services use. */
+  serviceArea?: { radiusKm: number | null; services: number; minKm: number | null; maxKm: number | null };
   providerApplication?: {
     firm: string;
     category?: string;

@@ -12,6 +12,27 @@ export async function providerLogin(identifier: string, password: string): Promi
   const { data } = await api.post<ApiEnvelope<AuthResult>>('/provider/auth/login', { identifier, password });
   return data.data;
 }
+
+export interface ProviderRegisterInput {
+  name: string;
+  phone: string;
+  email?: string;
+  password: string;
+  firm: string;
+  category?: string;
+  line1: string;
+  city: string;
+  state: string;
+  pincode: string;
+  location: { lat: number; lng: number };
+  about?: string;
+}
+
+/** Register a new service provider. The Autozo team approves it before the provider can sign in. Returns the confirmation message. */
+export async function registerProvider(input: ProviderRegisterInput): Promise<string> {
+  const { data } = await api.post<ApiEnvelope<{ message: string }>>('/provider/register', input);
+  return data.data.message;
+}
 export async function logoutRequest(refreshToken: string | null): Promise<void> {
   await api.post('/auth/logout', refreshToken ? { refreshToken } : {});
 }

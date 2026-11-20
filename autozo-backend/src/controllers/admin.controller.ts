@@ -200,7 +200,7 @@ export const stats = asyncHandler(async (req, res) => {
 /* ============ Products ============ */
 
 const ADMIN_PRODUCT_FIELDS =
-  'name slug brand images icon price mrp unit stock attributes foodType hsn gstRate paymentMode tags isActive rating ratingCount soldCount nameHi points sortCode ratingLabel variantGroup variantLabel seller shop category createdAt';
+  'name slug brand description images video icon price mrp unit stock attributes foodType hsn gstRate paymentMode tags isActive rating ratingCount soldCount nameHi points sortCode ratingLabel variantGroup variantLabel seller shop category standardCategories createdAt';
 
 export const listProductsAdmin = asyncHandler(async (req, res) => {
   const { q, category, shop, isActive, page, limit } = req.query as unknown as {
@@ -218,22 +218,41 @@ export const listProductsAdmin = asyncHandler(async (req, res) => {
     filter.$or = [{ name: rx }, { brand: rx }];
   }
   if (category) filter.category = category;
-  if (shop) filter.shop = shop;
   if (isActive !== undefined) filter.isActive = isActive;
 
-  const [products, total] = await Promise.all([
-    Product.find(filter)
+  const allProducts = await Product.find(filter)
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
       .select(ADMIN_PRODUCT_FIELDS)
       .populate('shop', 'name')
       .populate('category', 'name')
       .populate('seller', 'name sellerId sellerProfile.firm')
-      .lean(),
-    Product.countDocuments(filter),
+      .lean();
+  const keyFor = (p: (typeof allProducts)[number]) => JSON.stringify([
+    p.name.trim().toLowerCase(), p.brand?.trim().toLowerCase() ?? '', String(p.category?._id ?? p.category),
+    p.description ?? '', p.images?.[0] ?? '', p.price, p.mrp, p.unit, p.foodType, p.variantGroup ?? '', p.variantLabel ?? '',
+    p.nameHi ?? '', p.hsn ?? '', p.gstRate ?? null, p.paymentMode ?? 'both', p.isActive,
+    JSON.stringify(p.attributes ?? []), JSON.stringify(p.standardCategories ?? []),
   ]);
-  ok(res, products, pageMeta(page, limit, total));
+  const groups = new Map<string, Array<(typeof allProducts)[number]>>();
+  for (const product of allProducts) {
+    const key = keyFor(product);
+    groups.set(key, [...(groups.get(key) ?? []), product]);
+  }
+  const grouped = [...groups.values()].map((items) => {
+    const matchingShopIds = new Set(items.map((p) => String(p.shop?._id ?? p.shop)));
+    const selected = shop ? items.filter((p) => String(p.shop?._id ?? p.shop) === shop) : items;
+    const representative = selected[0] ?? items[0];
+    return {
+      ...representative,
+      _id: String(representative._id),
+      shops: items.map((p) => p.shop),
+      productIds: items.map((p) => String(p._id)),
+      warehouseCount: matchingShopIds.size,
+    };
+  }).filter((p) => !shop || String(p.shop?._id ?? p.shop) === shop);
+  const products = grouped.slice((page - 1) * limit, page * limit);
+  const groupedTotal = grouped.length;
+  ok(res, products, pageMeta(page, limit, groupedTotal));
 });
 
 export const getProductAdmin = asyncHandler(async (req, res) => {
@@ -249,12 +268,14 @@ async function assertLeafCategory(id: string) {
 }
 
 export const createProduct = asyncHandler(async (req, res) => {
-  const shop = await Shop.findById(req.body.shop).select('_id').lean();
-  if (!shop) throw new ApiError(400, 'Shop not found');
+  const shopIds = [...new Set((req.body.shops?.length ? req.body.shops : [req.body.shop]).map(String))];
+  const shops = await Shop.find({ _id: { $in: shopIds } }).select('_id').lean();
+  if (shops.length !== shopIds.length) throw new ApiError(400, 'One or more warehouses were not found');
   await assertLeafCategory(req.body.category);
 
-  const product = await Product.create(req.body);
-  created(res, product);
+  const { shops: _shops, ...fields } = req.body;
+  const products = await Product.create(shopIds.map((shop) => ({ ...fields, shop })));
+  created(res, products[0]);
 });
 
 /** Many products in one go; each row is checked on its own and reported back. */
@@ -274,10 +295,29 @@ export const updateProduct = asyncHandler(async (req, res) => {
   ok(res, product);
 });
 
+export const updateProductGroup = asyncHandler(async (req, res) => {
+  const { ids, patch } = req.body as { ids: string[]; patch: Record<string, unknown> };
+  if (patch.category) await assertLeafCategory(String(patch.category));
+  const uniqueIds = [...new Set(ids)];
+  const products = await Product.find({ _id: { $in: uniqueIds } }).select('_id').lean();
+  if (products.length !== uniqueIds.length) throw new ApiError(404, 'One or more products were not found');
+  await Product.updateMany({ _id: { $in: uniqueIds } }, { $set: patch }, { runValidators: true });
+  ok(res, { updated: products.length });
+});
+
 export const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
   ok(res, { message: 'Product deleted' });
+});
+
+export const deleteProductGroup = asyncHandler(async (req, res) => {
+  const { ids } = req.body as { ids: string[] };
+  const uniqueIds = [...new Set(ids)];
+  const existing = await Product.countDocuments({ _id: { $in: uniqueIds } });
+  if (existing !== uniqueIds.length) throw new ApiError(404, 'One or more products were not found');
+  const result = await Product.deleteMany({ _id: { $in: uniqueIds } });
+  ok(res, { message: 'Products deleted', deletedCount: result.deletedCount });
 });
 
 /* ============ Categories ============ */

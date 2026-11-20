@@ -5,7 +5,15 @@ import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, formatDate } f
 import type { ProviderApplication } from '../types';
 
 const blankProvider = { name: '', phone: '', email: '', password: '', firm: '', category: '', city: '' };
-const blankEdit = { name: '', phone: '', email: '', firm: '', category: '', about: '', line1: '', city: '', state: '', pincode: '', isActive: true };
+const blankEdit = { name: '', phone: '', email: '', firm: '', category: '', about: '', line1: '', city: '', state: '', pincode: '', isActive: true, serviceRadiusKm: '' };
+
+/** "Serves up to 25 km", "5-40 km (set per service)" or "Not set" - how far a provider serves. */
+function areaText(a: ProviderApplication['serviceArea']): { main: string; note: string } {
+  if (!a) return { main: '-', note: '' };
+  if (a.radiusKm != null) return { main: `Up to ${a.radiusKm} km`, note: a.services ? `${a.services} service${a.services === 1 ? '' : 's'}` : 'No services yet' };
+  if (a.services && a.minKm != null && a.maxKm != null) return { main: a.minKm === a.maxKm ? `Up to ${a.maxKm} km` : `${a.minKm}-${a.maxKm} km`, note: `${a.services} service${a.services === 1 ? '' : 's'}, radius set per service` };
+  return { main: 'Not set', note: 'No services yet' };
+}
 const newPassword = () => `Az${Math.random().toString(36).slice(2, 8)}${Math.floor(10 + Math.random() * 89)}`;
 
 const TABS = [
@@ -77,16 +85,24 @@ export default function ProviderRequestsPage() {
     setEdit({
       name: r.name, phone: r.phone, email: r.email ?? '', firm: a?.firm ?? '', category: a?.category ?? '', about: a?.about ?? '',
       line1: a?.line1 ?? '', city: a?.city ?? '', state: a?.state ?? '', pincode: a?.pincode ?? '', isActive: r.isActive !== false,
+      serviceRadiusKm: String(r.serviceArea?.radiusKm ?? r.serviceArea?.maxKm ?? ''),
     });
     setEditing(r);
   };
 
   const saveEdit = async () => {
     if (!editing) return;
+    const km = edit.serviceRadiusKm.trim() === '' ? undefined : Number(edit.serviceRadiusKm);
+    if (km !== undefined && !(km >= 1 && km <= 100)) {
+      setError('Service radius must be between 1 and 100 km.');
+      return;
+    }
+    const radiusChanged = km !== undefined && km !== (editing.serviceArea?.radiusKm ?? editing.serviceArea?.maxKm);
     setBusyId(editing._id);
     setError('');
     try {
       await adminUpdateProvider(editing._id, {
+        ...(radiusChanged ? { serviceRadiusKm: km } : {}),
         name: edit.name.trim(), phone: edit.phone.trim(), email: edit.email.trim(), firm: edit.firm.trim(), category: edit.category.trim(),
         about: edit.about.trim(), line1: edit.line1.trim(), city: edit.city.trim(), state: edit.state.trim(), pincode: edit.pincode.trim(), isActive: edit.isActive,
       });
@@ -189,6 +205,7 @@ export default function ProviderRequestsPage() {
                   <th>Provider</th>
                   <th>Owner</th>
                   <th>Address</th>
+                  <th>Service area</th>
                   <th>When</th>
                   <th />
                 </tr>
@@ -217,6 +234,9 @@ export default function ProviderRequestsPage() {
                             </a>
                           </div>
                         ) : null}
+                      </td>
+                      <td>
+                        {(() => { const t = areaText(r.serviceArea); return <>{t.main}{t.note ? <div className="cell-muted">{t.note}</div> : null}</>; })()}
                       </td>
                       <td className="cell-muted">{formatDate(r.createdAt)}</td>
                       <td>
@@ -268,6 +288,7 @@ export default function ProviderRequestsPage() {
             <Field label="Phone (login ID)"><input value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} inputMode="tel" /></Field>
             <Field label="Email"><input value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></Field>
           </div>
+          <Field label="Service radius (km) - how far this provider serves, 1 to 100. Applies to all their services."><input type="number" min={1} max={100} value={edit.serviceRadiusKm} onChange={(e) => setEdit({ ...edit, serviceRadiusKm: e.target.value })} placeholder="e.g. 10" /></Field>
           <Field label="Address"><input value={edit.line1} onChange={(e) => setEdit({ ...edit, line1: e.target.value })} /></Field>
           <div className="row-flex" style={{ gap: 10 }}>
             <Field label="City"><input value={edit.city} onChange={(e) => setEdit({ ...edit, city: e.target.value })} /></Field>

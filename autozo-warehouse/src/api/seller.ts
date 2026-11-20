@@ -11,6 +11,27 @@ export async function sellerLogin(identifier: string, password: string): Promise
   const { data } = await api.post<ApiEnvelope<AuthResult>>('/seller/auth/login', { identifier, password });
   return data.data;
 }
+
+export interface WarehouseRegisterInput {
+  name: string;
+  phone: string;
+  email?: string;
+  password: string;
+  shopName: string;
+  line1: string;
+  city: string;
+  state: string;
+  pincode: string;
+  location: { lat: number; lng: number };
+  gst?: string;
+  note?: string;
+}
+
+/** Register a new warehouse. The Autozo team approves it before the seller can sign in. Returns the confirmation message. */
+export async function registerWarehouse(input: WarehouseRegisterInput): Promise<string> {
+  const { data } = await api.post<ApiEnvelope<{ message: string }>>('/seller/register', input);
+  return data.data.message;
+}
 export async function logoutRequest(refreshToken: string | null): Promise<void> {
   await api.post('/auth/logout', refreshToken ? { refreshToken } : {});
 }

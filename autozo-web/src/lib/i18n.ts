@@ -7,6 +7,7 @@ export type Lang = 'en' | 'hi';
 const DICT: Record<string, { en: string; hi: string }> = {
   home: { en: 'Home', hi: 'होम' },
   categories: { en: 'Categories', hi: 'श्रेणियाँ' },
+  services: { en: 'Services', hi: 'सेवाएँ' },
   cart: { en: 'Cart', hi: 'कार्ट' },
   profile: { en: 'Profile', hi: 'प्रोफ़ाइल' },
   account: { en: 'Account', hi: 'खाता' },

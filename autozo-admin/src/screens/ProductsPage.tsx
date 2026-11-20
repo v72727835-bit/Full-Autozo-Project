@@ -3,7 +3,7 @@ import { useSearchParams } from '../navigation';
 import BulkUpload from '../components/BulkUpload';
 import ProductVideoField from '../components/ProductVideoField';
 import { useEagerUploads } from '../components/useEagerUploads';
-import { bulkCreateProducts, uploadProductVideo, createProduct, deleteProduct, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProduct, uploadImages } from '../api/admin';
+import { bulkCreateProducts, uploadProductVideo, createProduct, deleteProduct, deleteProductGroup, fetchCategories, fetchProducts, fetchAllShops, fetchSettings, fetchStandardCategories, updateProductGroup, uploadImages } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { IconPlus } from '../components/icons';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, ProgressBar, Tabs, Thumb, money } from '../components/ui';
@@ -13,7 +13,7 @@ type FormState = {
   name: string;
   brand: string;
   description: string;
-  shop: string;
+  shops: string[];
   category: string;
   price: string;
   mrp: string;
@@ -41,7 +41,7 @@ const EMPTY_FORM: FormState = {
   name: '',
   brand: '',
   description: '',
-  shop: '',
+  shops: [],
   category: '',
   price: '',
   mrp: '',
@@ -157,7 +157,7 @@ export default function ProductsPage() {
   const remove = async (p: Product) => {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
     try {
-      await deleteProduct(p._id);
+      await deleteProductGroup(p.productIds?.length ? p.productIds : [p._id]);
       load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -272,10 +272,10 @@ export default function ProductsPage() {
                 <tr>
                   <th>Product</th>
                   <th>Category</th>
-                  <th>Warehouse</th>
                   <th>Price</th>
                   <th>Stock</th>
                   <th>Status</th>
+                  <th>Warehouses</th>
                   <th></th>
                 </tr>
               </thead>
@@ -295,7 +295,6 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="cell-muted">{categoryName(p.category)}</td>
-                    <td className="cell-muted">{shopName(p.shop)}</td>
                     <td>
                       {money(p.price)}
                       {p.mrp > p.price && (
@@ -315,6 +314,10 @@ export default function ProductsPage() {
                     </td>
                     <td>
                       <Badge tone={p.isActive ? 'success' : 'muted'}>{p.isActive ? 'Active' : 'Hidden'}</Badge>
+                    </td>
+                    <td className="cell-muted">
+                      <span>{shopFilter ? shopName(p.shop) : `${p.warehouseCount ?? 1} warehouse${(p.warehouseCount ?? 1) === 1 ? '' : 's'}`}</span>
+                      {!shopFilter && p.shops?.length ? <div style={{ fontSize: 11, marginTop: 3 }}>{Array.from(new Map(p.shops.map((s) => [typeof s === 'string' ? s : s._id, typeof s === 'string' ? shops.find((item) => item._id === s)?.name ?? s : s.name])).entries()).map(([, name]) => name).join(', ')}</div> : null}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -387,7 +390,9 @@ function ProductForm({
           name: product.name,
           brand: product.brand ?? '',
           description: product.description ?? '',
-          shop: typeof product.shop === 'string' ? product.shop : product.shop._id,
+          shops: product.productIds?.length && product.shops?.length
+            ? [...new Set(product.shops.map((s) => typeof s === 'string' ? s : s._id))]
+            : [typeof product.shop === 'string' ? product.shop : product.shop._id],
           category: typeof product.category === 'string' ? product.category : product.category._id,
           price: String(product.price),
           mrp: String(product.mrp),
@@ -412,6 +417,13 @@ function ProductForm({
         }
       : EMPTY_FORM,
   );
+  const appliedDefaultWarehouses = useRef(false);
+  useEffect(() => {
+    if (!product && !optionsLoading && shops.length > 0 && !appliedDefaultWarehouses.current) {
+      set('shops', shops.map((shop) => shop._id));
+      appliedDefaultWarehouses.current = true;
+    }
+  }, [product, optionsLoading, shops]);
   const [stdRows, setStdRows] = useState<StandardCategory[]>([]);
   useEffect(() => {
     fetchStandardCategories().then(setStdRows).catch(() => undefined);
@@ -447,8 +459,8 @@ function ProductForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!form.shop || !form.category) {
-      setError('Pick a warehouse and a category.');
+    if (!form.shops.length || !form.category) {
+      setError('Pick at least one warehouse and a category.');
       return;
     }
     setSaving(true);
@@ -466,7 +478,6 @@ function ProductForm({
         name: form.name,
         brand: form.brand || undefined,
         description: form.description || undefined,
-        shop: form.shop,
         category: form.category,
         price: Number(form.price),
         mrp: Number(form.mrp) || Number(form.price),
@@ -492,8 +503,26 @@ function ProductForm({
         standardCategories: form.standardCategories,
         isActive: form.isActive,
       };
-      if (product) await updateProduct(product._id, body);
-      else await createProduct(body as never);
+      if (product) {
+        const ids = product.productIds?.length ? product.productIds : [product._id];
+        const originalShops = new Set(product.shops?.map((s) => typeof s === 'string' ? s : s._id) ?? []);
+        const selectedShops = new Set(form.shops);
+        const removedIds = product.shops?.flatMap((s, index) => {
+          const id = typeof s === 'string' ? s : s._id;
+          return selectedShops.has(id) ? [] : [ids[index]].filter(Boolean);
+        }) ?? [];
+        const additions = form.shops.filter((id) => !originalShops.has(id));
+        const keptIds = ids.filter((id) => !removedIds.includes(id));
+        if (keptIds.length) {
+          const { stock: _stock, ...sharedFields } = body;
+          await updateProductGroup(keptIds, sharedFields);
+        }
+        if (removedIds.length) await Promise.all(removedIds.map(deleteProduct));
+        if (additions.length) await Promise.all(additions.map((shop) => createProduct({ ...body, shop, shops: undefined } as never)));
+      } else {
+        const [shop, ...moreShops] = form.shops;
+        await createProduct({ ...body, shop, shops: moreShops.length ? [shop, ...moreShops] : undefined } as never);
+      }
       onSaved();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -528,15 +557,18 @@ function ProductForm({
         </div>
 
         <div className="field-row">
-          <Field label="Warehouse">
-            <select value={form.shop} onChange={(e) => set('shop', e.target.value)} required disabled={optionsLoading || shops.length === 0}>
-              <option value="">{optionsLoading ? 'Loading warehouses…' : shops.length === 0 ? 'No warehouses available' : 'Select warehouse…'}</option>
-              {shops.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+          <Field label="Warehouses (select one or more)">
+            <div className="row-flex" style={{ flexWrap: 'wrap', maxHeight: 150, overflowY: 'auto', padding: '8px 0' }}>
+              <label className="checkbox-row" style={{ minWidth: 130 }}>
+                <input type="checkbox" checked={shops.length > 0 && form.shops.length === shops.length} onChange={(e) => set('shops', e.target.checked ? shops.map((s) => s._id) : [])} disabled={optionsLoading || shops.length === 0} />
+                <span>All warehouses</span>
+              </label>
+              {shops.map((s) => <label key={s._id} className="checkbox-row" style={{ minWidth: 130 }}>
+                <input type="checkbox" checked={form.shops.includes(s._id)} onChange={(e) => set('shops', e.target.checked ? [...new Set([...form.shops, s._id])] : form.shops.filter((id) => id !== s._id))} disabled={optionsLoading} />
+                <span>{s.name}</span>
+              </label>)}
+            </div>
+            <span className="cell-muted">{form.shops.length} warehouse{form.shops.length === 1 ? '' : 's'} selected</span>
           </Field>
           <Field label="Category (leaf)">
             <select value={form.category} onChange={(e) => set('category', e.target.value)} required disabled={optionsLoading || categories.length === 0}>
@@ -763,7 +795,7 @@ function ProductForm({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving || optionsLoading || shops.length === 0 || categories.length === 0}>
+          <Button type="submit" disabled={saving || optionsLoading || form.shops.length === 0 || categories.length === 0}>
             {saving ? (uploads.overall !== null ? `Uploading photos ${Math.round(uploads.overall * 100)}%…` : 'Saving…') : product ? 'Save changes' : 'Create product'}
           </Button>
         </div>
