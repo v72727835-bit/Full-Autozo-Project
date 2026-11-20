@@ -67,7 +67,7 @@
   height: 38px;
   border-radius: 50%;
   background: #fff;
-  border: 3px solid var(--lt-color, #0e8a3e);
+  border: 3px solid var(--lt-color, var(--brand));
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
   font-size: 18px;
   line-height: 1;
@@ -77,7 +77,7 @@
   width: 44px;
   height: 44px;
   font-size: 22px;
-  background: #ffd23f;
+  background: var(--sun);
   border-color: #fff;
 }
 

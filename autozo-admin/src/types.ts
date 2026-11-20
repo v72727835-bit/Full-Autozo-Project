@@ -356,6 +356,8 @@ export interface CompanyDetails {
 export interface SocialLinks { facebook?: string; instagram?: string; youtube?: string; whatsapp?: string; x?: string; telegram?: string; linkedin?: string }
 
 export interface Settings {
+  /** Colours the super admin picked (#RRGGBB); empty = the built-in colours. */
+  theme?: { brand?: string; accent?: string; darkBrand?: string };
   festival: {
     enabled: boolean;
     /** Menu label customers see, e.g. "Rakhi" or "Diwali". */

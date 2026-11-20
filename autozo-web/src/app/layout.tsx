@@ -1,3 +1,4 @@
+import { BrandThemeSync } from '../components/BrandThemeSync';
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import React from 'react';
@@ -73,6 +74,9 @@ export const viewport: Viewport = {
  * Applies the saved theme before first paint. Without this the page renders
  * light and then flips, which is the most obvious tell of a bolted-on theme.
  */
+/** The super admin's colours from the last visit, painted before first render so nothing flashes green. */
+const BRAND_BOOT = `(function(){try{var c=localStorage.getItem('autozo_brand_css');if(c){var s=document.createElement('style');s.id='autozo-brand';s.textContent=c;document.head.appendChild(s)}}catch(e){}})()`;
+
 const THEME_BOOT = `(function(){try{var t=localStorage.getItem('autozo_theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -80,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={sans.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: BRAND_BOOT }} />
         {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} crossOrigin="anonymous" /> : null}
         {/* Photos load without CORS, which browsers send over a separate connection. */}
         {API_ORIGIN ? <link rel="preconnect" href={API_ORIGIN} /> : null}
@@ -88,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main" className="sr-only">
           Skip to content
         </a>
+        <BrandThemeSync />
         <ThemeProvider>
           <AuthProvider>
             <SettingsProvider>

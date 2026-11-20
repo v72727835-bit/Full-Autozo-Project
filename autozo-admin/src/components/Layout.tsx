@@ -146,6 +146,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         { to: '/gallery', label: 'Gallery', icon: <IconImage />, perm: 'media' },
         { to: '/videos', label: 'Videos', icon: <IconVideo />, perm: 'media' },
         { to: '/store-settings', label: 'Store Settings', icon: <IconSettings />, perm: 'settings' },
+        { to: '/theme', label: 'Theme & Colours', icon: <IconImage />, perm: 'settings' },
         { to: '/integrations', label: 'Login & Payments', icon: <IconShield />, perm: 'integrations' },
         { to: '/delivery-pricing', label: 'Delivery & Pricing', icon: <IconTag />, perm: 'settings' },
         { to: '/offers', label: 'Offers & Coupons', icon: <IconTag />, perm: 'offers' },

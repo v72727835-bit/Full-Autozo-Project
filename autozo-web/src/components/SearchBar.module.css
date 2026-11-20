@@ -22,7 +22,7 @@
 }
 
 .bar:focus-within {
-  box-shadow: 0 0 0 3px rgba(14, 138, 62, 0.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
 .bar[data-variant='plain']:focus-within {
