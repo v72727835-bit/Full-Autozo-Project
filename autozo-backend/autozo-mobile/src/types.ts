@@ -82,6 +82,8 @@ export interface RiderProfile {
   warehouse?: { _id: string; name: string };
   warehouses?: { _id: string; name: string }[];
   codPending: number;
+  /** Part of codPending already handed in and waiting for the office to confirm. */
+  codAwaiting?: number;
   codCollected: number;
   codLimit: number;
   deliveredCount: number;
@@ -133,6 +135,8 @@ export interface RiderWallet {
   pendingWithdraw: number;
   withdrawnTotal: number;
   codPending: number;
+  /** Part of codPending already handed in and waiting for the office to confirm. */
+  codAwaiting?: number;
   codCollected: number;
   codLimit: number;
   minWithdraw: number;

@@ -23,7 +23,7 @@ import { paySellerWithdrawal, syncSellerPayout, syncSellerPayoutById } from '../
 import { syncProviderPayoutById } from '../services/providerPay.service';
 import { seal } from '../utils/secretBox';
 import { checkServiceAccount, pushToUsers } from '../services/firebase.service';
-import { codSummary, ONLINE_WINDOW_MS } from '../services/rider.service';
+import { codSummary, ONLINE_WINDOW_MS, settleRiderCod as settleRiderCash } from '../services/rider.service';
 import { presentMedia } from '../services/media.service';
 import { getSettingsDoc } from '../services/settings.service';
 import { ApiError } from '../utils/ApiError';
@@ -223,11 +223,8 @@ export const setRiderPaused = asyncHandler(async (req, res) => {
 
 /** The rider handed their COD cash to the cash department: clear what they owe. */
 export const settleRiderCod = asyncHandler(async (req, res) => {
-  const result = await Order.updateMany(
-    { rider: req.params.id, status: 'delivered', paymentMethod: 'cod', codSettled: { $ne: true } },
-    { $set: { codSettled: true } },
-  );
-  ok(res, { settledOrders: result.modifiedCount });
+  const result = await settleRiderCash(String(req.params.id));
+  ok(res, { settledOrders: result.settledOrders, settledAmount: result.settledAmount });
 });
 
 /* ============ Rider profile (super admin) ============ */
@@ -384,16 +381,18 @@ export const paySellerWithdrawalAdmin = asyncHandler(async (req, res) => {
 
 /** Confirm a rider's cash submission: clear the COD they owe and mark it confirmed. */
 export const confirmCashSubmit = asyncHandler(async (req, res) => {
-  const txn = await WalletTxn.findOne({ _id: req.params.id, kind: 'cash_submit' });
-  if (!txn) throw new ApiError(404, 'Cash submission not found');
-  if (txn.status !== 'pending') throw new ApiError(409, 'This submission was already handled.');
-  txn.status = 'confirmed';
-  await txn.save();
-  await Order.updateMany(
-    { rider: txn.rider, status: 'delivered', paymentMethod: 'cod', codSettled: { $ne: true } },
-    { $set: { codSettled: true } },
+  // One atomic step, so two admins pressing Confirm together settle the cash once.
+  const txn = await WalletTxn.findOneAndUpdate(
+    { _id: req.params.id, kind: 'cash_submit', status: 'pending' },
+    { $set: { status: 'confirmed' } },
+    { new: true },
   );
-  await User.updateOne({ _id: txn.rider, riderPaused: true }, { $set: { riderPaused: false, riderPausedAt: null } });
+  if (!txn) {
+    if (await WalletTxn.exists({ _id: req.params.id, kind: 'cash_submit' })) throw new ApiError(409, 'This submission was already handled.');
+    throw new ApiError(404, 'Cash submission not found');
+  }
+  // Only the cash the rider actually handed in is cleared (oldest deliveries first).
+  await settleRiderCash(String(txn.rider), txn.amount);
   ok(res, txn);
 });
 

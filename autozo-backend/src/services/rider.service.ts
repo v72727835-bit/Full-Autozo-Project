@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { AdminAlert } from '../models/AdminAlert';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
+import { WalletTxn } from '../models/WalletTxn';
 import { loadSettings } from './settings.service';
 
 /** A rider counts as online if the app talked to us within this window. */
@@ -23,6 +24,57 @@ export async function codSummary(riderIds?: Types.ObjectId[]) {
     },
   ]);
   return new Map(rows.map((r) => [String(r._id), r]));
+}
+
+/** Cash the rider says they handed in that the office has not confirmed yet (per rider id). */
+export async function awaitingCash(riderId: Types.ObjectId | string): Promise<number> {
+  const rows = await WalletTxn.aggregate<{ total: number }>([
+    { $match: { rider: new Types.ObjectId(String(riderId)), kind: 'cash_submit', status: 'pending' } },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
+  ]);
+  return rows[0]?.total ?? 0;
+}
+
+/**
+ * The office has the rider's cash: clear what they owe. With no `amount` everything clears;
+ * with an amount, whole orders clear oldest first while the cash covers them (an amount within
+ * Rs 1 of everything owed counts as everything, so rounding never leaves one order behind).
+ *
+ * Every way the office can take cash goes through here - confirming a submission, collecting
+ * from the rider directly, and (later) an online payment - so the rider's panel agrees with
+ * the admin's. When nothing is owed any more, a submission still waiting is closed, and a
+ * rider paused for owing too much is released once they are back under the admin's limit.
+ */
+export async function settleRiderCod(riderId: Types.ObjectId | string, amount?: number): Promise<{ settledOrders: number; settledAmount: number; pending: number }> {
+  const id = new Types.ObjectId(String(riderId));
+  const open = await Order.find({ rider: id, status: 'delivered', paymentMethod: 'cod', codSettled: { $ne: true } })
+    .sort({ deliveredAt: 1, createdAt: 1 })
+    .select('_id total')
+    .lean();
+  const owed = open.reduce((sum, o) => sum + o.total, 0);
+  const everything = amount === undefined || amount + 1 >= owed;
+
+  const chosen: Types.ObjectId[] = [];
+  let settledAmount = 0;
+  for (const o of open) {
+    if (!everything && settledAmount + o.total > (amount ?? 0)) break;
+    chosen.push(o._id as Types.ObjectId);
+    settledAmount += o.total;
+  }
+  const result = chosen.length
+    ? await Order.updateMany({ _id: { $in: chosen }, codSettled: { $ne: true } }, { $set: { codSettled: true } })
+    : { modifiedCount: 0 };
+
+  const pending = Math.max(0, owed - settledAmount);
+  if (pending <= 0) {
+    await WalletTxn.updateMany({ rider: id, kind: 'cash_submit', status: 'pending' }, { $set: { status: 'confirmed' } });
+  }
+  const { settings } = await loadSettings();
+  const limit = settings.riderCodLimit ?? 2000;
+  if (!limit || pending < limit) {
+    await User.updateOne({ _id: id, riderPaused: true }, { $set: { riderPaused: false, riderPausedAt: null } });
+  }
+  return { settledOrders: result.modifiedCount, settledAmount, pending };
 }
 
 /**

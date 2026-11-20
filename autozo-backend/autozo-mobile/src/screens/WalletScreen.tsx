@@ -29,6 +29,10 @@ export default function WalletScreen() {
     finally { setLoading(false); setRefreshing(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+  // The office can take the cash at any time, so keep the number fresh while the rider is here.
+  useEffect(() => { const timer = setInterval(() => load(true), 20000); return () => clearInterval(timer); }, [load]);
+  const awaiting = wallet?.codAwaiting ?? 0;
+  const toSubmit = Math.max(0, (wallet?.codPending ?? 0) - awaiting);
 
   if (loading) return <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} />;
 
@@ -58,10 +62,11 @@ export default function WalletScreen() {
         <View style={styles.cashCard}>
           <View style={{ flex: 1 }}>
             <Text style={styles.cashLabel}>Cash to submit to office</Text>
-            <Text style={styles.cashValue}>{money(wallet?.codPending ?? 0)}</Text>
+            <Text style={styles.cashValue}>{money(toSubmit)}</Text>
+            {awaiting > 0 ? <Text style={styles.muted}>{money(awaiting)} handed in · waiting for the office to confirm</Text> : null}
             <Text style={styles.muted}>Collected in total {money(wallet?.codCollected ?? 0)}{wallet?.codLimit ? ` · hand in before ${money(wallet.codLimit)}` : ''}</Text>
           </View>
-          <Button title="Submit cash" variant="outline" onPress={() => setSheet('cash')} />
+          {awaiting > 0 ? null : <Button title="Submit cash" variant="outline" onPress={() => setSheet('cash')} />}
         </View>
         </FadeSlide>
 
@@ -92,7 +97,7 @@ export default function WalletScreen() {
 
       {sheet === 'withdraw' && <WithdrawSheet wallet={wallet!} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} onNeedAccount={() => setSheet('account')} />}
       {sheet === 'account' && <AccountSheet account={wallet?.account ?? null} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} />}
-      {sheet === 'cash' && <CashSheet pending={wallet?.codPending ?? 0} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} />}
+      {sheet === 'cash' && <CashSheet pending={toSubmit} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} />}
     </>
   );
 }
