@@ -83,3 +83,54 @@
   line-height: 1.25;
   color: var(--ink-2);
 }
+
+/* ------------------------- services entry (phones only) ------------------------- */
+
+.servicesRing {
+  color: var(--brand-text);
+  border-color: var(--brand-line);
+}
+
+.servicesBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--r-md);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+}
+
+.servicesBarIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.servicesBarText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.servicesBarText b {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* The header's category strip carries Services from 700 px up. */
+@media (min-width: 700px) {
+  .servicesOnPhone,
+  .servicesBar {
+    display: none;
+  }
+}

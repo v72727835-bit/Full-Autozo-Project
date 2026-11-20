@@ -1,12 +1,11 @@
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import React, { useCallback, useEffect, useState } from 'react';
-import { AppState, Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/AuthLayout';
-import { fetchMyPlan, startPlanPayment } from '../api/rider';
+import { fetchMyPlan, startPlanPayment, syncPlanPayments } from '../api/rider';
+import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { getErrorMessage } from '../api/client';
-import { WEB_URL } from '../config';
-import { tokenStore } from '../storage/tokens';
 import { MyPlan } from '../types';
 import { colors, radius, shadow } from '../theme';
 import { FadeSlide } from '../components/anim';
@@ -16,13 +15,14 @@ const longDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { da
 
 /**
  * The rider's plan: how long it runs and the plans the super admin offers. Paying opens the
- * website's /pay page (Razorpay runs there); coming back to the app reloads the plan.
+ * payment window inside the app (Razorpay runs in it); the plan starts as soon as the payment is done.
  */
 export default function PlanScreen({ onChanged }: { onChanged?: () => void }) {
   const [plan, setPlan] = useState<MyPlan | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [paying, setPaying] = useState<PayOrder | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -43,10 +43,7 @@ export default function PlanScreen({ onChanged }: { onChanged?: () => void }) {
     setBusy(planId);
     setError('');
     try {
-      const order = await startPlanPayment(planId);
-      const token = await tokenStore.getAccess();
-      const hash = `o=${encodeURIComponent(order.razorpayOrderId)}&k=${encodeURIComponent(order.keyId)}&a=${order.amount}&t=${encodeURIComponent(token ?? '')}&x=plan`;
-      await Linking.openURL(`${WEB_URL}/pay#${hash}`);
+      setPaying(await startPlanPayment(planId));
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -55,6 +52,7 @@ export default function PlanScreen({ onChanged }: { onChanged?: () => void }) {
   };
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.wrap} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
       {error ? <ErrorBanner message={error} /> : null}
       {plan ? (
@@ -94,6 +92,13 @@ export default function PlanScreen({ onChanged }: { onChanged?: () => void }) {
       {plan?.active ? <Text style={styles.note}>Buying again adds the days after your current plan ends.</Text> : null}
       <Text style={styles.note}>After paying, come back here and pull down to refresh.</Text>
     </ScrollView>
+    <OnlinePay
+      order={paying}
+      kind="plan"
+      onPaid={() => { setPaying(null); void load(); }}
+      onClose={() => { setPaying(null); void syncPlanPayments().catch(() => undefined).then(() => load()); }}
+    />
+    </>
   );
 }
 

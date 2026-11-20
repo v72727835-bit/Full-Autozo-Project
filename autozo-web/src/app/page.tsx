@@ -7,7 +7,7 @@ import { HomeSection } from '../lib/types';
 import { DeliverySlots } from '../components/DeliverySlots';
 import { BannerCarousel } from '../components/BannerCarousel';
 import AdSlot from '../components/AdSlot';
-import { CategoryCircle, CategoryTile } from '../components/CategoryTile';
+import { CategoryCircle, CategoryTile, ServicesCircle } from '../components/CategoryTile';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Icon } from '../components/Icon';
 import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
@@ -85,6 +85,7 @@ function Section({ section }: { section: HomeSection }) {
       return (
         <section className={s.circleSection}>
           <div className={`rail ${s.circleRail}`}>
+            <ServicesCircle />
             {section.items.map((c) => (
               <CategoryCircle key={c.id} category={c} />
             ))}

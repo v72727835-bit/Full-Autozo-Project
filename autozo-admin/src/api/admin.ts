@@ -868,3 +868,17 @@ export const adminDeleteServiceCategory = async (id: string): Promise<void> => {
 /* ---- admin: all service bookings ---- */
 export const adminServiceBookings = (params: { page?: number; limit?: number; status?: string }) =>
   paged<ServiceBookingRow>('/admin/service-bookings', params);
+
+/** Cash riders and providers paid the office online (Razorpay), newest first. */
+export interface OnlineDuesRow {
+  _id: string;
+  kind: 'rider_cash' | 'provider_dues';
+  amount: number;
+  paymentId?: string;
+  createdAt: string;
+  user: { _id: string; name: string; phone: string; role: string; providerId?: string } | null;
+}
+export const fetchOnlineDues = async (): Promise<{ rows: OnlineDuesRow[]; riderCash: { total: number; count: number }; providerDues: { total: number; count: number } }> => {
+  const { data } = await api.get('/admin/dues-payments');
+  return { rows: data.data, riderCash: data.meta.riderCash, providerDues: data.meta.providerDues };
+};

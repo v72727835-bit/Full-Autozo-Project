@@ -10,6 +10,8 @@ export interface ProviderUser {
   providerId?: string;
   providerStatus?: 'pending' | 'approved' | 'rejected';
   providerBusy?: boolean;
+  /** How far from their base the provider serves, in km (1-100). */
+  providerRadiusKm?: number;
   providerApplication?: { firm: string; category?: string; city?: string; state?: string };
 }
 export interface AuthResult { user: ProviderUser; accessToken: string; refreshToken: string }

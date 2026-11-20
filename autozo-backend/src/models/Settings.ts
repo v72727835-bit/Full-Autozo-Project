@@ -61,6 +61,8 @@ export interface ISettings {
   /** Paid plans: when switched on, riders get no new orders and warehouses cannot add products or see orders without one. */
   subscriptions: { rider: boolean; seller: boolean; provider?: boolean };
   appLinks: { android?: string; ios?: string; rider?: string; warehouse?: string; provider?: string };
+  /** Colours the super admin picked (#RRGGBB); empty = the built-in colours. Everything else is derived (utils/theme.ts). */
+  theme?: { brand?: string; accent?: string; darkBrand?: string };
   /** Company details printed on every bill (logo, signature, seal, GSTIN, declaration...). */
   company: {
     name?: string; tagline?: string; address?: string; phone?: string; email?: string; website?: string; gstin?: string; fssai?: string;
@@ -147,6 +149,7 @@ const settingsSchema = new Schema<ISettings>(
       provider: { type: Boolean, default: false },
     },
     appLinks: { android: String, ios: String, rider: String, warehouse: String, provider: String },
+    theme: { brand: { type: String, trim: true }, accent: { type: String, trim: true }, darkBrand: { type: String, trim: true } },
     company: {
       name: { type: String, trim: true }, tagline: { type: String, trim: true }, address: { type: String, trim: true }, phone: { type: String, trim: true },
       email: { type: String, trim: true }, website: { type: String, trim: true }, gstin: { type: String, trim: true }, fssai: { type: String, trim: true },

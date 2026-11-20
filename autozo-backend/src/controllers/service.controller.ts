@@ -7,7 +7,7 @@ import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { created, ok, pageMeta } from '../utils/response';
-import { idOrSlugFilter } from '../utils/helpers';
+import { haversineKm, idOrSlugFilter } from '../utils/helpers';
 import { cancelDispatch, startBookingDispatch } from '../services/dispatch.service';
 import { pushToUsers } from '../services/firebase.service';
 import { createRazorpayOrder, razorpayEnabled, razorpayKeys, verifyRazorpaySignature } from '../services/razorpay.service';
@@ -43,11 +43,13 @@ export const listServices = asyncHandler(async (req, res) => {
         $geoNear: {
           near: { type: 'Point', coordinates: [lng, lat] },
           distanceField: 'distM',
-          maxDistance: (maxKm ?? 25) * 1000,
+          maxDistance: (maxKm ?? 100) * 1000,
           spherical: true,
           query: filter,
         },
       },
+      // Each provider serves only as far as they chose (1-100 km from their own location).
+      { $match: { $expr: { $lte: ['$distM', { $multiply: [{ $ifNull: ['$serviceRadiusKm', 10] }, 1000] }] } } },
       { $skip: (page - 1) * limit },
       { $limit: limit },
     ]);
@@ -81,6 +83,15 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (!service) throw new ApiError(404, 'This service is not available right now.');
   const provider = await User.findOne({ _id: service.provider, role: 'provider', providerStatus: 'approved', isActive: true }).select('_id').lean();
   if (!provider) throw new ApiError(409, 'This provider is not accepting bookings right now.');
+  // The customer must be inside the area the provider chose to serve (when both places are known).
+  const [pLng, pLat] = service.location?.coordinates ?? [0, 0];
+  if (b.address.location && (pLng || pLat)) {
+    const away = haversineKm(b.address.location.lat, b.address.location.lng, pLat, pLng);
+    const radius = service.serviceRadiusKm ?? 10;
+    if (away > radius) {
+      throw new ApiError(400, `This provider serves up to ${radius} km from their location. Your address is about ${Math.ceil(away)} km away.`);
+    }
+  }
   if (b.paymentMethod === 'online' && !(await razorpayEnabled())) throw new ApiError(400, 'Online payment is not switched on. Please choose pay-after-service.');
 
   const booking = await ServiceBooking.create({

@@ -13,6 +13,7 @@ import { ok, pageMeta } from '../utils/response';
 import { haversineKm } from '../utils/helpers';
 import { cachedSettings, loadSettings, productRules } from '../services/settings.service';
 import { mapLimit } from '../utils/mapLimit';
+import { buildPublicTheme } from '../utils/theme';
 
 const CARD_FIELDS =
   'name slug brand images icon price mrp unit stock attributes foodType rating ratingCount ratingLabel variantGroup variantLabel nameHi shop category paymentMode';
@@ -681,6 +682,8 @@ export const publicSettings = asyncHandler(async (_req, res) => {
   ok(res, {
     festival: { enabled: settings.festival?.enabled ?? false, name: settings.festival?.name || 'Festival', banner: settings.festival?.banner || null },
     appLinks: settings.appLinks ?? {},
+    /** The colours the super admin picked, already worked out for light and dark mode; null = built-in colours. */
+    theme: buildPublicTheme(settings.theme),
     // Only the pages the admin filled in, so an empty one never shows an icon.
     socialLinks: Object.fromEntries(Object.entries(settings.socialLinks ?? {}).filter(([, v]) => typeof v === 'string' && /^https?:\/\//i.test(v))),
     socialOther: (settings.socialOther ?? []).filter((s) => s.label && /^https?:\/\//i.test(s.url)).map((s) => ({ label: s.label, url: s.url })),

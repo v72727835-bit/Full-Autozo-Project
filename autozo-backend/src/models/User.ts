@@ -116,6 +116,8 @@ export interface IUser {
   };
   /** Where the provider is based: [lng, lat]. Used to ring the nearest providers. */
   providerLocation?: { type: 'Point'; coordinates: [number, number] };
+  /** How far from providerLocation the provider serves, in km (1-100). Applied to every service they list. */
+  providerRadiusKm?: number;
   /** Last time the provider app checked in; recent = online and ringable. Cleared on logout. */
   providerOnlineAt?: Date | null;
   /** A provider busy on a job (or who turned themselves off) gets no new rings. */
@@ -263,6 +265,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       default: undefined,
     },
     providerLocation: { type: pointSchema, default: undefined },
+    providerRadiusKm: { type: Number, min: 1, max: 100 },
     providerOnlineAt: { type: Date, default: null },
     providerBusy: { type: Boolean, default: false },
     providerPaused: { type: Boolean, default: false },

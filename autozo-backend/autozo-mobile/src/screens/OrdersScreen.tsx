@@ -136,7 +136,8 @@ export default function OrdersScreen() {
     <FadeSlide><View style={styles.hero}>
       <View style={{ flex: 1 }}>
         <Text style={styles.heroEyebrow}>CASH TO SUBMIT</Text>
-        <AnimatedNumber value={profile?.codPending ?? 0} format={money} style={styles.heroTitle} />
+        <AnimatedNumber value={Math.max(0, (profile?.codPending ?? 0) - (profile?.codAwaiting ?? 0))} format={money} style={styles.heroTitle} />
+        {(profile?.codAwaiting ?? 0) > 0 ? <Text style={styles.heroText}>{money(profile?.codAwaiting ?? 0)} handed in · waiting for the office to confirm</Text> : null}
         <Text style={styles.heroText}>Collected in total {money(profile?.codCollected ?? 0)}{profile?.codLimit ? ` · hand in before ${money(profile.codLimit)}` : ''}</Text>
       </View>
       <Ionicons name="cash-outline" size={44} color="#fff" />

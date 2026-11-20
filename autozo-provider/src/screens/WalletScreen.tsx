@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
-import { fetchWallet, payDues, requestWithdraw, saveWalletAccount, walletTxns } from '../api/provider';
+import { fetchWallet, payDues, payDuesOnline, requestWithdraw, saveWalletAccount, syncDuesPayments, walletTxns } from '../api/provider';
+import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { colors, radius } from '../theme';
 import { ProviderTxn, ProviderWallet } from '../types';
 import { Btn, Card, Center, Chips, ErrorText, Input, Pill, Section, StatTile, money, when } from '../ui';
@@ -33,6 +34,7 @@ export default function WalletScreen() {
   const [method, setMethod] = useState<'upi' | 'bank'>('upi');
   const [payBy, setPayBy] = useState<'wallet' | 'cash' | 'upi'>('cash');
   const [payRef, setPayRef] = useState('');
+  const [paying, setPaying] = useState<PayOrder | null>(null);
   const [acct, setAcct] = useState({ upi: '', bankHolder: '', bankNumber: '', bankIfsc: '' });
 
   const load = useCallback(async (isRefresh = false) => {
@@ -58,6 +60,7 @@ export default function WalletScreen() {
   const openDue = Math.max(0, w.due - w.duePending);
 
   return (
+    <>
     <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 40 }} keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.primary} />}>
       {w.blocked ? (
@@ -89,6 +92,12 @@ export default function WalletScreen() {
         ) : (
           <>
             <Text style={st.big}>Due now: {money(openDue)}</Text>
+            <Btn
+              title={busy === 'online' ? 'Opening payment…' : `Pay ${money(openDue)} online`}
+              disabled={busy === 'online'}
+              onPress={() => run('online', async () => { setPaying(await payDuesOnline()); }, '')}
+            />
+            <Text style={[st.muted, { marginTop: 10 }]}>Pays Autozo right here in the app and clears your commission at once. Or record a payment you made another way:</Text>
             <Chips value={payBy} onChange={setPayBy} options={[
               ...(w.balance > 0 ? [['wallet', `From wallet (${money(w.balance)})`] as const] : []),
               ['cash', 'Cash at office'] as const,
@@ -147,6 +156,13 @@ export default function WalletScreen() {
         ))}
       </Card>
     </ScrollView>
+    <OnlinePay
+      order={paying}
+      kind="dues"
+      onPaid={() => { setPaying(null); setNote('Payment received. Your commission is cleared.'); void load(); }}
+      onClose={() => { setPaying(null); void syncDuesPayments().catch(() => undefined).then(() => load()); }}
+    />
+    </>
   );
 }
 

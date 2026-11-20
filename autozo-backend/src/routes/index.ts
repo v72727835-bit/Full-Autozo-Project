@@ -18,6 +18,7 @@ import * as provider from '../controllers/provider.controller';
 import * as providerWallet from '../controllers/providerWallet.controller';
 import * as services from '../controllers/service.controller';
 import * as plans from '../controllers/subscription.controller';
+import * as dues from '../controllers/dues.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
 import { requirePlan } from '../services/subscription.service';
@@ -109,6 +110,13 @@ router.get('/subscription', ...planUser, plans.myPlan);
 router.get('/subscription/payments', ...planUser, plans.myPlanPayments);
 router.post('/subscription/pay', ...planUser, validate({ body: v.startPlanBody }), plans.startPlanPayment);
 router.post('/subscription/confirm', ...planUser, validate({ body: v.confirmPaymentBody }), plans.confirmPlanPayment);
+router.post('/subscription/sync', ...planUser, plans.syncPlanPayments);
+
+/* Riders and service providers pay the cash they owe the office online; it clears by itself */
+const duesUser = [protect, authorize('rider', 'provider', 'seller')];
+router.post('/dues/pay', ...duesUser, validate({ body: v.payDuesOnlineBody }), dues.payDues);
+router.post('/dues/confirm', ...duesUser, validate({ body: v.confirmPaymentBody }), dues.confirmDues);
+router.post('/dues/sync', ...duesUser, dues.syncDues);
 router.post('/seller/ack-orders', ...sellerOnly, seller.ackOrders);
 router.put('/seller/profile', ...sellerOnly, validate({ body: v.sellerProfileBody }), seller.saveProfile);
 router.post('/seller/uploads/images', ...sellerOnly, uploadSellerImages, uploads.uploadImages);
@@ -146,6 +154,7 @@ router.post('/provider/register', authLimiter, validate({ body: v.providerRegist
 router.post('/provider/auth/login', authLimiter, validate({ body: v.loginBody }), provider.providerLogin);
 router.get('/provider/me', ...providerOnly, provider.getMe);
 router.get('/provider/dashboard', ...providerOnly, provider.dashboard);
+router.patch('/provider/service-radius', ...providerOnly, invalidateOnWrite, validate({ body: v.providerRadiusBody }), provider.setServiceRadius);
 router.post('/provider/availability', ...providerOnly, validate({ body: v.providerAvailabilityBody }), provider.setAvailability);
 router.get('/provider/services', ...providerOnly, provider.listMyServices);
 router.post('/provider/uploads/images', ...providerOnly, uploadProviderImages, uploads.uploadImages);

@@ -5,7 +5,7 @@ import { WalletTxn } from '../models/WalletTxn';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ok, pageMeta } from '../utils/response';
-import { codSummary } from '../services/rider.service';
+import { awaitingCash, codSummary } from '../services/rider.service';
 import { earningsSeries, payRules, walletSummary } from '../services/riderPay.service';
 import { loadSettings } from '../services/settings.service';
 import { payoutForWithdrawal, razorpayxConfig, syncPayout } from '../services/razorpayx.service';
@@ -18,15 +18,18 @@ export const getWallet = asyncHandler(async (req, res) => {
   // If a RazorpayX payout is in flight for this rider, refresh its real status first.
   const inflight = await WalletTxn.findOne({ rider: id, kind: 'withdrawal', status: 'pending', payoutId: { $exists: true } }).select('_id').lean();
   if (inflight) await syncPayout(inflight._id).catch(() => undefined);
-  const [sum, cod, me] = await Promise.all([
+  const [sum, cod, me, awaiting] = await Promise.all([
     walletSummary(id),
     codSummary([new Types.ObjectId(id)]),
     User.findById(id).select('payout').lean(),
+    awaitingCash(id),
   ]);
   const c = cod.get(id);
   ok(res, {
     ...sum,
     codPending: c?.pending ?? 0,
+    /** Part of codPending the rider already handed in and the office has not confirmed yet. */
+    codAwaiting: Math.min(awaiting, c?.pending ?? 0),
     codCollected: c?.total ?? 0,
     codLimit: settings.riderCodLimit ?? 2000,
     minWithdraw: rules.minWithdraw,

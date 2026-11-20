@@ -38,6 +38,9 @@ export async function logoutRequest(refreshToken: string | null): Promise<void> 
 }
 export const providerMe = async (): Promise<Me> => (await api.get('/provider/me')).data.data;
 export const providerDashboard = async (): Promise<ProviderDashboard> => (await api.get('/provider/dashboard')).data.data;
+/** One radius (km from the provider's own base) for every service they offer. */
+export const setServiceRadius = async (serviceRadiusKm: number): Promise<{ serviceRadiusKm: number; services: number }> =>
+  (await api.patch('/provider/service-radius', { serviceRadiusKm })).data.data;
 export const setAvailability = async (available: boolean): Promise<void> => { await api.post('/provider/availability', { available }); };
 
 /* ---------- services ---------- */
@@ -91,3 +94,8 @@ export interface MyPlan {
 export const fetchMyPlan = async (): Promise<MyPlan> => (await api.get('/subscription')).data.data;
 export const startPlanPayment = async (planId: string): Promise<{ razorpayOrderId: string; amount: number; keyId: string; planName: string }> =>
   (await api.post('/subscription/pay', { planId })).data.data;
+
+export const syncPlanPayments = async (): Promise<void> => { await api.post('/subscription/sync'); };
+/** Pay the cash owed to the office online; returns the prepared Razorpay order (paise) for the in-app payment window. */
+export const payDuesOnline = async (amount?: number): Promise<{ razorpayOrderId: string; keyId: string; amount: number; rupees: number }> => (await api.post('/dues/pay', amount ? { amount } : {})).data.data;
+export const syncDuesPayments = async (): Promise<void> => { await api.post('/dues/sync'); };

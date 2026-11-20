@@ -436,8 +436,11 @@ export const adminPasswordBody = z.object({
 
 /* ---------- settings, notices, care chat, stock alerts, riders ---------- */
 
+/** A #RRGGBB colour, or '' to clear it (back to the built-in colour). */
+const themeColor = z.union([z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a colour like #0E8A3E'), z.literal('')]);
 export const adminSettingsBody = z
   .object({
+    theme: z.object({ brand: themeColor, accent: themeColor, darkBrand: themeColor }).partial(),
     festival: z
       .object({
         enabled: z.boolean(),
@@ -784,6 +787,7 @@ export const bulkProductsBody = z.object({
 /* ---------- rider / warehouse plans ---------- */
 const audience = z.enum(['rider', 'seller', 'provider']);
 export const startPlanBody = z.object({ planId: objectId });
+export const payDuesOnlineBody = z.object({ amount: z.coerce.number().min(1).max(1_000_000).optional() });
 export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional(), provider: z.boolean().optional() });
 export const planBody = z.object({
   audience,
@@ -929,6 +933,8 @@ export const providerServiceUpdateBody = providerServiceBody
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 
+/** One radius (km from their own location) for everything a provider offers. */
+export const providerRadiusBody = z.object({ serviceRadiusKm: z.number().min(1).max(100) });
 export const providerAvailabilityBody = z.object({ available: z.boolean() });
 export const providerBookingsQuery = pagination.extend({
   status: z.enum(['requested', 'accepted', 'on_the_way', 'in_progress', 'completed', 'cancelled', 'rejected', 'expired']).optional(),

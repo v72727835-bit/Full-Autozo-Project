@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   collectProviderDues,
   fetchIntegrations,
+  fetchOnlineDues,
+  OnlineDuesRow,
   fetchProviderDues,
   fetchProviderWithdrawals,
   fetchSellerWithdrawals,
@@ -52,8 +54,8 @@ const fromProvider = (w: ProviderTxnRow): Row => ({
   who: typeof w.provider === 'string' ? '—' : w.provider?.name ?? '—',
   phone: typeof w.provider === 'string' ? '' : w.provider?.phone ?? '',
 });
-type Tab = 'rider' | 'seller' | 'provider' | 'dues';
-const WHOM: Record<Exclude<Tab, 'dues'>, string> = { rider: 'rider', seller: 'seller', provider: 'service provider' };
+type Tab = 'rider' | 'seller' | 'provider' | 'dues' | 'online';
+const WHOM: Record<Exclude<Tab, 'dues' | 'online'>, string> = { rider: 'rider', seller: 'seller', provider: 'service provider' };
 
 /**
  * Where you pay your riders and sellers. Each row is a withdrawal someone asked
@@ -75,7 +77,7 @@ export default function PayoutsPage() {
   }, []);
 
   const load = () => {
-    if (tab === 'dues') return;
+    if (tab === 'dues' || tab === 'online') return;
     setLoading(true);
     const req = tab === 'rider'
       ? fetchWithdrawals(status).then(({ items, meta }) => ({ rows: items.map(fromRider), meta }))
@@ -89,7 +91,7 @@ export default function PayoutsPage() {
   };
   useEffect(load, [status, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const whom = tab === 'dues' ? '' : WHOM[tab];
+  const whom = tab === 'dues' || tab === 'online' ? '' : WHOM[tab];
   const doMark = (id: string, next: 'paid' | 'rejected', reference?: string) =>
     tab === 'rider' ? markWithdrawal(id, next, reference) : tab === 'seller' ? markSellerWithdrawal(id, next, reference) : markProviderWithdrawal(id, next, reference);
   const doPay = (id: string) => (tab === 'rider' ? payWithdrawal(id) : tab === 'seller' ? paySellerWithdrawal(id) : payProviderWithdrawal(id));
@@ -130,9 +132,10 @@ export default function PayoutsPage() {
         <button className="chip" data-active={tab === 'seller'} onClick={() => setTab('seller')}>Sellers</button>
         <button className="chip" data-active={tab === 'provider'} onClick={() => setTab('provider')}>Service providers</button>
         <button className="chip" data-active={tab === 'dues'} onClick={() => setTab('dues')}>Provider commission</button>
+        <button className="chip" data-active={tab === 'online'} onClick={() => setTab('online')}>Paid online</button>
       </div>
 
-      {tab === 'dues' ? <ProviderDues /> : (<>
+      {tab === 'online' ? <OnlineDues /> : tab === 'dues' ? <ProviderDues /> : (<>
 
       <div className="stat-row" style={{ marginBottom: 16 }}>
         <div className="card card-pad">
@@ -284,6 +287,44 @@ function ProviderDues() {
                       void run(p._id, () => collectProviderDues(p._id, amount));
                     }}>Mark collected</Button>
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** What riders and providers paid the office online: it clears their cash / commission by itself. */
+function OnlineDues() {
+  const [data, setData] = useState<Awaited<ReturnType<typeof fetchOnlineDues>> | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => { fetchOnlineDues().then(setData).catch((e) => setError(getErrorMessage(e))); }, []);
+  if (!data) return error ? <ErrorBanner message={error} /> : <CenterSpinner />;
+  const label = (r: OnlineDuesRow) => (r.kind === 'rider_cash' ? 'Rider cash' : 'Provider commission');
+  return (
+    <>
+      <div className="stat-row" style={{ marginBottom: 16 }}>
+        <div className="card card-pad"><div className="stat-label">Rider cash paid online</div><div className="stat-value">{money(data.riderCash.total)}</div><div className="cell-muted">{data.riderCash.count} payment{data.riderCash.count === 1 ? '' : 's'}</div></div>
+        <div className="card card-pad"><div className="stat-label">Provider commission paid online</div><div className="stat-value">{money(data.providerDues.total)}</div><div className="cell-muted">{data.providerDues.count} payment{data.providerDues.count === 1 ? '' : 's'}</div></div>
+      </div>
+      <div className="card">
+        <div className="card-pad"><h2 className="card-title">Paid online</h2><div className="page-subtitle">Received through Razorpay and already cleared from the rider's cash / provider's commission. Nothing to confirm.</div></div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Who</th><th>For</th><th>Amount</th><th>Payment id</th><th>When</th></tr></thead>
+            <tbody>
+              {data.rows.length === 0 ? (
+                <tr><td colSpan={5}><div className="empty-state">No online payments yet.</div></td></tr>
+              ) : data.rows.map((r) => (
+                <tr key={r._id}>
+                  <td className="cell-name">{r.user?.name ?? '—'}<div className="cell-muted">{r.user?.phone}{r.user?.providerId ? ` · ${r.user.providerId}` : ''}</div></td>
+                  <td className="cell-muted">{label(r)}</td>
+                  <td className="cell-name">{money(r.amount)}</td>
+                  <td className="cell-muted" style={{ fontFamily: 'monospace', fontSize: 12 }}>{r.paymentId ?? '—'}</td>
+                  <td className="cell-muted">{timeAgo(r.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

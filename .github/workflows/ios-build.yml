@@ -1,0 +1,96 @@
+# Builds the four apps for the iOS Simulator, unsigned, to prove they compile and bundle on iOS.
+# It does NOT make an installable .ipa: that needs the Apple Developer account, signing and the
+# Firebase plist (see docs/IOS.md).
+#
+# macOS runner minutes cost ten times the Linux ones, so:
+#   - a pull request / push builds only the customer app (one signal on pods, Firebase and Xcode);
+#   - run the workflow by hand (Actions > Build iOS > Run workflow) with app = all, or one app, to
+#     build the rest.
+name: Build iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which app to build
+        type: choice
+        default: all
+        options: [all, customer, provider, warehouse, rider]
+  pull_request:
+    paths:
+      - '**/ios/**'
+      - .github/workflows/ios-build.yml
+  push:
+    branches: [main]
+    paths:
+      - '**/ios/**'
+      - .github/workflows/ios-build.yml
+
+concurrency:
+  group: build-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Picks which apps to build (the `matrix` context cannot be used in a job-level `if`).
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          APP: ${{ inputs.app }}
+        run: |
+          all='[{"app":"customer","dir":"blinkit-app-","scheme":"AutozoApp"},{"app":"provider","dir":"autozo-provider","scheme":"AutozoProvider"},{"app":"warehouse","dir":"autozo-warehouse","scheme":"AutozoWarehouse"},{"app":"rider","dir":"autozo-backend/autozo-mobile","scheme":"AutozoApp"}]'
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ "$APP" = "all" ]; then pick="$all"; else pick=$(echo "$all" | jq -c --arg a "$APP" 'map(select(.app==$a))'); fi
+          else
+            pick=$(echo "$all" | jq -c 'map(select(.app=="customer"))')
+          fi
+          echo "matrix=$pick" >> "$GITHUB_OUTPUT"
+
+  ios:
+    needs: plan
+    runs-on: macos-15
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # npm install, not npm ci: some package-lock.json files are out of sync with package.json.
+      - name: npm install
+        run: npm install --no-audit --no-fund
+
+      - name: pod install
+        working-directory: ${{ matrix.dir }}/ios
+        run: pod install --repo-update
+
+      - name: Build for the iOS Simulator (unsigned)
+        working-directory: ${{ matrix.dir }}/ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace ${{ matrix.scheme }}.xcworkspace \
+            -scheme ${{ matrix.scheme }} \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log" | tail -n 60
+
+      - name: Keep the build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-${{ matrix.app }}
+          path: ${{ runner.temp }}/xcodebuild.log

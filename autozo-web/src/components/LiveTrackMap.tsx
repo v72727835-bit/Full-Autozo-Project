@@ -1,5 +1,6 @@
 'use client';
 
+import { brandColor } from '../lib/remoteTheme';
 import React, { useEffect, useRef, useState } from 'react';
 import { Order } from '../lib/types';
 import { kmBetween, LatLng, roadRoute, roughMinutes } from '../lib/route';
@@ -50,7 +51,7 @@ export function LiveTrackMap({ order }: { order: Order }) {
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
       // Once the customer pans or zooms, stop re-framing the map for them.
       map.on('dragstart zoomstart', () => (touched.current = true));
-      if (shop) L.marker([shop.lat, shop.lng], { icon: L.divIcon({ className: '', html: pinHtml('🏬', '', '#0e8a3e'), iconSize: [38, 38], iconAnchor: [19, 19] }), title: 'Pickup' }).addTo(map);
+      if (shop) L.marker([shop.lat, shop.lng], { icon: L.divIcon({ className: '', html: pinHtml('🏬', '', brandColor()), iconSize: [38, 38], iconAnchor: [19, 19] }), title: 'Pickup' }).addTo(map);
       if (home) L.marker([home.lat, home.lng], { icon: L.divIcon({ className: '', html: pinHtml('🏠', '', '#e0453a'), iconSize: [38, 38], iconAnchor: [19, 19] }), title: 'Your door' }).addTo(map);
       mapRef.current = map;
       setReady(true);
@@ -105,7 +106,7 @@ export function LiveTrackMap({ order }: { order: Order }) {
 
     const draw = (path: [number, number][], dashed: boolean) => {
       if (line.current) line.current.remove();
-      line.current = L.polyline(path, { color: '#0e8a3e', weight: 5, opacity: 0.85, dashArray: dashed ? '8 10' : undefined }).addTo(map);
+      line.current = L.polyline(path, { color: brandColor(), weight: 5, opacity: 0.85, dashArray: dashed ? '8 10' : undefined }).addTo(map);
     };
 
     const frame = () => {
@@ -180,9 +181,9 @@ export function LiveTrackMap({ order }: { order: Order }) {
       </div>
       <div ref={box} className={s.map} />
       <div className={s.foot}>
-        {shop ? <span className={s.key}><span className={s.dot} style={{ background: '#0e8a3e' }} /> Pickup</span> : null}
+        {shop ? <span className={s.key}><span className={s.dot} style={{ background: 'var(--brand)' }} /> Pickup</span> : null}
         {home ? <span className={s.key}><span className={s.dot} style={{ background: '#e0453a' }} /> Your door</span> : null}
-        {onTheWay && rider ? <span className={s.key}><span className={s.dot} style={{ background: '#ffd23f' }} /> Rider</span> : null}
+        {onTheWay && rider ? <span className={s.key}><span className={s.dot} style={{ background: 'var(--sun)' }} /> Rider</span> : null}
       </div>
     </section>
   );

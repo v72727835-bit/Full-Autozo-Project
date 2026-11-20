@@ -19,6 +19,7 @@ const RidersPage = dynamic(() => import('./screens/RidersPage'), { ssr: false })
 const PayoutsPage = dynamic(() => import('./screens/PayoutsPage'), { ssr: false });
 const RiderProfilePage = dynamic(() => import('./screens/RiderProfilePage'), { ssr: false });
 const SettingsStorePage = dynamic(() => import('./screens/SettingsStorePage'), { ssr: false });
+const ThemePage = dynamic(() => import('./screens/ThemePage'), { ssr: false });
 const SupportPage = dynamic(() => import('./screens/SupportPage'), { ssr: false });
 const CategoriesPage = dynamic(() => import('./screens/CategoriesPage'), { ssr: false });
 const DashboardPage = dynamic(() => import('./screens/DashboardPage'), { ssr: false });
@@ -80,6 +81,7 @@ function routePermission(pathname: string): Permission | 'super' | null {
     '/enquiries': 'enquiries',
     '/delivery-pricing': 'settings',
     '/store-settings': 'settings',
+    '/theme': 'settings',
     '/integrations': 'integrations',
     '/team': 'super',
   };
@@ -170,6 +172,8 @@ function CurrentPage({ pathname, user }: { pathname: string; user: ReturnType<ty
       return <EnquiriesPage />;
     case '/store-settings':
       return <SettingsStorePage />;
+    case '/theme':
+      return <ThemePage />;
     case '/settings':
       return <SettingsPage />;
     default:

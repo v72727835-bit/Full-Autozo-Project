@@ -79,3 +79,10 @@ yarn-error.log
 
 # Update archives
 *.zip
+
+# iOS
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/.xcode.env.local
+.xcode.env.local

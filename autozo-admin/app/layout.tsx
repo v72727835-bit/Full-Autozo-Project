@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
+import ThemeSync from '../src/components/ThemeSync';
 import { AuthProvider } from '../src/context/AuthContext';
 import '../src/styles.css';
 
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <ThemeSync />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

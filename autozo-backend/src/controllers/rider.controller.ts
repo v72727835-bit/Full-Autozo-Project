@@ -7,7 +7,7 @@ import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ok, pageMeta } from '../utils/response';
 import { RequestHandler } from 'express';
-import { autoPauseIfOverLimit, codSummary } from '../services/rider.service';
+import { autoPauseIfOverLimit, awaitingCash, codSummary } from '../services/rider.service';
 import { creditDeliveryEarning } from '../services/riderPay.service';
 import { creditSellerEarnings } from '../services/sellerPay.service';
 import { needsPlan, planRequiredError } from '../services/subscription.service';
@@ -44,6 +44,7 @@ export const getProfile = asyncHandler(async (req, res) => {
   ok(res, {
     ...rider,
     codPending: pending,
+    codAwaiting: Math.min(await awaitingCash(rider._id), pending),
     codCollected: cod?.total ?? 0,
     codLimit: limit,
     deliveredCount: cod?.deliveries ?? 0,

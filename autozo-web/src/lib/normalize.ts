@@ -200,8 +200,8 @@ export function banner(raw: RawBanner): Banner {
     cta: raw.cta || undefined,
     art: artSrc(raw.icon),
     image: raw.image || undefined,
-    from: raw.from || '#0E8A3E',
-    to: raw.to || '#0F5C32',
+    from: raw.from || 'var(--brand)',
+    to: raw.to || 'var(--plum)',
     slug: raw.slug || undefined,
     categoryName: raw.categoryName || undefined,
   };

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchCategoryTree } from '../../api/catalog';
 import { getErrorMessage } from '../../lib/client';
 import { Category } from '../../lib/types';
-import { CategoryTile } from '../../components/CategoryTile';
+import { CategoryTile, ServicesBar } from '../../components/CategoryTile';
 import { Crumbs } from '../../components/Crumbs';
 import { Alert, SectionHead } from '../../components/ui';
 import s from './categories.module.css';
@@ -28,6 +28,8 @@ export default function CategoriesPage() {
       <p className="body-sm" style={{ marginBottom: 28 }}>
         From groceries to personal care — everything in one place.
       </p>
+
+      <ServicesBar />
 
       {error ? <Alert tone="bad">{error}</Alert> : null}
 
