@@ -19,6 +19,7 @@ import * as providerWallet from '../controllers/providerWallet.controller';
 import * as services from '../controllers/service.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as dues from '../controllers/dues.controller';
+import * as geo from '../controllers/geo.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
 import { requirePlan } from '../services/subscription.service';
@@ -42,6 +43,10 @@ const authLimiter = rateLimit({
 });
 
 /* ============ Auth ============ */
+/* Pin -> city / state / PIN / address (OpenStreetMap, cached). Public, so a registration form can use it before sign-in. */
+const geoLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 120, standardHeaders: true, legacyHeaders: false, message: { success: false, message: 'Too many lookups. Please try again in a few minutes.' } });
+router.get('/geo/reverse', geoLimiter, validate({ query: v.reverseGeoQuery }), geo.reverse);
+
 router.post('/auth/register', authLimiter, validate({ body: v.registerBody }), auth.register);
 router.post('/auth/login', authLimiter, validate({ body: v.loginBody }), auth.login);
 router.post('/auth/reset-password', authLimiter, validate({ body: v.resetPasswordBody }), auth.resetPassword);

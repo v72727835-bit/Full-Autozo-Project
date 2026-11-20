@@ -787,6 +787,9 @@ export const bulkProductsBody = z.object({
 /* ---------- rider / warehouse plans ---------- */
 const audience = z.enum(['rider', 'seller', 'provider']);
 export const startPlanBody = z.object({ planId: objectId });
+/** A blank value must not turn into 0 (the sea off Africa), so it is refused before it becomes a number. */
+const coord = (limit: number) => z.string().trim().min(1).transform(Number).pipe(z.number().min(-limit).max(limit));
+export const reverseGeoQuery = z.object({ lat: coord(90), lng: coord(180) });
 export const payDuesOnlineBody = z.object({ amount: z.coerce.number().min(1).max(1_000_000).optional() });
 export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional(), provider: z.boolean().optional() });
 export const planBody = z.object({
