@@ -26,6 +26,26 @@ export async function codSummary(riderIds?: Types.ObjectId[]) {
   return new Map(rows.map((r) => [String(r._id), r]));
 }
 
+/**
+ * What a rider can pay online: the whole amount owed, or - for a smaller amount - the most that
+ * clears whole deliveries oldest first, so an online payment never leaves money unapplied.
+ * `payable` is 0 when the amount is smaller than the oldest delivery.
+ */
+export async function payableCod(riderId: Types.ObjectId | string, amount?: number): Promise<{ owed: number; payable: number; oldest: number }> {
+  const open = await Order.find({ rider: new Types.ObjectId(String(riderId)), status: 'delivered', paymentMethod: 'cod', codSettled: { $ne: true } })
+    .sort({ deliveredAt: 1, createdAt: 1 })
+    .select('total')
+    .lean();
+  const owed = open.reduce((sum, o) => sum + o.total, 0);
+  if (amount === undefined || amount + 1 >= owed) return { owed, payable: owed, oldest: open[0]?.total ?? 0 };
+  let payable = 0;
+  for (const o of open) {
+    if (payable + o.total > amount) break;
+    payable += o.total;
+  }
+  return { owed, payable, oldest: open[0]?.total ?? 0 };
+}
+
 /** Cash the rider says they handed in that the office has not confirmed yet (per rider id). */
 export async function awaitingCash(riderId: Types.ObjectId | string): Promise<number> {
   const rows = await WalletTxn.aggregate<{ total: number }>([

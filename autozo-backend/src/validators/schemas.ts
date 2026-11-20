@@ -781,6 +781,7 @@ export const bulkProductsBody = z.object({
 /* ---------- rider / warehouse plans ---------- */
 const audience = z.enum(['rider', 'seller', 'provider']);
 export const startPlanBody = z.object({ planId: objectId });
+export const payDuesOnlineBody = z.object({ amount: z.coerce.number().min(1).max(1_000_000).optional() });
 export const planSwitchesBody = z.object({ rider: z.boolean().optional(), seller: z.boolean().optional(), provider: z.boolean().optional() });
 export const planBody = z.object({
   audience,

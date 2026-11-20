@@ -17,7 +17,7 @@ import { Schema, Types, model } from 'mongoose';
  */
 export type ProviderTxnKind = 'earning' | 'commission' | 'commission_paid' | 'withdrawal' | 'adjustment';
 export type ProviderTxnStatus = 'completed' | 'pending' | 'paid' | 'rejected' | 'confirmed';
-export type ProviderTxnMethod = 'upi' | 'bank' | 'cash' | 'wallet';
+export type ProviderTxnMethod = 'upi' | 'bank' | 'cash' | 'wallet' | 'online';
 
 export interface IProviderTxn {
   provider: Types.ObjectId;
@@ -55,7 +55,7 @@ const schema = new Schema<IProviderTxn>(
     commission: { type: Number, min: 0 },
     commissionPct: { type: Number, min: 0 },
     paymentMethod: { type: String, enum: ['cod', 'online'] },
-    method: { type: String, enum: ['upi', 'bank', 'cash', 'wallet'] },
+    method: { type: String, enum: ['upi', 'bank', 'cash', 'wallet', 'online'] },
     destination: { type: String, trim: true },
     reference: { type: String, trim: true },
     payoutId: { type: String, trim: true, index: true },

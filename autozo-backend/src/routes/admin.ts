@@ -8,6 +8,7 @@ import * as seller from '../controllers/seller.controller';
 import * as provider from '../controllers/provider.controller';
 import * as providerWallet from '../controllers/providerWallet.controller';
 import * as plans from '../controllers/subscription.controller';
+import * as dues from '../controllers/dues.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
 import { adminOnly, permissionGate, superAdminOnly } from '../middleware/auth';
@@ -186,6 +187,7 @@ router.post('/withdrawals/:id/pay', validate({ params: v.idParam }), extra.payWi
 router.get('/seller-withdrawals', validate({ query: v.withdrawalsQuery }), extra.listSellerWithdrawals);
 router.post('/seller-withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), extra.markSellerWithdrawal);
 router.post('/seller-withdrawals/:id/pay', validate({ params: v.idParam }), extra.paySellerWithdrawalAdmin);
+router.get('/dues-payments', dues.adminDuesPayments);
 router.post('/cash-submits/:id/confirm', validate({ params: v.idParam }), extra.confirmCashSubmit);
 router.post('/riders/:id/bonus', validate({ params: v.idParam, body: v.walletAdjustBody }), extra.adjustRiderWallet);
 

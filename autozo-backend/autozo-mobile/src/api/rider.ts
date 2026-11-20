@@ -90,3 +90,8 @@ export async function startPlanPayment(planId: string): Promise<{ razorpayOrderI
   const { data } = await api.post('/subscription/pay', { planId });
   return data.data;
 }
+
+export const syncPlanPayments = async (): Promise<void> => { await api.post('/subscription/sync'); };
+/** Pay the cash owed to the office online; returns the prepared Razorpay order (paise) for the in-app payment window. */
+export const payDuesOnline = async (amount?: number): Promise<{ razorpayOrderId: string; keyId: string; amount: number; rupees: number }> => (await api.post('/dues/pay', amount ? { amount } : {})).data.data;
+export const syncDuesPayments = async (): Promise<void> => { await api.post('/dues/sync'); };

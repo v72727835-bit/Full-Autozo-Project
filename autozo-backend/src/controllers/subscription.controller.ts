@@ -3,7 +3,7 @@ import { ISubscriptionPayment, SubscriptionPayment } from '../models/Subscriptio
 import { SubscriptionAudience, SubscriptionPlan } from '../models/SubscriptionPlan';
 import { Settings } from '../models/Settings';
 import { IUser, User } from '../models/User';
-import { createRazorpayOrder, razorpayEnabled, razorpayKeys, verifyRazorpaySignature } from '../services/razorpay.service';
+import { capturedPaymentFor, createRazorpayOrder, razorpayEnabled, razorpayKeys, verifyRazorpaySignature } from '../services/razorpay.service';
 import { clearSettingsCache, getSettingsDoc } from '../services/settings.service';
 import { addPlanDays, audienceOf, planActive, planStatus, subscriptionSwitches } from '../services/subscription.service';
 import { ApiError } from '../utils/ApiError';
@@ -70,6 +70,27 @@ export const confirmPlanPayment = asyncHandler(async (req, res) => {
   const period = await addPlanDays(userId, payment.days);
   await SubscriptionPayment.updateOne({ _id: payment._id }, { $set: period });
   ok(res, await planStatus(userId, audience));
+});
+
+/**
+ * Recovers a plan payment whose confirmation never reached us (the app closed, the network dropped):
+ * asks Razorpay which started payments were really captured and adds those days - once each.
+ */
+export const syncPlanPayments = asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  const audience = myAudience(req.user!.role);
+  const open = await SubscriptionPayment.find({ user: userId, source: 'razorpay', status: 'created', razorpayOrderId: { $exists: true } }).sort({ createdAt: -1 }).limit(10).lean();
+  let credited = 0;
+  for (const p of open) {
+    const paymentId = await capturedPaymentFor(p.razorpayOrderId!).catch(() => null);
+    if (!paymentId) continue;
+    const payment = await SubscriptionPayment.findOneAndUpdate({ _id: p._id, status: 'created' }, { $set: { status: 'paid', paymentId } }, { new: true });
+    if (!payment) continue;
+    const period = await addPlanDays(userId, payment.days);
+    await SubscriptionPayment.updateOne({ _id: payment._id }, { $set: period });
+    credited++;
+  }
+  ok(res, { credited, plan: await planStatus(userId, audience) });
 });
 
 export const myPlanPayments = asyncHandler(async (req, res) => {

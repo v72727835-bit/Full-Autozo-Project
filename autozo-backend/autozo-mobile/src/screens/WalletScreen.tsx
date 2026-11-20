@@ -3,7 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/AuthLayout';
-import { fetchWallet, fetchWalletTxns, requestWithdraw, savePayoutAccount, submitCash } from '../api/rider';
+import { fetchWallet, fetchWalletTxns, payDuesOnline, requestWithdraw, savePayoutAccount, submitCash, syncDuesPayments } from '../api/rider';
+import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { getErrorMessage } from '../api/client';
 import { PayoutAccount, RiderWallet, WalletTxn } from '../types';
 import { colors, radius, shadow } from '../theme';
@@ -19,6 +20,8 @@ export default function WalletScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [sheet, setSheet] = useState<'withdraw' | 'account' | 'cash' | null>(null);
+  const [paying, setPaying] = useState<PayOrder | null>(null);
+  const [payBusy, setPayBusy] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -33,6 +36,11 @@ export default function WalletScreen() {
   useEffect(() => { const timer = setInterval(() => load(true), 20000); return () => clearInterval(timer); }, [load]);
   const awaiting = wallet?.codAwaiting ?? 0;
   const toSubmit = Math.max(0, (wallet?.codPending ?? 0) - awaiting);
+  /** Pay the cash owed to Autozo online, inside the app: it clears at once, no waiting for the office. */
+  const payOnline = async () => {
+    setPayBusy(true);
+    try { setPaying(await payDuesOnline()); } catch (err) { Alert.alert('Could not start the payment', getErrorMessage(err)); } finally { setPayBusy(false); }
+  };
 
   if (loading) return <ActivityIndicator color={colors.primary} style={{ marginTop: 42 }} />;
 
@@ -66,7 +74,12 @@ export default function WalletScreen() {
             {awaiting > 0 ? <Text style={styles.muted}>{money(awaiting)} handed in · waiting for the office to confirm</Text> : null}
             <Text style={styles.muted}>Collected in total {money(wallet?.codCollected ?? 0)}{wallet?.codLimit ? ` · hand in before ${money(wallet.codLimit)}` : ''}</Text>
           </View>
-          {awaiting > 0 ? null : <Button title="Submit cash" variant="outline" onPress={() => setSheet('cash')} />}
+          {awaiting > 0 || toSubmit < 1 ? null : (
+            <View style={{ gap: 8 }}>
+              <Button title={payBusy ? 'Opening…' : 'Pay online'} onPress={() => void payOnline()} disabled={payBusy} />
+              <Button title="Handed to office" variant="outline" onPress={() => setSheet('cash')} />
+            </View>
+          )}
         </View>
         </FadeSlide>
 
@@ -97,6 +110,12 @@ export default function WalletScreen() {
 
       {sheet === 'withdraw' && <WithdrawSheet wallet={wallet!} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} onNeedAccount={() => setSheet('account')} />}
       {sheet === 'account' && <AccountSheet account={wallet?.account ?? null} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} />}
+      <OnlinePay
+        order={paying}
+        kind="dues"
+        onPaid={() => { setPaying(null); load(true); }}
+        onClose={() => { setPaying(null); void syncDuesPayments().catch(() => undefined).then(() => load(true)); }}
+      />
       {sheet === 'cash' && <CashSheet pending={toSubmit} onClose={() => setSheet(null)} onDone={() => { setSheet(null); load(true); }} />}
     </>
   );

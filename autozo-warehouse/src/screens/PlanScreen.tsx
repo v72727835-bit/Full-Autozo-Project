@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
-import { MyPlan, startPlanPayment } from '../api/seller';
-import { WEB_URL } from '../config';
-import { tokenStore } from '../storage/tokens';
+import { MyPlan, startPlanPayment, syncPlanPayments } from '../api/seller';
+import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { colors } from '../theme';
 import { Btn, Card, ErrorText, H, Pill, money } from '../ui';
 
@@ -13,21 +12,19 @@ export const planLocked = (plan: MyPlan | null) => !!plan && plan.required && !p
 
 /**
  * "My plan": the warehouse's current plan and the plans the super admin offers. Paying opens the
- * website's /pay page (Razorpay runs there); coming back to the app reloads the plan.
+ * payment window inside the app (Razorpay runs in it); the plan starts as soon as the payment is done.
  */
 export default function PlanScreen({ plan, onReload }: { plan: MyPlan | null; onReload: () => Promise<void> }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [paying, setPaying] = useState<PayOrder | null>(null);
 
   const buy = async (planId: string) => {
     setBusy(planId);
     setError('');
     try {
-      const order = await startPlanPayment(planId);
-      const token = await tokenStore.getAccess();
-      const hash = `o=${encodeURIComponent(order.razorpayOrderId)}&k=${encodeURIComponent(order.keyId)}&a=${order.amount}&t=${encodeURIComponent(token ?? '')}&x=plan`;
-      await Linking.openURL(`${WEB_URL}/pay#${hash}`);
+      setPaying(await startPlanPayment(planId));
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -36,6 +33,7 @@ export default function PlanScreen({ plan, onReload }: { plan: MyPlan | null; on
   };
 
   return (
+    <>
     <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await onReload(); setRefreshing(false); }} />}>
       <H title="My plan" sub="A running plan keeps your orders and product listing open." center />
       <ErrorText message={error} />
@@ -70,8 +68,15 @@ export default function PlanScreen({ plan, onReload }: { plan: MyPlan | null; on
         ))}
         {plan && plan.plans.length === 0 ? <Text style={{ color: colors.muted, textAlign: 'center' }}>No plans are offered right now. Please contact Autozo.</Text> : null}
         {plan && plan.plans.length > 0 && !plan.canPayOnline ? <Text style={{ color: colors.muted, textAlign: 'center' }}>Online payment is switched off right now. Please contact Autozo.</Text> : null}
-        <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 4 }}>After paying, come back here and pull down to refresh.</Text>
+        <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 4 }}>You pay right here in the app. Your plan starts as soon as the payment is done.</Text>
       </View>
     </ScrollView>
+    <OnlinePay
+      order={paying}
+      kind="plan"
+      onPaid={() => { setPaying(null); void onReload(); }}
+      onClose={() => { setPaying(null); void syncPlanPayments().catch(() => undefined).then(() => onReload()); }}
+    />
+    </>
   );
 }

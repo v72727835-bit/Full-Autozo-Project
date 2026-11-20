@@ -47,6 +47,15 @@ export async function verifyRazorpaySignature(orderId: string, paymentId: string
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+/**
+ * The id of the payment Razorpay actually captured for an order, or null. Asked server to server, so
+ * it can recover a payment whose confirmation never reached us (the app closed, the network dropped).
+ */
+export async function capturedPaymentFor(orderId: string): Promise<string | null> {
+  const { items } = await call<{ items?: { id: string; status: string }[] }>('GET', `/orders/${encodeURIComponent(orderId)}/payments`);
+  return items?.find((p) => p.status === 'captured')?.id ?? null;
+}
+
 export const refundRazorpayPayment = (paymentId: string, rupees: number) =>
   call('POST', `/payments/${paymentId}/refund`, { amount: Math.round(rupees * 100) });
 
