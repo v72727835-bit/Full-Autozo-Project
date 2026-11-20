@@ -144,8 +144,6 @@ function BannerCarousel({ items: all, onPress }: { items: Banner[]; onPress: (b:
   );
 }
 
-const FALLBACK_FROM = '#0E8A3E';
-const FALLBACK_TO = '#0A4D29';
 
 /**
  * One slide. A banner uploaded from the admin panel is a picture that fills
@@ -164,8 +162,9 @@ const BannerSlide = React.memo(function BannerSlide({
   onBroken: () => void;
 }) {
   const [failed, setFailed] = useState(false);
-  const from = item.from ?? FALLBACK_FROM;
-  const to = item.to ?? FALLBACK_TO;
+  // A banner with no colours of its own follows the brand colours the super admin chose.
+  const from = item.from ?? colors.brand;
+  const to = item.to ?? colors.brandDeep;
   const photo = !!item.image && !failed;
   const label = [item.title, item.subtitle].filter(Boolean).join('. ') || item.categoryName || 'Offer';
 
