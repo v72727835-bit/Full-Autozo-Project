@@ -17,6 +17,9 @@ export async function logoutRequest(refreshToken: string | null): Promise<void> 
 }
 export const providerMe = async (): Promise<Me> => (await api.get('/provider/me')).data.data;
 export const providerDashboard = async (): Promise<ProviderDashboard> => (await api.get('/provider/dashboard')).data.data;
+/** One radius (km from the provider's own base) for every service they offer. */
+export const setServiceRadius = async (serviceRadiusKm: number): Promise<{ serviceRadiusKm: number; services: number }> =>
+  (await api.patch('/provider/service-radius', { serviceRadiusKm })).data.data;
 export const setAvailability = async (available: boolean): Promise<void> => { await api.post('/provider/availability', { available }); };
 
 /* ---------- services ---------- */

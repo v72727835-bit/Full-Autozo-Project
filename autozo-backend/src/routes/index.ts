@@ -146,6 +146,7 @@ router.post('/provider/register', authLimiter, validate({ body: v.providerRegist
 router.post('/provider/auth/login', authLimiter, validate({ body: v.loginBody }), provider.providerLogin);
 router.get('/provider/me', ...providerOnly, provider.getMe);
 router.get('/provider/dashboard', ...providerOnly, provider.dashboard);
+router.patch('/provider/service-radius', ...providerOnly, invalidateOnWrite, validate({ body: v.providerRadiusBody }), provider.setServiceRadius);
 router.post('/provider/availability', ...providerOnly, validate({ body: v.providerAvailabilityBody }), provider.setAvailability);
 router.get('/provider/services', ...providerOnly, provider.listMyServices);
 router.post('/provider/uploads/images', ...providerOnly, uploadProviderImages, uploads.uploadImages);

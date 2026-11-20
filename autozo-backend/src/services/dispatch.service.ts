@@ -47,7 +47,7 @@ async function eligibleProviderFilter() {
 }
 
 /** Approved, un-paused, free providers who offer an active listing in this category, nearest first. */
-async function bookingCandidates(
+export async function bookingCandidates(
   center: [number, number],
   category: Types.ObjectId,
   radiusKm: number,
@@ -64,6 +64,8 @@ async function bookingCandidates(
         query: { category, isActive: true },
       },
     },
+    // A provider is only rung for customers inside the radius they chose to serve.
+    { $match: { $expr: { $lte: ['$distM', { $multiply: [{ $ifNull: ['$serviceRadiusKm', 10] }, 1000] }] } } },
     { $group: { _id: '$provider', distM: { $min: '$distM' } } },
     { $sort: { distM: 1 } },
     { $limit: MAX_CANDIDATES * 2 },

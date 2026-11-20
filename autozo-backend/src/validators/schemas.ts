@@ -923,6 +923,8 @@ export const providerServiceUpdateBody = providerServiceBody
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 
+/** One radius (km from their own location) for everything a provider offers. */
+export const providerRadiusBody = z.object({ serviceRadiusKm: z.number().min(1).max(100) });
 export const providerAvailabilityBody = z.object({ available: z.boolean() });
 export const providerBookingsQuery = pagination.extend({
   status: z.enum(['requested', 'accepted', 'on_the_way', 'in_progress', 'completed', 'cancelled', 'rejected', 'expired']).optional(),

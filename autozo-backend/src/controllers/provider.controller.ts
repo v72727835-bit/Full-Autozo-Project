@@ -78,7 +78,7 @@ export const providerLogin = asyncHandler(async (req, res) => {
 /* ============ Profile & dashboard ============ */
 
 export const getMe = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user!.id).select('name phone email providerId providerStatus providerApplication providerBusy providerOnlineAt');
+  const user = await User.findById(req.user!.id).select('name phone email providerId providerStatus providerApplication providerBusy providerOnlineAt providerRadiusKm');
   if (!user) throw new ApiError(404, 'Account not found');
   if (!user.providerId) {
     for (let i = 0; !user.providerId && i < 5; i++) {
@@ -129,7 +129,7 @@ export const setAvailability = asyncHandler(async (req, res) => {
 /* ============ Service listings (CRUD) ============ */
 
 async function requireApproved(userId: string) {
-  const u = await User.findById(userId).select('providerStatus providerLocation').lean();
+  const u = await User.findById(userId).select('providerStatus providerLocation providerRadiusKm').lean();
   if (!u || u.providerStatus !== 'approved') throw new ApiError(403, 'Your account must be approved before you can add or manage services.');
   return u;
 }
@@ -144,11 +144,22 @@ export const createService = asyncHandler(async (req, res) => {
   const b = req.body as Record<string, unknown>;
   const coords = (u.providerLocation?.coordinates as [number, number]) ?? [0, 0];
   const service = await Service.create({
+    // A new listing serves as far as the provider chose for the whole account, unless it says otherwise.
+    ...(u.providerRadiusKm ? { serviceRadiusKm: u.providerRadiusKm } : {}),
     ...b,
     provider: req.user!.id,
     location: { type: 'Point', coordinates: coords },
   });
   created(res, service);
+});
+
+/** How far from their own location the provider will go: one number for every service they offer. */
+export const setServiceRadius = asyncHandler(async (req, res) => {
+  await requireApproved(req.user!.id);
+  const { serviceRadiusKm } = req.body as { serviceRadiusKm: number };
+  await User.updateOne({ _id: req.user!.id }, { $set: { providerRadiusKm: serviceRadiusKm } });
+  const result = await Service.updateMany({ provider: req.user!.id }, { $set: { serviceRadiusKm } });
+  ok(res, { serviceRadiusKm, services: result.modifiedCount });
 });
 
 export const updateService = asyncHandler(async (req, res) => {
