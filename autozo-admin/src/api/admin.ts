@@ -882,3 +882,12 @@ export const fetchOnlineDues = async (): Promise<{ rows: OnlineDuesRow[]; riderC
   const { data } = await api.get('/admin/dues-payments');
   return { rows: data.data, riderCash: data.meta.riderCash, providerDues: data.meta.providerDues };
 };
+
+/** What "Delete all customers" removes. */
+export interface CustomerPurgeCounts {
+  customers: number; bookings: number; orders: number; carts: number; reviews: number; tickets: number;
+  devices: number; payments: number; stockAlerts: number; alerts: number; dispatches: number;
+}
+export const previewCustomerPurge = async (): Promise<CustomerPurgeCounts> => (await api.get('/admin/customers/purge')).data.data;
+export const purgeAllCustomers = async (): Promise<CustomerPurgeCounts> =>
+  (await api.post('/admin/customers/purge', { confirm: 'DELETE' }, { timeout: 120000 })).data.data;
