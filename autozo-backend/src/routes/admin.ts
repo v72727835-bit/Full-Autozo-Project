@@ -11,6 +11,7 @@ import * as plans from '../controllers/subscription.controller';
 import * as dues from '../controllers/dues.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
+import * as purge from '../controllers/purge.controller';
 import { adminOnly, permissionGate, superAdminOnly } from '../middleware/auth';
 import { uploadProductImages, uploadProductVideo, uploadThumb } from '../middleware/upload';
 import { validate } from '../middleware/validate';
@@ -38,6 +39,10 @@ router.get('/stats', validate({ query: v.adminStatsQuery }), admin.stats);
 
 /* ---- Team: role-based access (super admin only) ---- */
 router.get('/permissions', admin.listPermissions);
+/* Wipe every customer and their data: super admin only, previewed first, confirmed by typing DELETE. */
+const purgeLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
+router.get('/customers/purge', superAdminOnly, purge.previewCustomerPurge);
+router.post('/customers/purge', superAdminOnly, purgeLimiter, purge.purgeAllCustomers);
 router.get('/admins', superAdminOnly, admin.listAdmins);
 router.post('/admins', superAdminOnly, validate({ body: v.adminAdminBody }), admin.createAdmin);
 router.patch('/admins/:id', superAdminOnly, validate({ params: v.idParam, body: v.adminAdminUpdateBody }), admin.updateAdmin);

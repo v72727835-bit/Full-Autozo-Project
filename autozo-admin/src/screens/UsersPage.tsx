@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import WarehouseChecks from '../components/WarehouseChecks';
+import PurgeCustomers from '../components/PurgeCustomers';
+import { useAuth } from '../context/AuthContext';
+import { isSuperAdmin } from '../lib/permissions';
 import { createRider, deleteUser, fetchShops, fetchUsers, updateUser } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, CenterSpinner, ErrorBanner, Field, Modal, Pagination, Tabs, Tone, formatDate, timeAgo } from '../components/ui';
@@ -13,6 +16,8 @@ const ROLE_TONE: Record<Role, Tone> = { admin: 'danger', shop: 'info', rider: 'b
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export default function UsersPage({ fixedRole, title = 'Users', subtitle }: { fixedRole?: Role; title?: string; subtitle?: string }) {
+  const { user } = useAuth();
+  const superAdmin = isSuperAdmin(user);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [meta, setMeta] = useState<PageMeta | null>(null);
   const [page, setPage] = useState(1);
@@ -87,6 +92,7 @@ export default function UsersPage({ fixedRole, title = 'Users', subtitle }: { fi
           <div className="page-subtitle">{subtitle ?? (meta ? `${meta.total} accounts` : '')}</div>
         </div>
         {fixedRole === 'rider' && <Button onClick={() => setShowCreate(true)}>+ Create rider</Button>}
+        {fixedRole === 'customer' && superAdmin && <PurgeCustomers onDone={load} />}
       </div>
 
       <div className="toolbar">
