@@ -15,15 +15,15 @@ export function ShareCard() {
   }, []);
   if (!info) return null;
   const link = `${SHOP_URL}/?ref=${info.code}`;
-  const send = () => { void Share.share({ message: `Order on Autozo with my link: ${link}` }).catch(() => undefined); };
+  const send = () => { void Share.share({ message: `Order on autozo with my link: ${link}` }).catch(() => undefined); };
   return (
     <View style={st.card}>
-      <Text style={st.title}>Share Autozo</Text>
+      <Text style={st.title}>Share autozo</Text>
       <Text style={st.body}>
         Your code <Text style={st.code}>{info.code}</Text>.{' '}
         {info.referred ? `${info.referred} ${info.referred === 1 ? 'person has' : 'people have'} joined with it.` : 'Anyone who signs up with it is counted as yours.'}
       </Text>
-      <Pressable onPress={send} style={st.btn} accessibilityRole="button" accessibilityLabel="Share Autozo">
+      <Pressable onPress={send} style={st.btn} accessibilityRole="button" accessibilityLabel="Share autozo">
         <Text style={st.btnText}>Share link</Text>
       </Pressable>
     </View>

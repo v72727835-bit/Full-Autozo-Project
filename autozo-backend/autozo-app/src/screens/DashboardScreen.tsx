@@ -117,7 +117,7 @@ export default function DashboardScreen() {
   };
 
   const confirmLogout = () => {
-    Alert.alert('Log out', 'Do you want to log out of Autozo?', [
+    Alert.alert('Log out', 'Do you want to log out of autozo?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log out', style: 'destructive', onPress: () => void signOut() },
     ]);

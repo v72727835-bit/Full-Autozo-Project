@@ -99,7 +99,7 @@ export default function PlanView({ plan, me, onPaid, kind = 'warehouse' }: { pla
       </div>
 
       {plan.plans.length === 0 ? (
-        <div className="card"><div className="empty-state">No plans are offered right now. Please contact Autozo.</div></div>
+        <div className="card"><div className="empty-state">No plans are offered right now. Please contact autozo.</div></div>
       ) : (
         <div className="grid grid-3">
           {plan.plans.map((p) => (
@@ -117,7 +117,7 @@ export default function PlanView({ plan, me, onPaid, kind = 'warehouse' }: { pla
           ))}
         </div>
       )}
-      {plan.plans.length > 0 && !plan.canPayOnline ? <div className="cell-muted" style={{ marginTop: 10 }}>Online payment is switched off right now. Please contact Autozo.</div> : null}
+      {plan.plans.length > 0 && !plan.canPayOnline ? <div className="cell-muted" style={{ marginTop: 10 }}>Online payment is switched off right now. Please contact autozo.</div> : null}
     </>
   );
 }

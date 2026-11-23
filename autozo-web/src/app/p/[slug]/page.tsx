@@ -27,7 +27,7 @@ export default function Page() {
   }, [slug]);
 
   useEffect(() => {
-    if (page) document.title = `${page.title} · Autozo`;
+    if (page) document.title = `${page.title} · autozo`;
   }, [page]);
 
   if (state === 'loading') {

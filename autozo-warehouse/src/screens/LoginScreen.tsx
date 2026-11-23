@@ -22,7 +22,7 @@ export default function LoginScreen({ onRegister }: { onRegister?: () => void })
   };
 
   return (
-    <AuthLayout title="Warehouse sign in" subtitle="Manage your orders, products, stock and riders with Autozo.">
+    <AuthLayout title="Warehouse sign in" subtitle="Manage your orders, products, stock and riders with autozo.">
       {error ? <ErrorBanner message={error} /> : null}
       <TextField label="Phone number or email" icon="person-outline" placeholder="9876543210" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} autoComplete="username" />
       <TextField label="Password" icon="lock-closed-outline" placeholder="Your password" value={password} onChangeText={setPassword} secure inputRef={passwordRef} returnKeyType="done" onSubmitEditing={submit} autoComplete="password" />

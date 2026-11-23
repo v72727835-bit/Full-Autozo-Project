@@ -624,7 +624,7 @@ export const updateIntegrationsAdmin = asyncHandler(async (req, res) => {
 /** Proves the service account works with Google, then sends a test push to the admin's own devices (if any). */
 export const testFirebaseAdmin = asyncHandler(async (req, res) => {
   const projectId = await checkServiceAccount();
-  const sent = await pushToUsers([req.user!.id], { title: 'Autozo test', body: 'Push notifications are working.' });
+  const sent = await pushToUsers([req.user!.id], { title: 'autozo test', body: 'Push notifications are working.' });
   ok(res, { projectId, sentToYourDevices: sent });
 });
 

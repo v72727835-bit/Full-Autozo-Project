@@ -31,7 +31,7 @@ export const sellerLogin = asyncHandler(async (req, res) => {
   if (!user || !(await user.comparePassword(password))) throw new ApiError(401, 'Invalid phone/email or password');
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
   if (user.role !== 'seller') throw new ApiError(403, 'This login is only for sellers.');
-  if (user.sellerStatus === 'pending') throw new ApiError(403, 'Your registration is waiting for approval. We will let you in as soon as the Autozo team approves it.');
+  if (user.sellerStatus === 'pending') throw new ApiError(403, 'Your registration is waiting for approval. We will let you in as soon as the autozo team approves it.');
   if (user.sellerStatus === 'rejected') throw new ApiError(403, `Your registration was not approved${user.sellerRejectReason ? `: ${user.sellerRejectReason}` : '.'} Please contact support.`);
   const accessToken = signAccessToken(user.id, user.role);
   const refreshToken = signRefreshToken(user.id);
@@ -87,7 +87,7 @@ export const saveProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user!.id).select('sellerProfile sellerId');
   if (!user) throw new ApiError(404, 'Seller not found');
   if (user.sellerProfile?.locked) {
-    throw new ApiError(409, 'Your details are saved and cannot be edited. Contact Autozo support to change them.');
+    throw new ApiError(409, 'Your details are saved and cannot be edited. Contact autozo support to change them.');
   }
   let sellerId = user.sellerId;
   for (let i = 0; !sellerId && i < 5; i++) {
@@ -133,7 +133,7 @@ export const createMyProduct = asyncHandler(async (req, res) => {
   if (!category) throw new ApiError(400, 'Choose the child category your product belongs to.');
   // Sellers cannot set a sort code or points: the admin does. New listings fall in A-Z order.
   const mine = (me.sellerWarehouses ?? []).map(String);
-  if (!mine.length) throw new ApiError(409, 'No warehouse is assigned to you yet. Ask Autozo support to assign one.');
+  if (!mine.length) throw new ApiError(409, 'No warehouse is assigned to you yet. Ask autozo support to assign one.');
   const warehouse = body.warehouse ?? (mine.length === 1 ? mine[0] : undefined);
   if (!warehouse) throw new ApiError(400, 'Choose the warehouse this product is stocked in.');
   if (!mine.includes(warehouse)) throw new ApiError(403, 'That warehouse is not assigned to you.');
@@ -147,7 +147,7 @@ export const bulkCreateMyProducts = asyncHandler(async (req, res) => {
   const me = await User.findById(req.user!.id).select('sellerWarehouses').lean();
   if (!me) throw new ApiError(404, 'Account not found');
   const shopIds = (me.sellerWarehouses ?? []).map(String);
-  if (!shopIds.length) throw new ApiError(409, 'No warehouse is assigned to you yet. Ask Autozo support to assign one.');
+  if (!shopIds.length) throw new ApiError(409, 'No warehouse is assigned to you yet. Ask autozo support to assign one.');
   const { rows, dryRun } = req.body as { rows: Record<string, unknown>[]; dryRun?: boolean };
   ok(res, await importProducts(rows, { mode: 'seller', sellerId: req.user!.id, shopIds, dryRun }));
 });
@@ -401,7 +401,7 @@ export const registerWarehouse = asyncHandler(async (req, res) => {
     },
   });
   await AdminAlert.create({ type: 'warehouse_registered', message: `New warehouse "${b.shopName}" (${b.city}) registered and is waiting for approval`, user: user._id });
-  created(res, { message: 'Registration received. You can log in once the Autozo team approves it.' });
+  created(res, { message: 'Registration received. You can log in once the autozo team approves it.' });
 });
 
 export const adminListWarehouseApplications = asyncHandler(async (req, res) => {

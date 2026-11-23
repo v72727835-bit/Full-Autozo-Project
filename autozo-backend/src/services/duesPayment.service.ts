@@ -39,7 +39,7 @@ async function payableFor(userId: string, kind: DuesKind, asked?: number): Promi
 
 export async function startDuesPayment(userId: string, role: string | undefined, asked?: number) {
   const kind = kindOf(role);
-  if (!(await razorpayEnabled())) throw new ApiError(503, 'Online payment is not switched on. Please contact Autozo.');
+  if (!(await razorpayEnabled())) throw new ApiError(503, 'Online payment is not switched on. Please contact autozo.');
   const amount = await payableFor(userId, kind, asked);
   if (amount < MIN_RUPEES) throw new ApiError(400, `Online payment needs at least ₹${MIN_RUPEES}. Hand this small amount to the office instead.`);
   const order = await createRazorpayOrder(amount, `dues-${Date.now()}`, { user: userId, kind });
@@ -80,7 +80,7 @@ async function claimAndCredit(filter: Record<string, unknown>, paymentId: string
 /** The app says the payment went through: verify the signature, then credit (once). */
 export async function confirmDuesPayment(userId: string, ids: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): Promise<void> {
   if (!(await verifyRazorpaySignature(ids.razorpay_order_id, ids.razorpay_payment_id, ids.razorpay_signature))) {
-    throw new ApiError(400, 'We could not verify this payment. If money was deducted, contact Autozo with the payment id.');
+    throw new ApiError(400, 'We could not verify this payment. If money was deducted, contact autozo with the payment id.');
   }
   const filter = { razorpayOrderId: ids.razorpay_order_id, user: userId };
   if (await claimAndCredit(filter, ids.razorpay_payment_id)) return;

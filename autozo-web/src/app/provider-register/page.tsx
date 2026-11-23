@@ -15,8 +15,8 @@ import { getErrorMessage } from '../../lib/client';
 import { PANEL_URL } from '../../lib/config';
 
 const HERO = {
-  kicker: 'Partner with Autozo',
-  title: 'Grow your business with Autozo Services',
+  kicker: 'Partner with autozo',
+  title: 'Grow your business with autozo Services',
   lead: 'Plumber, electrician, car wash, salon, cleaning, repairs: list your services and get bookings from customers in your area.',
   perks: [
     { icon: 'pin' as const, text: 'Bookings from customers near you' },
@@ -24,7 +24,7 @@ const HERO = {
     { icon: 'clock' as const, text: 'Choose your days & timings' },
     { icon: 'bell' as const, text: 'New bookings ring on your phone' },
   ],
-  steps: ['Fill this form', 'Autozo team approves you', 'Add services & get bookings'],
+  steps: ['Fill this form', 'autozo team approves you', 'Add services & get bookings'],
 };
 
 /** A service provider registers itself; the Autozo team approves it, then it signs in to its own panel or app. */
@@ -196,7 +196,7 @@ export default function ProviderRegisterPage() {
           </Field>
         </FormGroup>
 
-        <p className={p.note}>By submitting, you agree that Autozo may verify your details before approving your account. You can sign in only after approval.</p>
+        <p className={p.note}>By submitting, you agree that autozo may verify your details before approving your account. You can sign in only after approval.</p>
         <Button type="submit" size="lg" full loading={busy}>
           Submit for approval
         </Button>

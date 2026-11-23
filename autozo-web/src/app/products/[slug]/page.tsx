@@ -320,7 +320,7 @@ export default function ProductPage() {
           <ul className={s.promises}>
             <li>
               <Icon name="shield" size={16} />
-              Fulfilled by Autozo
+              Fulfilled by autozo
             </li>
             <li>
               <Icon name="wallet" size={16} />

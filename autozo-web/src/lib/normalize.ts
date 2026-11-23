@@ -187,7 +187,7 @@ export function review(raw: RawReview): Review {
     id: idOf(raw),
     rating: raw.rating,
     comment: raw.comment || undefined,
-    userName: user?.name || 'Autozo customer',
+    userName: user?.name || 'autozo customer',
     createdAt: raw.createdAt,
   };
 }

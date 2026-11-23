@@ -62,8 +62,8 @@ export default function ContactPage() {
     return (
       <PartnerShell
         active="rider"
-        kicker="Deliver with Autozo"
-        title="Become an Autozo rider"
+        kicker="Deliver with autozo"
+        title="Become an autozo rider"
         lead="Deliver orders in your own area and earn every day. Leave your details and our team will call you."
         perks={[
           { icon: 'pin', text: 'Short routes near your home' },

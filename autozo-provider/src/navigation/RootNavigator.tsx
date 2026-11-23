@@ -102,7 +102,7 @@ export default function RootNavigator() {
   if (initializing) return (
     <View style={styles.splash}>
       <FadeSlide><Pulse style={styles.splashLogo}><Image source={LOGO} style={styles.splashLogoImg} /></Pulse></FadeSlide>
-      <FadeSlide delay={120}><Text style={styles.brand}>Autozo Provider</Text></FadeSlide>
+      <FadeSlide delay={120}><Text style={styles.brand}>autozo Provider</Text></FadeSlide>
       <FadeSlide delay={220}><Text style={styles.splashTag}>Your services, your bookings</Text></FadeSlide>
       <ActivityIndicator color={colors.primary} style={{ marginTop: 22 }} />
     </View>

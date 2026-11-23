@@ -12,7 +12,7 @@ const ENTRY: Record<ProviderTxnRow['kind'], string> = {
   commission: 'Commission due (cash booking)',
   commission_paid: 'Commission paid',
   withdrawal: 'Withdrawal',
-  adjustment: 'Credit from Autozo',
+  adjustment: 'Credit from autozo',
 };
 
 /** Money in or out of the withdrawable balance (+ / −), or a due that does not touch it (blank). */
@@ -69,7 +69,7 @@ export default function ProviderWalletView() {
           <div className="page-subtitle">
             {w.hasPlan
               ? 'Your plan is running: no commission on your bookings.'
-              : `No plan: Autozo keeps ${w.planCommissionPct}% commission on each completed booking. Buy a plan for 0% commission.`}
+              : `No plan: autozo keeps ${w.planCommissionPct}% commission on each completed booking. Buy a plan for 0% commission.`}
           </div>
         </div>
       </div>
@@ -105,8 +105,8 @@ export default function ProviderWalletView() {
               <Field label="Pay by">
                 <select value={payMethod} onChange={(e) => setPayMethod(e.target.value as 'wallet' | 'cash' | 'upi')}>
                   <option value="wallet" disabled={w.balance <= 0}>From my wallet ({money(w.balance)}) — instant</option>
-                  <option value="cash">Cash at the Autozo office</option>
-                  <option value="upi">UPI to Autozo</option>
+                  <option value="cash">Cash at the autozo office</option>
+                  <option value="upi">UPI to autozo</option>
                 </select>
               </Field>
               {payMethod === 'upi' ? <Field label="UPI transaction id"><input value={payRef} onChange={(e) => setPayRef(e.target.value)} placeholder="e.g. 4321XXXXXXXX" /></Field> : null}
@@ -131,7 +131,7 @@ export default function ProviderWalletView() {
           </Field>
           <Button
             disabled={busy === 'wd' || w.balance < w.minWithdraw || !Number(amount)}
-            onClick={() => run('wd', async () => { await providerRequestWithdraw(Number(amount), method); setAmount(''); }, 'Withdrawal requested. The Autozo team will verify and pay it.')}
+            onClick={() => run('wd', async () => { await providerRequestWithdraw(Number(amount), method); setAmount(''); }, 'Withdrawal requested. The autozo team will verify and pay it.')}
           >{busy === 'wd' ? 'Requesting…' : 'Request withdrawal'}</Button>
         </div>
 
@@ -152,7 +152,7 @@ export default function ProviderWalletView() {
         <div className="card card-pad">
           <h2 className="card-title">How your money works</h2>
           <ul className="cell-muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-            <li><b>Online booking:</b> the customer pays Autozo; your share{w.commissionPct ? ` (after ${w.commissionPct}% commission)` : ''} comes to this wallet when you complete the job.</li>
+            <li><b>Online booking:</b> the customer pays autozo; your share{w.commissionPct ? ` (after ${w.commissionPct}% commission)` : ''} comes to this wallet when you complete the job.</li>
             <li><b>Cash booking:</b> you keep the cash.{w.commissionPct ? ` The ${w.commissionPct}% commission is added to “Commission due”.` : ' With your plan there is no commission.'}</li>
             <li>When commission due goes over {money(w.dueLimit)}, new bookings stop until the office confirms your payment.</li>
           </ul>

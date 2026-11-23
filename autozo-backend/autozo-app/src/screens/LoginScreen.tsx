@@ -74,7 +74,7 @@ export default function LoginScreen({ navigation }: Props) {
       <Button title="Log in" onPress={onSubmit} loading={submitting} style={{ marginTop: 4 }} />
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>New to Autozo? </Text>
+        <Text style={styles.footerText}>New to autozo? </Text>
         <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={8}>
           <Text style={styles.link}>Create an account</Text>
         </Pressable>

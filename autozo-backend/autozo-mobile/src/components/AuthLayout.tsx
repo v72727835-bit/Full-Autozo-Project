@@ -30,7 +30,7 @@ export function AuthLayout({ title, subtitle, children }: Props) {
                 <Image source={LOGO} style={styles.logoImg} />
               </Pulse>
               <View>
-                <Text style={styles.brand}>Autozo</Text>
+                <Text style={styles.brand}>autozo</Text>
                 <Text style={styles.brandSub}>Rider partner</Text>
               </View>
             </View>

@@ -28,7 +28,7 @@ const navTheme = {
 function Splash() {
   return (
     <View style={styles.splash}>
-      <Text style={styles.brand}>Autozo</Text>
+      <Text style={styles.brand}>autozo</Text>
       <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} />
     </View>
   );

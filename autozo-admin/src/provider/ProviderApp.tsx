@@ -77,7 +77,7 @@ export default function ProviderApp() {
     return () => clearInterval(t);
   }, [ring.length]);
   useEffect(() => {
-    document.title = ring.length > 0 ? `(${ring.length}) New booking · Autozo Provider` : 'Autozo Provider';
+    document.title = ring.length > 0 ? `(${ring.length}) New booking · autozo Provider` : 'autozo Provider';
   }, [ring.length]);
 
   const approved = me?.providerStatus === 'approved';
@@ -129,8 +129,8 @@ export default function ProviderApp() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <img className="logo-mark" src="/logo-mark.png" alt="Autozo" width={36} height={36} />
-          <div className="logo-text"><b>Autozo</b><span>Service Provider</span></div>
+          <img className="logo-mark" src="/logo-provider.png" alt="autozo" width={36} height={36} />
+          <div className="logo-text"><b>autozo</b><span>Service Provider</span></div>
         </div>
         <div className="sidebar-scroll">
           <div className="nav-section">Panel</div>

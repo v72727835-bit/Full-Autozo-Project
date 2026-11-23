@@ -653,7 +653,7 @@ function CompanyCard({ settings, onSave }: { settings: Settings; onSave: (patch:
         <ImageField label="Round seal / stamp" hint="PNG with a transparent background." value={f.seal} onChange={(v) => set('seal', v)} />
         <ImageField label="Signature" hint="Signature on a transparent or white background." value={f.signature} onChange={(v) => set('signature', v)} />
         <div />
-        <Field label="Company name"><input value={f.name} onChange={(e) => set('name', e.target.value)} placeholder="Autozo Retail Pvt Ltd" /></Field>
+        <Field label="Company name"><input value={f.name} onChange={(e) => set('name', e.target.value)} placeholder="autozo Retail Pvt Ltd" /></Field>
         <Field label="Tagline"><input value={f.tagline} onChange={(e) => set('tagline', e.target.value)} placeholder="Groceries in minutes" /></Field>
         <Field label="Phone"><input value={f.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
         <Field label="Email"><input value={f.email} onChange={(e) => set('email', e.target.value)} /></Field>

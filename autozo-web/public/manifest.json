@@ -1,7 +1,7 @@
 {
-  "name": "Autozo — Groceries in minutes",
-  "short_name": "Autozo",
-  "description": "Autozo se grocery, fruits, veggies aur daily zarooratein chand minute mein mangwayein.",
+  "name": "autozo — Groceries in minutes",
+  "short_name": "autozo",
+  "description": "autozo se grocery, fruits, veggies aur daily zarooratein chand minute mein mangwayein.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

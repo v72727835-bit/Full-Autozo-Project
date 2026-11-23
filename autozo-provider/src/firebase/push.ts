@@ -47,7 +47,7 @@ export async function registerPush(app: 'provider', onForeground: (title: string
     // Ring pushes are shown by the ring overlay (with the loud bell), not as a pop-up.
     const offMessage = messaging().onMessage((m) => {
       if (m.data?.type === 'ring') return;
-      onForeground(m.notification?.title ?? 'Autozo', m.notification?.body ?? '');
+      onForeground(m.notification?.title ?? 'autozo', m.notification?.body ?? '');
     });
     // So the bell still reaches a phone that has been idle for a while (asked once).
     bell.allowBackgroundRinging();

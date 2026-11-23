@@ -27,7 +27,7 @@ function Splash() {
       <FadeSlide>
         <Pulse style={styles.splashLogo}><Image source={LOGO} style={styles.splashLogoImg} /></Pulse>
       </FadeSlide>
-      <FadeSlide delay={120}><Text style={styles.brand}>Autozo Rider</Text></FadeSlide>
+      <FadeSlide delay={120}><Text style={styles.brand}>autozo Rider</Text></FadeSlide>
       <FadeSlide delay={220}><Text style={styles.splashTag}>Deliver happiness, earn every ride</Text></FadeSlide>
       <ActivityIndicator color={colors.primary} style={{ marginTop: 22 }} />
     </View>
@@ -39,7 +39,7 @@ function Offline({ onRetry }: { onRetry: () => void }) {
     <View style={styles.splash}>
       <Image source={LOGO} style={[styles.splashLogoImg, { marginBottom: 18 }]} />
       <Text style={styles.brand}>No connection</Text>
-      <Text style={[styles.splashTag, { paddingHorizontal: 32 }]}>Cannot reach Autozo. Check your internet and try again.</Text>
+      <Text style={[styles.splashTag, { paddingHorizontal: 32 }]}>Cannot reach autozo. Check your internet and try again.</Text>
       <Button title="Try again" onPress={onRetry} style={{ marginTop: 22, alignSelf: 'stretch', marginHorizontal: 40 }} />
     </View>
   );

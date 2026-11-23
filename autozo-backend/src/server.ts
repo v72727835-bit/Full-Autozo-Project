@@ -9,7 +9,7 @@ import { startDispatchSweep } from './services/dispatch.service';
 async function main() {
   await connectDB();
   const server = app.listen(env.PORT, () => {
-    console.log(`Autozo API running on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+    console.log(`autozo API running on http://localhost:${env.PORT} (${env.NODE_ENV})`);
     // Legacy backfill must not block Passenger startup or the health route.
     void Product.updateMany({ sortCode: { $exists: false } }, { $set: { sortCode: 1_000_000 } })
       .catch((error) => console.error('Product sort-code backfill failed:', error));

@@ -24,7 +24,7 @@ export default function PublicPayPage() {
     const kind = params.get('x');
 
     if (!orderId || !keyId || !Number.isFinite(amount) || amount <= 0 || !token) {
-      setMessage('This payment link is invalid or incomplete. Return to the Autozo app and try again.');
+      setMessage('This payment link is invalid or incomplete. Return to the autozo app and try again.');
       setState('error');
       return;
     }
@@ -35,8 +35,8 @@ export default function PublicPayPage() {
         keyId,
         orderId,
         amountPaise: amount,
-        name: 'Autozo provider',
-        description: kind === 'plan' ? 'Autozo provider plan' : 'Autozo payment',
+        name: 'autozo provider',
+        description: kind === 'plan' ? 'autozo provider plan' : 'autozo payment',
       });
       const confirmPath = kind === 'booking' ? '/bookings/online/confirm' : kind === 'plan' ? '/subscription/confirm' : '/orders/online/confirm';
       await axios.post(`${API_URL}${confirmPath}`, paid, {
@@ -62,13 +62,13 @@ export default function PublicPayPage() {
   return (
     <main style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 20, background: 'var(--bg, #f7f7f8)' }}>
       <section className="card card-pad" style={{ width: 'min(100%, 460px)', textAlign: 'center' }}>
-        <img src="/logo-mark.png" alt="Autozo" width={56} height={56} style={{ objectFit: 'contain', margin: '0 auto 16px' }} />
+        <img src="/logo-mark.png" alt="autozo" width={56} height={56} style={{ objectFit: 'contain', margin: '0 auto 16px' }} />
         {state === 'loading' || state === 'paying' ? (
-          <><CenterSpinner /><h1 style={{ margin: '18px 0 6px' }}>Secure Autozo payment</h1><p className="cell-muted">{state === 'paying' ? 'Complete payment in the Razorpay window.' : 'Preparing your payment…'}</p></>
+          <><CenterSpinner /><h1 style={{ margin: '18px 0 6px' }}>Secure autozo payment</h1><p className="cell-muted">{state === 'paying' ? 'Complete payment in the Razorpay window.' : 'Preparing your payment…'}</p></>
         ) : state === 'done' ? (
-          <><h1 style={{ margin: '0 0 8px' }}>Payment received</h1><p className="cell-muted">Your payment is confirmed. Return to the Autozo Provider app and refresh your plan.</p></>
+          <><h1 style={{ margin: '0 0 8px' }}>Payment received</h1><p className="cell-muted">Your payment is confirmed. Return to the autozo Provider app and refresh your plan.</p></>
         ) : (
-          <><h1 style={{ margin: '0 0 8px' }}>Payment could not be completed</h1><ErrorBanner message={message} /><Button onClick={() => void run()} style={{ marginTop: 16 }}>Try again</Button><p className="cell-muted" style={{ marginTop: 14 }}>If money was deducted, keep the payment ID and contact Autozo support.</p></>
+          <><h1 style={{ margin: '0 0 8px' }}>Payment could not be completed</h1><ErrorBanner message={message} /><Button onClick={() => void run()} style={{ marginTop: 16 }}>Try again</Button><p className="cell-muted" style={{ marginTop: 14 }}>If money was deducted, keep the payment ID and contact autozo support.</p></>
         )}
       </section>
     </main>

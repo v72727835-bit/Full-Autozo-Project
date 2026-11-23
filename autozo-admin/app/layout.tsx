@@ -5,8 +5,8 @@ import { AuthProvider } from '../src/context/AuthContext';
 import '../src/styles.css';
 
 export const metadata: Metadata = {
-  title: 'Autozo Admin',
-  description: 'Autozo super admin panel',
+  title: 'autozo Admin',
+  description: 'autozo super admin panel',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

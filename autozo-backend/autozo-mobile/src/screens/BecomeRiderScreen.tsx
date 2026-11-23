@@ -57,10 +57,10 @@ export default function BecomeRiderScreen({ navigation }: Props) {
 
   if (done) {
     return (
-      <AuthLayout title="Application received!" subtitle="Thanks for your interest in riding with Autozo.">
+      <AuthLayout title="Application received!" subtitle="Thanks for your interest in riding with autozo.">
         <View style={styles.doneRow}>
           <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-          <Text style={styles.doneText}>{done} Once a warehouse or the Autozo team sets up your rider login, come back here and sign in with the mobile number and password they give you.</Text>
+          <Text style={styles.doneText}>{done} Once a warehouse or the autozo team sets up your rider login, come back here and sign in with the mobile number and password they give you.</Text>
         </View>
         <Button title="Back to sign in" onPress={() => navigation.goBack()} style={{ marginTop: 4 }} />
       </AuthLayout>
@@ -68,7 +68,7 @@ export default function BecomeRiderScreen({ navigation }: Props) {
   }
 
   return (
-    <AuthLayout title="Become a rider" subtitle="Leave your details and the Autozo team will get in touch to set up your rider account.">
+    <AuthLayout title="Become a rider" subtitle="Leave your details and the autozo team will get in touch to set up your rider account.">
       {error ? <ErrorBanner message={error} /> : null}
       <TextField label="Full name" icon="person-outline" placeholder="e.g. Suresh Yadav" value={f.fullName} onChangeText={set('fullName')} autoCapitalize="words" returnKeyType="next" onSubmitEditing={() => mobileRef.current?.focus()} />
       <TextField label="Mobile number" icon="call-outline" placeholder="9876543210" value={f.mobile} onChangeText={set('mobile')} keyboardType="phone-pad" maxLength={14} inputRef={mobileRef} returnKeyType="next" onSubmitEditing={() => emailRef.current?.focus()} />

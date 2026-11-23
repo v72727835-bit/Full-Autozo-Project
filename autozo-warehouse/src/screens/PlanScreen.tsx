@@ -66,8 +66,8 @@ export default function PlanScreen({ plan, onReload }: { plan: MyPlan | null; on
             </View>
           </Card>
         ))}
-        {plan && plan.plans.length === 0 ? <Text style={{ color: colors.muted, textAlign: 'center' }}>No plans are offered right now. Please contact Autozo.</Text> : null}
-        {plan && plan.plans.length > 0 && !plan.canPayOnline ? <Text style={{ color: colors.muted, textAlign: 'center' }}>Online payment is switched off right now. Please contact Autozo.</Text> : null}
+        {plan && plan.plans.length === 0 ? <Text style={{ color: colors.muted, textAlign: 'center' }}>No plans are offered right now. Please contact autozo.</Text> : null}
+        {plan && plan.plans.length > 0 && !plan.canPayOnline ? <Text style={{ color: colors.muted, textAlign: 'center' }}>Online payment is switched off right now. Please contact autozo.</Text> : null}
         <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 4 }}>You pay right here in the app. Your plan starts as soon as the payment is done.</Text>
       </View>
     </ScrollView>

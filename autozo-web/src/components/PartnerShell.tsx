@@ -37,7 +37,7 @@ export function PartnerShell({
     <div className={`page rise ${s.wrap}`}>
       <div className={s.topRow}>
         <BackButton />
-        <nav className={s.tabs} aria-label="Join Autozo as">
+        <nav className={s.tabs} aria-label="Join autozo as">
           {TABS.map((t) => (
             <Link key={t.kind} href={t.href} className={`${s.tab} ${t.kind === active ? s.tabOn : ''}`} aria-current={t.kind === active ? 'page' : undefined}>
               <Icon name={t.icon} size={15} />

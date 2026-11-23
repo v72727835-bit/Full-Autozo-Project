@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
-  return <AuthLayout title="Rider sign in" subtitle="Manage pickups and deliveries with Autozo.">
+  return <AuthLayout title="Rider sign in" subtitle="Manage pickups and deliveries with autozo.">
     {formError ? <ErrorBanner message={formError} /> : null}
     <TextField label="Rider mobile number or email" icon="person-outline" placeholder="9876543210" value={identifier} onChangeText={setIdentifier} error={errors.identifier} keyboardType="email-address" returnKeyType="next" onSubmitEditing={() => passwordRef.current?.focus()} autoComplete="username" />
     <TextField label="Password" icon="lock-closed-outline" placeholder="Your rider password" value={password} onChangeText={setPassword} error={errors.password} secure inputRef={passwordRef} returnKeyType="done" onSubmitEditing={onSubmit} autoComplete="password" />

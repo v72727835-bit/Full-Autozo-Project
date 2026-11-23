@@ -115,7 +115,7 @@ export async function sendPlanReminders(): Promise<number> {
     const days = Math.max(1, Math.ceil((new Date(u.subscriptionUntil!).getTime() - now.getTime()) / DAY_MS));
     await pushToUsers([u._id], {
       title: 'Your plan ends soon',
-      body: `Your Autozo plan ends in ${days} day${days === 1 ? '' : 's'}. Renew it to keep ${u.role === 'rider' ? 'getting orders' : u.role === 'provider' ? 'getting bookings' : 'your orders and products running'}.`,
+      body: `Your autozo plan ends in ${days} day${days === 1 ? '' : 's'}. Renew it to keep ${u.role === 'rider' ? 'getting orders' : u.role === 'provider' ? 'getting bookings' : 'your orders and products running'}.`,
       data: { type: 'subscription' },
     }).catch(() => 0);
     await User.updateOne({ _id: u._id, subscriptionUntil: u.subscriptionUntil }, { $set: { subscriptionRemindedFor: u.subscriptionUntil } });

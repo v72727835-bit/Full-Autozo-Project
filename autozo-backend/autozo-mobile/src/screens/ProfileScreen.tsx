@@ -68,7 +68,7 @@ export default function ProfileScreen() {
 
       <ShareCard />
       <Button title="Log out" variant="outline" onPress={() => void signOut()} style={{ marginTop: 22 }} />
-      <Text style={styles.version}>Autozo Rider</Text>
+      <Text style={styles.version}>autozo Rider</Text>
     </ScrollView>
   );
 }

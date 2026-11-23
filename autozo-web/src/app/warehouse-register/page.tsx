@@ -14,16 +14,16 @@ import { appDownloads } from '../../lib/apps';
 import { getErrorMessage } from '../../lib/client';
 
 const HERO = {
-  kicker: 'Sell on Autozo',
+  kicker: 'Sell on autozo',
   title: 'Take your shop online',
-  lead: 'List your products on Autozo and sell to customers in your area. We bring the orders and the riders.',
+  lead: 'List your products on autozo and sell to customers in your area. We bring the orders and the riders.',
   perks: [
     { icon: 'pin' as const, text: 'Orders from customers nearby' },
-    { icon: 'truck' as const, text: 'Autozo riders deliver for you' },
+    { icon: 'truck' as const, text: 'autozo riders deliver for you' },
     { icon: 'rupee' as const, text: 'Clear earnings & payouts' },
     { icon: 'package' as const, text: 'Easy app to add products' },
   ],
-  steps: ['Fill this form', 'Autozo team approves', 'Add products & get orders'],
+  steps: ['Fill this form', 'autozo team approves', 'Add products & get orders'],
 };
 
 /** A warehouse registers itself here; the Autozo team approves it, then it signs in to its own panel. */
@@ -175,7 +175,7 @@ export default function WarehouseRegisterPage() {
           </div>
         </FormGroup>
 
-        <p className={p.note}>The Autozo team reviews every warehouse before it goes live. You can sign in after approval.</p>
+        <p className={p.note}>The autozo team reviews every warehouse before it goes live. You can sign in after approval.</p>
         <Button type="submit" size="lg" full loading={busy}>
           Submit for approval
         </Button>

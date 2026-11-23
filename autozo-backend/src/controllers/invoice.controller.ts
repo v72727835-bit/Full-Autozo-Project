@@ -80,7 +80,7 @@ export const renderInvoice = asyncHandler(async (req, res) => {
       social: (settings?.socialLinks ?? {}) as Record<string, string | undefined>,
       siteUrl: site,
       gst,
-      supplier: { name: shop?.name || company.name || 'Autozo', address: shopAddress || company.address || '', gstin, phone: shop?.phone || company.phone, stateText: `${from.name} (${from.code})` },
+      supplier: { name: shop?.name || company.name || 'autozo', address: shopAddress || company.address || '', gstin, phone: shop?.phone || company.phone, stateText: `${from.name} (${from.code})` },
       placeOfSupply: to ? `${to.name} (${to.code})` : order.address.state || from.name,
     },
     kind,

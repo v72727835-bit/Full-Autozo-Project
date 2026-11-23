@@ -96,7 +96,7 @@ function Shell() {
           <View style={styles.brandMark}><Image source={LOGO} style={{ width: 26, height: 26, borderRadius: 8 }} /></View>
         )}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={styles.appbarTitle} numberOfLines={1}>{tab === 'more' && !more ? 'Autozo Warehouse' : sectionTitle}</Text>
+          <Text style={styles.appbarTitle} numberOfLines={1}>{tab === 'more' && !more ? 'autozo Warehouse' : sectionTitle}</Text>
           <Text style={styles.appbarSub} numberOfLines={1}>{warehouse}</Text>
         </View>
         <Pressable onPress={() => { setTab('orders'); setMore(null); }} style={styles.appbarBtn}>
@@ -137,7 +137,7 @@ export default function RootNavigator() {
   if (initializing) return (
     <View style={styles.splash}>
       <FadeSlide><Pulse style={styles.splashLogo}><Image source={LOGO} style={styles.splashLogoImg} /></Pulse></FadeSlide>
-      <FadeSlide delay={120}><Text style={styles.brand}>Autozo Warehouse</Text></FadeSlide>
+      <FadeSlide delay={120}><Text style={styles.brand}>autozo Warehouse</Text></FadeSlide>
       <FadeSlide delay={220}><Text style={styles.splashTag}>Run your store, your way</Text></FadeSlide>
       <ActivityIndicator color={colors.primary} style={{ marginTop: 22 }} />
     </View>

@@ -70,7 +70,7 @@ export function PwaRegister() {
         <Icon name="download" size={19} />
       </span>
       <span className={s.text}>
-        <b>Install Autozo</b>
+        <b>Install autozo</b>
         <span className={s.sub}>Add it to your home screen for faster access</span>
       </span>
       <button
