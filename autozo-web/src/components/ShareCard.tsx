@@ -21,11 +21,11 @@ export function ShareCard() {
 
   if (!user || !info) return null;
   const link = `${window.location.origin}/?ref=${info.code}`;
-  const text = `Order on Autozo with my link: ${link}`;
+  const text = `Order on autozo with my link: ${link}`;
 
   const share = async () => {
     try {
-      if (navigator.share) { await navigator.share({ title: 'Autozo', text, url: link }); return; }
+      if (navigator.share) { await navigator.share({ title: 'autozo', text, url: link }); return; }
     } catch (err) {
       if ((err as Error)?.name === 'AbortError') return;
     }
@@ -37,7 +37,7 @@ export function ShareCard() {
 
   return (
     <section id="share" style={{ border: '1px solid var(--border)', borderRadius: 14, padding: 16, margin: '16px 0', background: 'var(--surface)' }}>
-      <h2 style={{ margin: 0, fontSize: 17 }}>Share Autozo</h2>
+      <h2 style={{ margin: 0, fontSize: 17 }}>Share autozo</h2>
       <p style={{ margin: '6px 0 12px', color: 'var(--text-soft)', fontSize: 14 }}>
         Your code <strong>{info.code}</strong>. {info.referred ? `${info.referred} ${info.referred === 1 ? 'person has' : 'people have'} joined with it.` : 'Anyone who signs up with it is counted as yours.'}
       </p>

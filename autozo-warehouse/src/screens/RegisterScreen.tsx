@@ -113,7 +113,7 @@ export default function RegisterScreen({ onBack }: Props) {
         gst: f.gst.trim() || undefined,
         note: f.note.trim() || undefined,
       });
-      setDone(message || 'Registration received. You can log in once the Autozo team approves it.');
+      setDone(message || 'Registration received. You can log in once the autozo team approves it.');
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -123,7 +123,7 @@ export default function RegisterScreen({ onBack }: Props) {
 
   if (done) {
     return (
-      <AuthLayout title="Registration received!" subtitle="Thanks for registering your warehouse with Autozo.">
+      <AuthLayout title="Registration received!" subtitle="Thanks for registering your warehouse with autozo.">
         <View style={styles.doneRow}>
           <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
           <Text style={styles.doneText}>{done} Once approved, sign in with your mobile number and password to add products and take orders.</Text>
@@ -134,7 +134,7 @@ export default function RegisterScreen({ onBack }: Props) {
   }
 
   return (
-    <AuthLayout title="Register your warehouse" subtitle="Takes about 2 minutes. The Autozo team reviews every warehouse before it goes live.">
+    <AuthLayout title="Register your warehouse" subtitle="Takes about 2 minutes. The autozo team reviews every warehouse before it goes live.">
       {error ? <ErrorBanner message={error} /> : null}
 
       <Text style={styles.section}>Your details</Text>

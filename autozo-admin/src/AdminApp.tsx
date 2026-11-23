@@ -145,9 +145,9 @@ function CurrentPage({ pathname, user }: { pathname: string; user: ReturnType<ty
     case '/subscriptions':
       return <SubscriptionsPage />;
     case '/rider-accounts':
-      return <UsersPage fixedRole="rider" title="Riders" subtitle="Delivery partners authorised to collect and deliver Autozo orders." />;
+      return <UsersPage fixedRole="rider" title="Riders" subtitle="Delivery partners authorised to collect and deliver autozo orders." />;
     case '/customers':
-      return <UsersPage fixedRole="customer" title="Customers" subtitle="All customers registered on the Autozo app and website." />;
+      return <UsersPage fixedRole="customer" title="Customers" subtitle="All customers registered on the autozo app and website." />;
     case '/team':
       return <TeamPage />;
     case '/ads':

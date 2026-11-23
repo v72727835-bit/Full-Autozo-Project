@@ -13,7 +13,7 @@ export default function LoginPage() {
   const panelName = kind === 'seller' ? 'Warehouse Panel' : kind === 'provider' ? 'Service Provider Panel' : 'Super Admin Panel';
   const panelSub =
     kind === 'seller'
-      ? 'Sign in with the warehouse login Autozo gave you to manage products, orders and riders.'
+      ? 'Sign in with the warehouse login autozo gave you to manage products, orders and riders.'
       : kind === 'provider'
         ? 'Sign in to manage your services, prices, times and bookings. New bookings ring until you accept them.'
         : 'Sign in to manage products, orders, riders and offers.';
@@ -39,9 +39,9 @@ export default function LoginPage() {
     <div className="login-wrap">
       <form className="login-card" onSubmit={submit}>
         <div className="login-logo">
-          <img className="logo-mark" src="/logo-mark.png" alt="Autozo" width={36} height={36} />
+          <img className="logo-mark" src={kind === 'seller' ? '/logo-warehouse.png' : kind === 'provider' ? '/logo-provider.png' : '/logo-mark.png'} alt="autozo" width={36} height={36} />
           <div className="logo-text">
-            <b style={{ fontSize: 18 }}>Autozo</b>
+            <b style={{ fontSize: 18 }}>autozo</b>
             <span>{panelName}</span>
           </div>
         </div>

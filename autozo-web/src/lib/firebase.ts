@@ -82,7 +82,7 @@ function otpErrorMessage(e: unknown): string {
   if (code.includes('code-expired') || code.includes('session-expired')) return 'That code has expired. Please request a new one.';
   if (code.includes('captcha')) return 'Could not verify that you are human. Please reload the page and try again.';
   if (code.includes('quota-exceeded')) return 'We cannot send more OTPs right now. Please try again later.';
-  if (code.includes('operation-not-allowed') || code.includes('billing')) return `OTP SMS is switched off right now (${code}). Please contact Autozo support.`;
+  if (code.includes('operation-not-allowed') || code.includes('billing')) return `OTP SMS is switched off right now (${code}). Please contact autozo support.`;
   return `Could not send the OTP. Please try again.${code ? ` (${code})` : ''}`;
 }
 
@@ -108,6 +108,6 @@ export async function onForegroundPush(fb: FirebaseSettings, handler: (m: { titl
   const { isSupported, getMessaging, onMessage } = await import('firebase/messaging');
   if (!(await isSupported())) return () => undefined;
   return onMessage(getMessaging(await getApp(fb.config)), (p) =>
-    handler({ title: p.notification?.title ?? 'Autozo', body: p.notification?.body ?? '', url: p.data?.url }),
+    handler({ title: p.notification?.title ?? 'autozo', body: p.notification?.body ?? '', url: p.data?.url }),
   );
 }

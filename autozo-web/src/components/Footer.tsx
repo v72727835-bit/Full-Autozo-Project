@@ -12,7 +12,7 @@ const JOIN_LINKS = [
   { href: '/contact/delivery-partner', label: 'Become a rider' },
   { href: '/warehouse-register', label: 'Register your warehouse' },
   { href: '/provider-register', label: 'Become a service provider' },
-  { href: '/profile#share', label: 'Share Autozo & invite friends' },
+  { href: '/profile#share', label: 'Share autozo & invite friends' },
 ];
 import { Icon } from './Icon';
 import { LanguageMenu } from './LanguageMenu';

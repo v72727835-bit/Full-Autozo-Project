@@ -27,7 +27,7 @@ export function AuthLayout({ title, subtitle, children }: Props) {
             <View style={styles.brandRow}>
               <Pulse style={styles.logo}><Image source={LOGO} style={styles.logoImg} /></Pulse>
               <View>
-                <Text style={styles.brand}>Autozo</Text>
+                <Text style={styles.brand}>autozo</Text>
                 <Text style={styles.brandSub}>Warehouse partner</Text>
               </View>
             </View>

@@ -126,7 +126,7 @@ const pct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2)}%`;
 
 function a4(d: InvoiceData): string {
   const { order: o, company: c, gst: g } = d;
-  const name = c.name || 'Autozo';
+  const name = c.name || 'autozo';
   const logo = safeUrl(c.logo);
   const sign = safeUrl(c.signature);
   const seal = safeUrl(c.seal);
@@ -219,7 +219,7 @@ td{padding:6px 5px;border-bottom:1px solid #e5e7eb;vertical-align:top}.c{text-al
 
 function pos(d: InvoiceData): string {
   const { order: o, company: c } = d;
-  const name = c.name || 'Autozo';
+  const name = c.name || 'autozo';
   const logo = safeUrl(c.logo);
   const sign = safeUrl(c.signature);
   const seal = safeUrl(c.seal);
@@ -276,6 +276,6 @@ function pos(d: InvoiceData): string {
 
 export function renderInvoiceHtml(d: InvoiceData, format: 'a4' | 'pos', altQuery: string, autoPrint: boolean): string {
   const body = (format === 'pos' ? pos(d) : a4(d)).replace('{ALT}', esc(altQuery));
-  const title = `${d.order.orderNumber} - ${d.company.name || 'Autozo'}`;
+  const title = `${d.order.orderNumber} - ${d.company.name || 'autozo'}`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head><body>${body}${autoPrint ? '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},400)})</script>' : ''}</body></html>`;
 }

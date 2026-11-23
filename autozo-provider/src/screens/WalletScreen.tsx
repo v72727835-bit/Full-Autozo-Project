@@ -12,7 +12,7 @@ const ENTRY: Record<ProviderTxn['kind'], string> = {
   commission: 'Commission due (cash booking)',
   commission_paid: 'Commission paid',
   withdrawal: 'Withdrawal',
-  adjustment: 'Credit from Autozo',
+  adjustment: 'Credit from autozo',
 };
 const sign = (t: ProviderTxn) =>
   t.kind === 'earning' || t.kind === 'adjustment' ? '+' : t.kind === 'withdrawal' || (t.kind === 'commission_paid' && t.method === 'wallet') ? '−' : '';
@@ -72,7 +72,7 @@ export default function WalletScreen() {
         </View>
       ) : null}
       <Text style={st.hint}>
-        {w.hasPlan ? 'Your plan is running: no commission on your bookings.' : `No plan: Autozo keeps ${w.planCommissionPct}% on each completed booking. Buy a plan for 0% commission.`}
+        {w.hasPlan ? 'Your plan is running: no commission on your bookings.' : `No plan: autozo keeps ${w.planCommissionPct}% on each completed booking. Buy a plan for 0% commission.`}
       </Text>
 
       <ErrorText message={error} />
@@ -97,11 +97,11 @@ export default function WalletScreen() {
               disabled={busy === 'online'}
               onPress={() => run('online', async () => { setPaying(await payDuesOnline()); }, '')}
             />
-            <Text style={[st.muted, { marginTop: 10 }]}>Pays Autozo right here in the app and clears your commission at once. Or record a payment you made another way:</Text>
+            <Text style={[st.muted, { marginTop: 10 }]}>Pays autozo right here in the app and clears your commission at once. Or record a payment you made another way:</Text>
             <Chips value={payBy} onChange={setPayBy} options={[
               ...(w.balance > 0 ? [['wallet', `From wallet (${money(w.balance)})`] as const] : []),
               ['cash', 'Cash at office'] as const,
-              ['upi', 'UPI to Autozo'] as const,
+              ['upi', 'UPI to autozo'] as const,
             ]} />
             {payBy === 'upi' ? <Input label="UPI transaction id" value={payRef} onChangeText={setPayRef} placeholder="e.g. 4321XXXXXXXX" /> : null}
             <View style={{ marginTop: 10 }}>
@@ -123,7 +123,7 @@ export default function WalletScreen() {
         <Chips value={method} onChange={setMethod} options={[['upi', `UPI${acct.upi ? ` (${acct.upi})` : ''}`], ['bank', `Bank${acct.bankNumber ? ` (${acct.bankNumber.slice(-4)})` : ''}`]] as const} />
         <View style={{ marginTop: 10 }}>
           <Btn title={busy === 'wd' ? 'Requesting…' : 'Request withdrawal'} disabled={busy === 'wd' || w.balance < w.minWithdraw || !Number(amount)}
-            onPress={() => run('wd', async () => { await requestWithdraw(Number(amount), method); setAmount(''); }, 'Withdrawal requested. The Autozo team will verify and pay it.')} />
+            onPress={() => run('wd', async () => { await requestWithdraw(Number(amount), method); setAmount(''); }, 'Withdrawal requested. The autozo team will verify and pay it.')} />
         </View>
       </Card>
 

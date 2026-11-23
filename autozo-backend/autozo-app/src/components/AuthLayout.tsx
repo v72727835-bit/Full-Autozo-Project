@@ -24,7 +24,7 @@ export function AuthLayout({ title, subtitle, children }: Props) {
             <View style={styles.logo}>
               <Ionicons name="bag-handle" size={26} color="#fff" />
             </View>
-            <Text style={styles.brand}>Autozo</Text>
+            <Text style={styles.brand}>autozo</Text>
           </View>
 
           <Text style={styles.title}>{title}</Text>

@@ -130,7 +130,7 @@ export async function payProviderWithdrawal(txnId: string | Types.ObjectId): Pro
   if (txn.status !== 'pending') throw new ApiError(409, 'This withdrawal was already handled.');
   if (txn.payoutId) throw new ApiError(409, 'A payout was already started for this withdrawal.');
   const method = txn.method === 'bank' ? 'bank' : 'upi';
-  const { payoutId, status } = await createUserPayout(txn.provider, txn.amount, method, String(txn._id), 'Autozo provider payout');
+  const { payoutId, status } = await createUserPayout(txn.provider, txn.amount, method, String(txn._id), 'autozo provider payout');
   txn.payoutId = payoutId;
   txn.payoutStatus = status;
   txn.reference = payoutId;

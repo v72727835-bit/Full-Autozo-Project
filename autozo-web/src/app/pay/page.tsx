@@ -46,7 +46,7 @@ export default function PayPage() {
     }
     try {
       setState('paying');
-      const paid = await payWithRazorpay({ keyId, orderId, amountPaise: amount, name: '', description: plan ? 'Your Autozo plan' : booking ? 'Your Autozo booking' : dues ? 'Amount due to Autozo' : undefined });
+      const paid = await payWithRazorpay({ keyId, orderId, amountPaise: amount, name: '', description: plan ? 'Your autozo plan' : booking ? 'Your autozo booking' : dues ? 'Amount due to autozo' : undefined });
       const confirmPath = plan ? '/subscription/confirm' : dues ? '/dues/confirm' : booking ? '/bookings/online/confirm' : '/orders/online/confirm';
       await axios.post(`${API_URL}${confirmPath}`, paid, { headers: { Authorization: `Bearer ${token}` }, timeout: 30000 });
       setState('done');
@@ -71,7 +71,7 @@ export default function PayPage() {
         <>
           <h1 className="h1">Payment received</h1>
           <p className="body-sm" style={{ margin: '8px 0 20px' }}>
-            {forPlan ? 'Thank you! Your plan is active. Go back to the app and pull down to refresh.' : forDues ? 'Thank you! Your payment is received and your balance is updated. Go back to the app.' : 'Thank you! Your order is placed. Go back to the Autozo app to see it.'}
+            {forPlan ? 'Thank you! Your plan is active. Go back to the app and pull down to refresh.' : forDues ? 'Thank you! Your payment is received and your balance is updated. Go back to the app.' : 'Thank you! Your order is placed. Go back to the autozo app to see it.'}
           </p>
         </>
       ) : null}
@@ -80,7 +80,7 @@ export default function PayPage() {
           <Alert tone="bad">{message}</Alert>
           <p className="body-sm" style={{ margin: '12px 0 16px' }}>
             {forPlan || forDues
-              ? 'If money was deducted and it does not show in the app, open the app and pull down to refresh, or contact Autozo with the payment id.'
+              ? 'If money was deducted and it does not show in the app, open the app and pull down to refresh, or contact autozo with the payment id.'
               : 'If money was deducted it is refunded automatically. Your cart in the app is safe.'}
           </p>
           <Button onClick={run}>Try again</Button>

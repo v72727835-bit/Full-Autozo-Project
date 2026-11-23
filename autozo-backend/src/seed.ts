@@ -85,15 +85,15 @@ async function main() {
   });
 
   const owners = await User.create([
-    { name: 'Autozo Daily Owner', phone: '9000000001', password: 'Shop@1234', role: 'shop' },
-    { name: 'Autozo Fresh Owner', phone: '9000000002', password: 'Shop@1234', role: 'shop' },
-    { name: 'Autozo Bazaar Owner', phone: '9000000003', password: 'Shop@1234', role: 'shop' },
+    { name: 'autozo Daily Owner', phone: '9000000001', password: 'Shop@1234', role: 'shop' },
+    { name: 'autozo Fresh Owner', phone: '9000000002', password: 'Shop@1234', role: 'shop' },
+    { name: 'autozo Bazaar Owner', phone: '9000000003', password: 'Shop@1234', role: 'shop' },
   ]);
 
   /* ---------------- shops ---------------- */
   const shops = await Shop.create([
     {
-      name: 'Autozo Daily',
+      name: 'autozo Daily',
       description: 'Everyday grocery, dairy and fresh produce delivered in minutes.',
       owner: owners[0]._id,
       phone: '9000000001',
@@ -106,7 +106,7 @@ async function main() {
       deliveryRadiusKm: 9,
     },
     {
-      name: 'Autozo Fresh',
+      name: 'autozo Fresh',
       description: 'Fruits, vegetables, meat and everything that has to arrive cold.',
       owner: owners[1]._id,
       phone: '9000000002',
@@ -119,7 +119,7 @@ async function main() {
       deliveryRadiusKm: 10,
     },
     {
-      name: 'Autozo Bazaar',
+      name: 'autozo Bazaar',
       description: 'Beauty, electronics, home care and the things you did not plan to buy.',
       owner: owners[2]._id,
       phone: '9000000003',
@@ -203,7 +203,7 @@ async function main() {
             ratingCount: 40 + Math.round(r * 9600),
             soldCount: Math.round(r * 900),
             tags: [brand.toLowerCase(), child.name.toLowerCase(), category.name.toLowerCase()],
-            description: `${name} from ${brand}. ${unit} pack, delivered fresh from your nearest Autozo store.`,
+            description: `${name} from ${brand}. ${unit} pack, delivered fresh from your nearest autozo store.`,
           });
           stats.products++;
         }

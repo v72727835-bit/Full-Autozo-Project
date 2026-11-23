@@ -39,7 +39,7 @@ export function ProfileScreen(_props: TabScreenProps) {
   const toast = useToast();
 
   const confirmSignOut = () =>
-    Alert.alert('Sign out of Autozo?', 'Your cart and saved items stay on your account.', [
+    Alert.alert('Sign out of autozo?', 'Your cart and saved items stay on your account.', [
       { text: 'Stay signed in', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
     ]);
@@ -131,7 +131,7 @@ export function ProfileScreen(_props: TabScreenProps) {
               </Txt>
             </View>
             <Txt variant="h2" tone="onBrand" center numberOfLines={2} style={styles.name}>
-              {user?.name ?? 'Autozo customer'}
+              {user?.name ?? 'autozo customer'}
             </Txt>
             <Txt variant="bodySm" center style={styles.identityMeta} numberOfLines={1}>
               +91 {user?.phone}
@@ -182,7 +182,7 @@ export function ProfileScreen(_props: TabScreenProps) {
         <View style={styles.footer}>
           <LogoMark size={30} style={styles.footerMark} />
           <Txt variant="caption" tone="faint" center>
-            Autozo {'·'} version 1.0.0
+            autozo {'·'} version 1.0.0
           </Txt>
           <Txt variant="caption" tone="faint" center style={styles.footerNote}>
             Made for neighbourhood shops.

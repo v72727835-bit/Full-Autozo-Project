@@ -93,9 +93,9 @@ export const CATALOG: SeedGroup[] = [
             name: 'Cuts & Sprouts',
             icon: 'green-salad',
             products: [
-              ['Cut Mixed Vegetables', 'Autozo Fresh', 68, 85, '500 g', 'veg', ['Ready to Cook']],
-              ['Moong Sprouts', 'Autozo Fresh', 38, 49, '200 g', 'veg', ['Protein Rich']],
-              ['Grated Coconut', 'Autozo Fresh', 45, 60, '200 g', 'veg'],
+              ['Cut Mixed Vegetables', 'autozo Fresh', 68, 85, '500 g', 'veg', ['Ready to Cook']],
+              ['Moong Sprouts', 'autozo Fresh', 38, 49, '200 g', 'veg', ['Protein Rich']],
+              ['Grated Coconut', 'autozo Fresh', 45, 60, '200 g', 'veg'],
             ],
           },
         ],
@@ -242,9 +242,9 @@ export const CATALOG: SeedGroup[] = [
             name: 'Eggs',
             icon: 'egg',
             products: [
-              ['Farm Fresh White Eggs', 'Autozo Fresh', 78, 95, '6 pcs', 'nonveg'],
-              ['Brown Eggs Cage Free', 'Autozo Fresh', 112, 139, '6 pcs', 'nonveg', ['Cage Free']],
-              ['Country Eggs (Desi)', 'Autozo Fresh', 96, 120, '6 pcs', 'nonveg', ['Desi']],
+              ['Farm Fresh White Eggs', 'autozo Fresh', 78, 95, '6 pcs', 'nonveg'],
+              ['Brown Eggs Cage Free', 'autozo Fresh', 112, 139, '6 pcs', 'nonveg', ['Cage Free']],
+              ['Country Eggs (Desi)', 'autozo Fresh', 96, 120, '6 pcs', 'nonveg', ['Desi']],
             ],
           },
           {
@@ -253,7 +253,7 @@ export const CATALOG: SeedGroup[] = [
             products: [
               ['Amul Fresh Paneer', 'Amul', 96, 112, '200 g', 'veg'],
               ['Mother Dairy Malai Paneer', 'Mother Dairy', 102, 120, '200 g', 'veg'],
-              ['Soft Tofu Block', 'Autozo Fresh', 88, 110, '200 g', 'veg', ['Soya']],
+              ['Soft Tofu Block', 'autozo Fresh', 88, 110, '200 g', 'veg', ['Soya']],
             ],
           },
           {
@@ -309,7 +309,7 @@ export const CATALOG: SeedGroup[] = [
             products: [
               ['Britannia Premium Bake Rusk', 'Britannia', 62, 72, '300 g', 'veg'],
               ['Parle Elaichi Rusk', 'Parle', 55, 65, '300 g', 'veg', ['Elaichi']],
-              ['Butter Khari Puff', 'Autozo Bakes', 48, 60, '200 g', 'veg'],
+              ['Butter Khari Puff', 'autozo Bakes', 48, 60, '200 g', 'veg'],
             ],
           },
           {
@@ -377,26 +377,26 @@ export const CATALOG: SeedGroup[] = [
             name: 'Chicken',
             icon: 'poultry-leg',
             products: [
-              ['Chicken Curry Cut With Skin', 'Autozo Meat', 218, 275, '500 g', 'nonveg', ['Curry Cut']],
-              ['Chicken Boneless Breast', 'Autozo Meat', 289, 359, '450 g', 'nonveg', ['Boneless']],
-              ['Chicken Drumsticks', 'Autozo Meat', 249, 310, '450 g', 'nonveg'],
+              ['Chicken Curry Cut With Skin', 'autozo Meat', 218, 275, '500 g', 'nonveg', ['Curry Cut']],
+              ['Chicken Boneless Breast', 'autozo Meat', 289, 359, '450 g', 'nonveg', ['Boneless']],
+              ['Chicken Drumsticks', 'autozo Meat', 249, 310, '450 g', 'nonveg'],
             ],
           },
           {
             name: 'Mutton',
             icon: 'cut-of-meat',
             products: [
-              ['Mutton Curry Cut', 'Autozo Meat', 489, 599, '500 g', 'nonveg', ['Curry Cut']],
-              ['Mutton Keema', 'Autozo Meat', 452, 549, '500 g', 'nonveg', ['Minced']],
+              ['Mutton Curry Cut', 'autozo Meat', 489, 599, '500 g', 'nonveg', ['Curry Cut']],
+              ['Mutton Keema', 'autozo Meat', 452, 549, '500 g', 'nonveg', ['Minced']],
             ],
           },
           {
             name: 'Fish & Seafood',
             icon: 'fish',
             products: [
-              ['Rohu Fish Curry Cut', 'Autozo Meat', 289, 359, '500 g', 'nonveg'],
-              ['Prawns Medium Cleaned', 'Autozo Meat', 389, 479, '400 g', 'nonveg', ['Deveined']],
-              ['Surmai Fish Steaks', 'Autozo Meat', 549, 679, '500 g', 'nonveg'],
+              ['Rohu Fish Curry Cut', 'autozo Meat', 289, 359, '500 g', 'nonveg'],
+              ['Prawns Medium Cleaned', 'autozo Meat', 389, 479, '400 g', 'nonveg', ['Deveined']],
+              ['Surmai Fish Steaks', 'autozo Meat', 549, 679, '500 g', 'nonveg'],
             ],
           },
           {
@@ -707,15 +707,15 @@ export const CATALOG: SeedGroup[] = [
             products: [
               ['Pass Pass Pulse Candy', 'Pass Pass', 25, 30, '100 g', 'veg', ['Tangy']],
               ['Rajnigandha Silver Pearls', 'Rajnigandha', 65, 75, '50 g', 'veg', ['Elaichi']],
-              ['Chandan Mukhwas', 'Autozo Fresh', 55, 68, '100 g', 'veg'],
+              ['Chandan Mukhwas', 'autozo Fresh', 55, 68, '100 g', 'veg'],
             ],
           },
           {
             name: 'Paan Ingredients',
             icon: 'herb',
             products: [
-              ['Gulkand Rose Petal Jam', 'Autozo Fresh', 89, 110, '200 g', 'veg'],
-              ['Saunf Coated Colourful', 'Autozo Fresh', 48, 60, '100 g', 'veg'],
+              ['Gulkand Rose Petal Jam', 'autozo Fresh', 89, 110, '200 g', 'veg'],
+              ['Saunf Coated Colourful', 'autozo Fresh', 48, 60, '100 g', 'veg'],
             ],
           },
         ],
@@ -1055,7 +1055,7 @@ export const CATALOG: SeedGroup[] = [
             products: [
               ['Origami Kitchen Towel Rolls', 'Origami', 199, 249, '2 rolls', '', ['Absorbent']],
               ['Premium Toilet Paper Rolls', 'Origami', 289, 349, '4 rolls', '', ['3 Ply']],
-              ['Garbage Bags Medium', 'Autozo Home', 149, 189, '90 pcs', '', ['Biodegradable']],
+              ['Garbage Bags Medium', 'autozo Home', 149, 189, '90 pcs', '', ['Biodegradable']],
             ],
           },
         ],
@@ -1069,8 +1069,8 @@ export const CATALOG: SeedGroup[] = [
             name: 'Bedsheets & Furnishing',
             icon: 'bed',
             products: [
-              ['Cotton Double Bedsheet with 2 Pillow Covers', 'Autozo Home', 899, 1499, '1 set', '', ['Cotton']],
-              ['Microfibre Pillow Pair', 'Autozo Home', 649, 999, '2 pcs', '', ['Soft']],
+              ['Cotton Double Bedsheet with 2 Pillow Covers', 'autozo Home', 899, 1499, '1 set', '', ['Cotton']],
+              ['Microfibre Pillow Pair', 'autozo Home', 649, 999, '2 pcs', '', ['Soft']],
               ['Cotton Bath Towel Large', 'Bombay Dyeing', 449, 699, '1 pc', '', ['Cotton']],
             ],
           },
@@ -1078,9 +1078,9 @@ export const CATALOG: SeedGroup[] = [
             name: 'Home Decor & Plants',
             icon: 'potted-plant',
             products: [
-              ['Money Plant in Ceramic Pot', 'Autozo Home', 349, 499, '1 pc', '', ['Indoor']],
-              ['Scented Candle Jar Vanilla', 'Autozo Home', 299, 449, '1 pc', '', ['Vanilla']],
-              ['Photo Frame Set of 3', 'Autozo Home', 449, 699, '3 pcs', ''],
+              ['Money Plant in Ceramic Pot', 'autozo Home', 349, 499, '1 pc', '', ['Indoor']],
+              ['Scented Candle Jar Vanilla', 'autozo Home', 299, 449, '1 pc', '', ['Vanilla']],
+              ['Photo Frame Set of 3', 'autozo Home', 449, 699, '3 pcs', ''],
             ],
           },
           {
@@ -1088,8 +1088,8 @@ export const CATALOG: SeedGroup[] = [
             icon: 'candle',
             products: [
               ['Cycle Agarbatti Three in One', 'Cycle', 89, 110, '120 sticks', '', ['Fragrant']],
-              ['Brass Diya Set', 'Autozo Home', 399, 599, '2 pcs', '', ['Brass']],
-              ['Pure Cotton Wicks (Batti)', 'Autozo Home', 49, 65, '100 pcs', ''],
+              ['Brass Diya Set', 'autozo Home', 399, 599, '2 pcs', '', ['Brass']],
+              ['Pure Cotton Wicks (Batti)', 'autozo Home', 49, 65, '100 pcs', ''],
             ],
           },
         ],
@@ -1148,7 +1148,7 @@ export const CATALOG: SeedGroup[] = [
             products: [
               ['Classmate Notebook Single Line', 'Classmate', 175, 220, '6 pcs', '', ['172 Pages']],
               ['A4 Copier Paper Ream', 'JK', 349, 449, '500 sheets', '', ['75 GSM']],
-              ['Sticky Notes Assorted', 'Autozo Office', 99, 149, '5 pads', ''],
+              ['Sticky Notes Assorted', 'autozo Office', 99, 149, '5 pads', ''],
             ],
           },
           {
@@ -1166,7 +1166,7 @@ export const CATALOG: SeedGroup[] = [
             products: [
               ['UNO Flip Card Game', 'Mattel', 399, 599, '1 pack', '', ['2-10 Players']],
               ['Funskool Chess Set', 'Funskool', 449, 699, '1 set', ''],
-              ['Ludo King Board Game', 'Autozo Play', 249, 399, '1 set', ''],
+              ['Ludo King Board Game', 'autozo Play', 249, 399, '1 set', ''],
             ],
           },
         ],
@@ -1199,7 +1199,7 @@ export const CATALOG: SeedGroup[] = [
             icon: 'paw-prints',
             products: [
               ['Himalaya Erina EP Pet Shampoo', 'Himalaya', 249, 299, '200 ml', '', ['Tick Control']],
-              ['Pet Grooming Brush', 'Autozo Pet', 299, 449, '1 pc', ''],
+              ['Pet Grooming Brush', 'autozo Pet', 299, 449, '1 pc', ''],
             ],
           },
         ],

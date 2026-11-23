@@ -29,7 +29,7 @@ export const startPlanPayment = asyncHandler(async (req, res) => {
   const { planId } = req.body as { planId: string };
   const plan = await SubscriptionPlan.findOne({ _id: planId, audience, active: true }).lean();
   if (!plan) throw new ApiError(404, 'This plan is not available any more. Pick another plan.');
-  if (!(await razorpayEnabled())) throw new ApiError(503, 'Online payment is not switched on. Please contact Autozo.');
+  if (!(await razorpayEnabled())) throw new ApiError(503, 'Online payment is not switched on. Please contact autozo.');
   const rzp = await createRazorpayOrder(plan.price, `sub-${Date.now()}`, { user: req.user!.id, plan: String(plan._id), kind: 'subscription' });
   await SubscriptionPayment.create({
     user: req.user!.id,
@@ -54,7 +54,7 @@ export const confirmPlanPayment = asyncHandler(async (req, res) => {
     razorpay_signature: string;
   };
   if (!(await verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature))) {
-    throw new ApiError(400, 'We could not verify this payment. If money was deducted, contact Autozo with the payment id.');
+    throw new ApiError(400, 'We could not verify this payment. If money was deducted, contact autozo with the payment id.');
   }
   // Only one request can flip "created" to "paid", so the days are never added twice.
   const payment = await SubscriptionPayment.findOneAndUpdate(

@@ -2,7 +2,7 @@
   "name": "autozo-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Autozo e-commerce backend - Public (customer) portal API",
+  "description": "autozo e-commerce backend - Public (customer) portal API",
   "main": "dist/server.js",
   "scripts": {
     "test": "tsx --test tests/*.test.ts",

@@ -29,7 +29,7 @@ export function RidersScreen() {
     try {
       await createRider({ name: f.name.trim(), phone: f.phone.trim(), password: f.password, warehouses: picked.length ? picked : undefined });
       setF({ name: '', phone: '', password: '' }); setAdding(false); load();
-      Alert.alert('Rider added', 'They can sign in to the Autozo Rider app with this phone number and password.');
+      Alert.alert('Rider added', 'They can sign in to the autozo Rider app with this phone number and password.');
     } catch (e) { setError(getErrorMessage(e)); } finally { setBusy(false); }
   };
 
@@ -246,14 +246,14 @@ export function EarningsScreen() {
     const amt = Number(amount);
     if (!amt || amt <= 0) return setError('Enter an amount to withdraw.');
     setBusy('wd'); setMsg(''); setError('');
-    try { await requestWithdraw(amt, method); setMsg('Withdrawal requested. The Autozo team will verify and pay it.'); setAmount(''); load(); }
+    try { await requestWithdraw(amt, method); setMsg('Withdrawal requested. The autozo team will verify and pay it.'); setAmount(''); load(); }
     catch (e) { setError(getErrorMessage(e)); } finally { setBusy(''); }
   };
 
   if (!w) return error ? <Center><ErrorText message={error} /></Center> : <Center />;
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      <H title="Earnings" sub={`Your item sales minus the ${w.commissionPct}% platform commission. Withdraw to your UPI/bank; the Autozo team verifies and pays.`} center />
+      <H title="Earnings" sub={`Your item sales minus the ${w.commissionPct}% platform commission. Withdraw to your UPI/bank; the autozo team verifies and pays.`} center />
       <View style={{ padding: 16, paddingTop: 8, gap: 12 }}>
         <ErrorText message={error} />
         {msg ? <Text style={{ color: colors.primary, fontWeight: '700' }}>{msg}</Text> : null}

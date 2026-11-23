@@ -459,7 +459,7 @@ async function getOrCreateSystemShopOwner(): Promise<Types.ObjectId> {
   const existing = await User.findOne({ phone: '9000000000' }).select('_id').lean();
   if (existing) return existing._id as Types.ObjectId;
   const created2 = await User.create({
-    name: 'Autozo Shops',
+    name: 'autozo Shops',
     phone: '9000000000',
     password: sha256(`shop-owner-${Date.now()}-${Math.random()}`).slice(0, 20),
     role: 'shop',

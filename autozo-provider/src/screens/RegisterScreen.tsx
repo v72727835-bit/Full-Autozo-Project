@@ -121,7 +121,7 @@ export default function RegisterScreen({ onBack }: Props) {
         location,
         about: f.about.trim() || undefined,
       });
-      setDone(message || 'Registration received. You can log in and add services once the Autozo team approves it.');
+      setDone(message || 'Registration received. You can log in and add services once the autozo team approves it.');
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -131,7 +131,7 @@ export default function RegisterScreen({ onBack }: Props) {
 
   if (done) {
     return (
-      <AuthLayout title="Registration received!" subtitle="Thanks for registering with Autozo Services.">
+      <AuthLayout title="Registration received!" subtitle="Thanks for registering with autozo Services.">
         <View style={styles.doneRow}>
           <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
           <Text style={styles.doneText}>{done} Once approved, sign in with your mobile number and password to add your services, prices and timings.</Text>
@@ -142,7 +142,7 @@ export default function RegisterScreen({ onBack }: Props) {
   }
 
   return (
-    <AuthLayout title="Register as a service provider" subtitle="Takes about 2 minutes. The Autozo team reviews every provider before it goes live.">
+    <AuthLayout title="Register as a service provider" subtitle="Takes about 2 minutes. The autozo team reviews every provider before it goes live.">
       {error ? <ErrorBanner message={error} /> : null}
 
       <Text style={styles.section}>Your details</Text>

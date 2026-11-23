@@ -87,8 +87,8 @@ export default function PlanScreen({ onChanged }: { onChanged?: () => void }) {
           </View>
         </FadeSlide>
       ))}
-      {plan && plan.plans.length === 0 ? <Text style={styles.note}>No plans are offered right now. Please contact Autozo.</Text> : null}
-      {plan && plan.plans.length > 0 && !plan.canPayOnline ? <Text style={styles.note}>Online payment is switched off right now. Please contact Autozo.</Text> : null}
+      {plan && plan.plans.length === 0 ? <Text style={styles.note}>No plans are offered right now. Please contact autozo.</Text> : null}
+      {plan && plan.plans.length > 0 && !plan.canPayOnline ? <Text style={styles.note}>Online payment is switched off right now. Please contact autozo.</Text> : null}
       {plan?.active ? <Text style={styles.note}>Buying again adds the days after your current plan ends.</Text> : null}
       <Text style={styles.note}>After paying, come back here and pull down to refresh.</Text>
     </ScrollView>

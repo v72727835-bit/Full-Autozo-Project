@@ -10,7 +10,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 /** Ready-made pairs: brand = buttons and links, accent = the header bar and highlights. */
 const PRESETS: { name: string; brand: string; accent: string }[] = [
-  { name: 'Autozo green', brand: '#0e8a3e', accent: '#ffd23f' },
+  { name: 'autozo green', brand: '#0e8a3e', accent: '#ffd23f' },
   { name: 'Ocean blue', brand: '#1a56db', accent: '#ffb020' },
   { name: 'Sunset orange', brand: '#e8590c', accent: '#ffd23f' },
   { name: 'Royal purple', brand: '#6d28d9', accent: '#f5c542' },
@@ -162,7 +162,7 @@ export default function ThemePage() {
       <Card title="Preview">
         <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(128,128,128,0.25)', maxWidth: 420 }}>
           <div style={{ background: `linear-gradient(100deg, ${shownAccent}, ${shownAccent})`, color: inkOn(shownAccent), padding: '14px 16px', fontWeight: 800 }}>
-            Autozo · 19 min delivery
+            autozo · 19 min delivery
           </div>
           <div style={{ padding: 16, background: '#ffffff', color: '#111111', display: 'grid', gap: 12 }}>
             <div style={{ fontWeight: 700 }}>

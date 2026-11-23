@@ -154,7 +154,7 @@ export async function payoutForWithdrawal(txnId: string | Types.ObjectId): Promi
       purpose: 'payout',
       queue_if_low_balance: true,
       reference_id: String(txn._id),
-      narration: 'Autozo rider payout',
+      narration: 'autozo rider payout',
     },
     cfg,
     `wd_${txn._id}`, // idempotency: one payout per withdrawal, even on a retry

@@ -57,7 +57,7 @@ export function Header() {
     <header className={s.hdr} data-site-header>
       <div className={s.brandBar}>
         <div className={`page ${s.row}`}>
-          <Link href="/" className={s.logo} aria-label="Autozo home">
+          <Link href="/" className={s.logo} aria-label="autozo home">
             <img src="/logo-mark.png" alt="" width={38} height={38} className={s.mark} />
             <span className={s.word}>
               autozo

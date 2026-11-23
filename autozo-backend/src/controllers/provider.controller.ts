@@ -54,7 +54,7 @@ export const registerProvider = asyncHandler(async (req, res) => {
     providerLocation: { type: 'Point', coordinates: [b.location.lng, b.location.lat] },
   });
   await AdminAlert.create({ type: 'provider_registered', message: `New service provider "${b.firm}" (${b.city}) registered and is waiting for approval`, user: user._id });
-  created(res, { message: 'Registration received. You can log in and add services once the Autozo team approves it.' });
+  created(res, { message: 'Registration received. You can log in and add services once the autozo team approves it.' });
 });
 
 export const providerLogin = asyncHandler(async (req, res) => {
@@ -65,7 +65,7 @@ export const providerLogin = asyncHandler(async (req, res) => {
   const user = await User.findOne(query).select('+password');
   if (!user || !(await user.comparePassword(password))) throw new ApiError(401, 'Invalid phone/email or password');
   if (!user.isActive) throw new ApiError(403, 'Your account has been disabled. Please contact support.');
-  if (user.providerStatus === 'pending') throw new ApiError(403, 'Your registration is waiting for approval. We will let you in as soon as the Autozo team approves it.');
+  if (user.providerStatus === 'pending') throw new ApiError(403, 'Your registration is waiting for approval. We will let you in as soon as the autozo team approves it.');
   if (user.providerStatus === 'rejected') throw new ApiError(403, `Your registration was not approved${user.providerRejectReason ? `: ${user.providerRejectReason}` : '.'} Please contact support.`);
   const accessToken = signAccessToken(user.id, user.role);
   const refreshToken = signRefreshToken(user.id);
