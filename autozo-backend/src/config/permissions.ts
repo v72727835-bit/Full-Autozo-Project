@@ -58,6 +58,7 @@ const SECTION_MAP: Array<{ test: RegExp; perm: AdminPermission }> = [
   { test: /(?:^|\/)provider-payouts(?:\/|$)/, perm: 'payouts' },
   { test: /(?:^|\/)withdrawals(?:\/|$)/, perm: 'payouts' },
   { test: /(?:^|\/)cash-submits(?:\/|$)/, perm: 'payouts' },
+  { test: /(?:^|\/)manual-payments?(?:\/|$)/, perm: 'payouts' },
   { test: /(?:^|\/)riders(?:\/|$)/, perm: 'riders' },
   { test: /(?:^|\/)sellers(?:\/|$)/, perm: 'shops' },
   { test: /(?:^|\/)shops(?:\/|$)/, perm: 'shops' },

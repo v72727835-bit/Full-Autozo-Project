@@ -1,3 +1,4 @@
+import { pendingManualTotal } from './manualPending';
 import { Types } from 'mongoose';
 import { AdminAlert } from '../models/AdminAlert';
 import { Order } from '../models/Order';
@@ -52,7 +53,7 @@ export async function awaitingCash(riderId: Types.ObjectId | string): Promise<nu
     { $match: { rider: new Types.ObjectId(String(riderId)), kind: 'cash_submit', status: 'pending' } },
     { $group: { _id: null, total: { $sum: '$amount' } } },
   ]);
-  return rows[0]?.total ?? 0;
+  return (rows[0]?.total ?? 0) + (await pendingManualTotal(riderId, 'rider_cash'));
 }
 
 /**

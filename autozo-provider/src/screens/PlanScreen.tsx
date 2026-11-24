@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
 import { MyPlan, startPlanPayment, syncPlanPayments } from '../api/provider';
+import { ManualPay } from '../components/ManualPay';
 import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { colors } from '../theme';
 import { Btn, Card, ErrorText, H, Pill, money } from '../ui';
@@ -64,6 +65,7 @@ export default function PlanScreen({ plan, onReload }: { plan: MyPlan | null; on
             <View style={{ marginTop: 12 }}>
               <Btn title={busy === p._id ? 'Opening payment…' : plan.active ? 'Renew with this plan' : 'Buy now'} disabled={!!busy || !plan.canPayOnline} onPress={() => buy(p._id)} />
             </View>
+            <ManualPay purpose="subscription" planId={p._id} planName={p.name} amount={p.price} onDone={() => void onReload()} />
           </Card>
         ))}
         {plan && plan.plans.length === 0 ? <Text style={{ color: colors.muted, textAlign: 'center' }}>No plans are offered right now. Please contact autozo.</Text> : null}

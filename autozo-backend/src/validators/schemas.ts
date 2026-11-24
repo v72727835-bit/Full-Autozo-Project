@@ -1054,3 +1054,29 @@ export const bookingsQuery = pagination.extend({
 });
 export const cancelBookingBody = z.object({ reason: z.string().trim().max(300).optional() });
 export const rateBookingBody = z.object({ rating: z.number().int().min(1).max(5), comment: z.string().trim().max(1000).optional() });
+
+/* ---- manual payment (QR / UPI / bank) ---- */
+const upiId = z.string().trim().regex(/^[a-zA-Z0-9._-]{2,64}@[a-zA-Z][a-zA-Z0-9.-]{1,30}$/, 'Enter a valid UPI id like name@bank');
+export const manualPaymentConfigBody = z.object({
+  enabled: z.boolean(),
+  payeeName: z.string().trim().max(80).optional(),
+  upiId: z.union([upiId, z.literal('')]).optional(),
+  qrImage: z.string().trim().max(500).optional(),
+  bankHolder: z.string().trim().max(80).optional(),
+  bankName: z.string().trim().max(80).optional(),
+  bankNumber: z.union([z.string().trim().regex(/^\d{6,22}$/, 'Account number must be digits only'), z.literal('')]).optional(),
+  bankIfsc: z.union([z.string().trim().toUpperCase().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Enter a valid IFSC like SBIN0001234'), z.literal('')]).optional(),
+  note: z.string().trim().max(300).optional(),
+});
+export const manualPaymentBody = z.object({
+  purpose: z.enum(['rider_cash', 'provider_dues', 'subscription']),
+  amount: z.coerce.number().positive().max(1_000_000),
+  method: z.enum(['upi', 'bank', 'qr']),
+  /** The transaction id (UTR) from the UPI app or the bank. */
+  reference: z.string().trim().min(6, 'Enter the transaction id (at least 6 characters)').max(60),
+  proof: z.string().trim().max(500).optional(),
+  note: z.string().trim().max(200).optional(),
+  planId: z.string().trim().optional(),
+});
+export const manualPaymentsQuery = pagination.extend({ status: z.enum(['pending', 'confirmed', 'rejected']).optional() });
+export const manualDecisionBody = z.object({ note: z.string().trim().max(200).optional(), reason: z.string().trim().max(200).optional() }).optional();

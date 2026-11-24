@@ -891,3 +891,23 @@ export interface CustomerPurgeCounts {
 export const previewCustomerPurge = async (): Promise<CustomerPurgeCounts> => (await api.get('/admin/customers/purge')).data.data;
 export const purgeAllCustomers = async (): Promise<CustomerPurgeCounts> =>
   (await api.post('/admin/customers/purge', { confirm: 'DELETE' }, { timeout: 120000 })).data.data;
+
+/* ---- manual payment (QR / UPI / bank) ---- */
+export interface ManualPaymentConfig {
+  enabled: boolean; payeeName?: string; upiId?: string; qrImage?: string;
+  bankHolder?: string; bankName?: string; bankNumber?: string; bankIfsc?: string; note?: string;
+}
+export interface ManualPaymentRow {
+  _id: string; role: 'rider' | 'provider' | 'seller'; purpose: 'rider_cash' | 'provider_dues' | 'subscription';
+  amount: number; method: string; reference: string; proof?: string; note?: string; planName?: string; days?: number;
+  status: 'pending' | 'confirmed' | 'rejected'; adminNote?: string; createdAt: string; handledAt?: string;
+  user: { _id: string; name: string; phone: string; role: string; providerId?: string } | null;
+}
+export const fetchManualConfig = async (): Promise<ManualPaymentConfig> => (await api.get('/admin/manual-payment/config')).data.data;
+export const saveManualConfig = async (body: ManualPaymentConfig): Promise<ManualPaymentConfig> => (await api.put('/admin/manual-payment/config', body)).data.data;
+export const fetchManualPayments = async (status?: string): Promise<{ rows: ManualPaymentRow[]; pending: number }> => {
+  const { data } = await api.get('/admin/manual-payments', { params: { status, limit: 50 } });
+  return { rows: data.data, pending: data.meta.pending };
+};
+export const confirmManualPayment = async (id: string): Promise<void> => { await api.post(`/admin/manual-payments/${id}/confirm`, {}); };
+export const rejectManualPayment = async (id: string, reason?: string): Promise<void> => { await api.post(`/admin/manual-payments/${id}/reject`, { reason }); };

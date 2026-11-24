@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { confirmMyPlanPayment, MyPlan, startMyPlanPayment } from '../api/admin';
 import { getErrorMessage } from '../api/client';
 import { Badge, Button, ErrorBanner, money } from '../components/ui';
+import ManualPay from '../components/ManualPay';
 import { payWithRazorpay } from '../lib/razorpay';
 import { NavLink } from '../navigation';
 
@@ -113,6 +114,7 @@ export default function PlanView({ plan, me, onPaid, kind = 'warehouse' }: { pla
                   {busy === p._id ? 'Opening payment…' : plan.active ? 'Renew with this plan' : 'Buy now'}
                 </Button>
               </div>
+              <ManualPay purpose="subscription" planId={p._id} planName={p.name} amount={p.price} onDone={() => void 0} />
             </div>
           ))}
         </div>

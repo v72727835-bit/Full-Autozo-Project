@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getErrorMessage } from '../api/client';
 import { fetchWallet, payDues, payDuesOnline, requestWithdraw, saveWalletAccount, syncDuesPayments, walletTxns } from '../api/provider';
+import { ManualPay } from '../components/ManualPay';
 import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { colors, radius } from '../theme';
 import { ProviderTxn, ProviderWallet } from '../types';
@@ -115,6 +116,8 @@ export default function WalletScreen() {
           </>
         )}
       </Card>
+
+      <ManualPay purpose="provider_dues" amount={openDue} onDone={() => void load()} />
 
       <Section title="Withdraw" />
       <Card>
