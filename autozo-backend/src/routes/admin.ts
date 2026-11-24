@@ -9,6 +9,7 @@ import * as provider from '../controllers/provider.controller';
 import * as providerWallet from '../controllers/providerWallet.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as dues from '../controllers/dues.controller';
+import * as manualPay from '../controllers/manualPayment.controller';
 import * as ads from '../controllers/ads.controller';
 import * as pages from '../controllers/page.controller';
 import * as purge from '../controllers/purge.controller';
@@ -195,6 +196,11 @@ router.get('/seller-withdrawals', validate({ query: v.withdrawalsQuery }), extra
 router.post('/seller-withdrawals/:id/mark', validate({ params: v.idParam, body: v.markWithdrawalBody }), extra.markSellerWithdrawal);
 router.post('/seller-withdrawals/:id/pay', validate({ params: v.idParam }), extra.paySellerWithdrawalAdmin);
 router.get('/dues-payments', dues.adminDuesPayments);
+router.get('/manual-payment/config', manualPay.getConfig);
+router.put('/manual-payment/config', validate({ body: v.manualPaymentConfigBody }), manualPay.putConfig);
+router.get('/manual-payments', validate({ query: v.manualPaymentsQuery }), manualPay.list);
+router.post('/manual-payments/:id/confirm', validate({ params: v.idParam, body: v.manualDecisionBody }), manualPay.confirm);
+router.post('/manual-payments/:id/reject', validate({ params: v.idParam, body: v.manualDecisionBody }), manualPay.reject);
 router.post('/cash-submits/:id/confirm', validate({ params: v.idParam }), extra.confirmCashSubmit);
 router.post('/riders/:id/bonus', validate({ params: v.idParam, body: v.walletAdjustBody }), extra.adjustRiderWallet);
 

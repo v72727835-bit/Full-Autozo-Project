@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { pendingManualTotal } from './manualPending';
 import { ProviderTxn } from '../models/ProviderTxn';
 import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
@@ -35,6 +36,7 @@ export async function providerDueFilter() {
 
 /** A provider's wallet at a glance. */
 export async function providerWalletSummary(providerId: Types.ObjectId | string) {
+  const manualPending = await pendingManualTotal(providerId, 'provider_dues');
   const rows = await ProviderTxn.aggregate<{ _id: { kind: string; status: string; method?: string }; total: number; commission: number }>([
     { $match: { provider: oid(providerId) } },
     {
@@ -71,7 +73,7 @@ export async function providerWalletSummary(providerId: Types.ObjectId | string)
     onlineEarned: round(credit),
     commissionTotal: round(onlineCommission + duesOwed),
     due: round(Math.max(0, duesOwed - duesPaid)),
-    duePending: round(duesPending),
+    duePending: round(duesPending + manualPending),
     pendingWithdraw: round(pendingWithdraw),
     paidOut: round(paidOut),
   };

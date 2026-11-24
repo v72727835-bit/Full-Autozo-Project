@@ -17,6 +17,7 @@ const MediaPage = dynamic(() => import('./screens/MediaPage'), { ssr: false });
 const NoticesPage = dynamic(() => import('./screens/NoticesPage'), { ssr: false });
 const RidersPage = dynamic(() => import('./screens/RidersPage'), { ssr: false });
 const PayoutsPage = dynamic(() => import('./screens/PayoutsPage'), { ssr: false });
+const ManualPaymentsPage = dynamic(() => import('./screens/ManualPaymentsPage'), { ssr: false });
 const RiderProfilePage = dynamic(() => import('./screens/RiderProfilePage'), { ssr: false });
 const SettingsStorePage = dynamic(() => import('./screens/SettingsStorePage'), { ssr: false });
 const ThemePage = dynamic(() => import('./screens/ThemePage'), { ssr: false });
@@ -74,6 +75,7 @@ function routePermission(pathname: string): Permission | 'super' | null {
     '/service-bookings': 'orders',
     '/riders': 'riders',
     '/payouts': 'payouts',
+    '/manual-payments': 'payouts',
     '/subscriptions': 'subscriptions',
     '/rider-accounts': 'users',
     '/customers': 'users',
@@ -142,6 +144,8 @@ function CurrentPage({ pathname, user }: { pathname: string; user: ReturnType<ty
       return <RidersPage />;
     case '/payouts':
       return <PayoutsPage />;
+    case '/manual-payments':
+      return <ManualPaymentsPage />;
     case '/subscriptions':
       return <SubscriptionsPage />;
     case '/rider-accounts':

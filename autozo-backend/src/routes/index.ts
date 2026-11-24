@@ -19,6 +19,7 @@ import * as providerWallet from '../controllers/providerWallet.controller';
 import * as services from '../controllers/service.controller';
 import * as plans from '../controllers/subscription.controller';
 import * as dues from '../controllers/dues.controller';
+import * as manualPay from '../controllers/manualPayment.controller';
 import * as referral from '../controllers/referral.controller';
 import * as geo from '../controllers/geo.controller';
 import * as ads from '../controllers/ads.controller';
@@ -126,6 +127,10 @@ const duesUser = [protect, authorize('rider', 'provider', 'seller')];
 router.post('/dues/pay', ...duesUser, validate({ body: v.payDuesOnlineBody }), dues.payDues);
 router.post('/dues/confirm', ...duesUser, validate({ body: v.confirmPaymentBody }), dues.confirmDues);
 router.post('/dues/sync', ...duesUser, dues.syncDues);
+/* Manual payment (UPI / QR / bank): where to pay, send a payment, my payments and their status */
+router.get('/manual-payment/info', ...duesUser, manualPay.info);
+router.get('/manual-payment/mine', ...duesUser, manualPay.mine);
+router.post('/manual-payment', ...duesUser, validate({ body: v.manualPaymentBody }), manualPay.submit);
 router.post('/seller/ack-orders', ...sellerOnly, seller.ackOrders);
 router.put('/seller/profile', ...sellerOnly, validate({ body: v.sellerProfileBody }), seller.saveProfile);
 router.post('/seller/uploads/images', ...sellerOnly, uploadSellerImages, uploads.uploadImages);

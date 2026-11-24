@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Pressable, Refre
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/AuthLayout';
 import { fetchWallet, fetchWalletTxns, payDuesOnline, requestWithdraw, savePayoutAccount, submitCash, syncDuesPayments } from '../api/rider';
+import { ManualPay } from '../components/ManualPay';
 import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { getErrorMessage } from '../api/client';
 import { PayoutAccount, RiderWallet, WalletTxn } from '../types';
@@ -82,6 +83,8 @@ export default function WalletScreen() {
           )}
         </View>
         </FadeSlide>
+
+        <ManualPay purpose="rider_cash" amount={toSubmit} onDone={() => load(true)} />
 
         <Text style={styles.sectionTitle}>Passbook</Text>
         {txns.length === 0 ? (

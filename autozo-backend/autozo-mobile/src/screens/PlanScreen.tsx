@@ -4,6 +4,7 @@ import { AppState, RefreshControl, ScrollView, StyleSheet, Text, View } from 're
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/AuthLayout';
 import { fetchMyPlan, startPlanPayment, syncPlanPayments } from '../api/rider';
+import { ManualPay } from '../components/ManualPay';
 import { OnlinePay, PayOrder } from '../components/OnlinePay';
 import { getErrorMessage } from '../api/client';
 import { MyPlan } from '../types';
@@ -84,6 +85,7 @@ export default function PlanScreen({ onChanged }: { onChanged?: () => void }) {
               onPress={() => buy(p._id)}
               style={{ marginTop: 14 }}
             />
+            <ManualPay purpose="subscription" planId={p._id} planName={p.name} amount={p.price} onDone={() => void load()} />
           </View>
         </FadeSlide>
       ))}

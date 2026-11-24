@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useNavigate } from '../navigation';
-import { fetchAdminAlerts, fetchOrders, fetchWarehouseApplications, fetchProviderApplications, fetchProducts, fetchShops, fetchTickets, markAdminAlertsRead } from '../api/admin';
+import { fetchManualPayments, fetchAdminAlerts, fetchOrders, fetchWarehouseApplications, fetchProviderApplications, fetchProducts, fetchShops, fetchTickets, markAdminAlertsRead } from '../api/admin';
 import { useAuth } from '../context/AuthContext';
 import { askNotificationPermission, notifyNewOrders, playChime } from '../lib/alerts';
 import { activeOrderCount, useStats } from '../context/StatsContext';
@@ -57,6 +57,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
      the count in the tab title. Live Orders has its own chime, so skip there. */
   const waiting = useRef<number | null>(null);
   const [pending, setPending] = useState(0);
+  const [manualPending, setManualPending] = useState(0);
   useEffect(() => {
     askNotificationPermission();
     let alive = true;
@@ -98,6 +99,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         .catch(() => undefined);
       fetchWarehouseApplications({ status: 'pending', page: 1, limit: 1 })
         .then(({ pending }) => alive && setWhPending(pending))
+        .catch(() => undefined);
+      fetchManualPayments('pending')
+        .then(({ pending }) => alive && setManualPending(pending))
         .catch(() => undefined);
       fetchProviderApplications({ status: 'pending', page: 1, limit: 1 })
         .then(({ pending }) => alive && setProviderPending(pending))
@@ -160,6 +164,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         { to: '/warehouse-requests', label: 'Warehouse requests', icon: <IconStore />, badge: whPending, badgeTone: 'warn', perm: 'shops' },
         { to: '/riders', label: 'Riders', icon: <IconRider />, badge: riders, badgeTone: 'brand', perm: 'riders' },
         { to: '/payouts', label: 'Payouts & dues', icon: <IconTag />, perm: 'payouts' },
+        { to: '/manual-payments', label: 'Manual payments', icon: <IconRupee />, badge: manualPending, badgeTone: 'warn', perm: 'payouts' },
         { to: '/subscriptions', label: 'Subscriptions', icon: <IconRupee />, perm: 'subscriptions' },
         { to: '/support', label: 'Customer Care', icon: <IconBell />, badge: careUnread, badgeTone: 'brand', perm: 'support' },
         { to: '/notifications', label: 'Notifications', icon: <IconVolume />, perm: 'media' },

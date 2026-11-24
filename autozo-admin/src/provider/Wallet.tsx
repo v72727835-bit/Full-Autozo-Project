@@ -1,5 +1,6 @@
 "use client";
 
+import ManualPay from '../components/ManualPay';
 import React, { useEffect, useState } from 'react';
 import {
   ProviderTxnRow, ProviderWallet, providerPayDues, providerRequestWithdraw, providerSaveWalletAccount, providerWallet, providerWalletTxns,
@@ -117,6 +118,7 @@ export default function ProviderWalletView() {
               >{busy === 'due' ? 'Saving…' : payMethod === 'wallet' ? `Pay ${money(Math.min(openDue, w.balance))} from wallet` : `I paid ${money(openDue)}`}</Button>
             </>
           )}
+          <ManualPay purpose="provider_dues" amount={openDue} onDone={load} />
         </div>
 
         <div className="card card-pad">
