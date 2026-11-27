@@ -82,3 +82,13 @@ Not collected: contacts, SMS, calls, health, browsing history. No ads, no data s
 2. Create each app with the package id above, upload its `.aab` to an internal test track, then fill App content (privacy policy, data safety, deletion URL, target audience, content rating) and the listing.
 3. New personal developer accounts must run a closed test with 12 testers for 14 days before production access; organisation accounts skip this.
 4. Add the Play App Signing SHA-1 to Firebase, test sign-in from the Play-installed build, then promote to production.
+
+## 8. Reviewer logins (Play Console, App content, "App access")
+
+Google reviewers need a working login for every app. Create or reset four demo accounts on the live server (run in `autozo-backend` where `.env` is):
+
+```
+npm run create-review-accounts
+```
+
+It makes one demo account per app (customer, warehouse, rider, provider) with phones 9000000001 to 9000000004 and emails `review.<app>@autozo.org`. The password is `REVIEW_PASSWORD` from the environment, or the default written in `src/createReviewAccounts.ts`. Warehouse and provider are pre-approved and every plan runs for a year, so the reviewer lands on the home screen. Paste the phone and password into Play Console under App content, App access (select "All or some functionality is restricted"). Re-running resets the password.
