@@ -5,6 +5,7 @@ import { setServiceRadius } from '../api/provider';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 import { ShareCard } from '../components/ShareCard';
+import { LegalAndDelete } from '../components/LegalAndDelete';
 import { Btn, Card, Section } from '../ui';
 
 const MIN_KM = 1;
@@ -86,6 +87,7 @@ export default function AccountScreen() {
       <View style={{ marginTop: 16 }}>
         <Btn title="Log out" tone="danger" onPress={() => void signOut()} />
       </View>
+      <LegalAndDelete />
     </View>
   );
 }

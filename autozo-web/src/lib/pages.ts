@@ -17,6 +17,7 @@ export const DESKTOP_PAGES: { href: string; label: string }[] = [
   { href: '/seller-partner', label: 'autozo Seller Partner' },
   { href: '/help', label: 'Help & Support' },
   { href: '/p/terms', label: 'Terms & Conditions' },
-  { href: '/p/privacy', label: 'Privacy Policy' },
+  { href: '/privacy-policy', label: 'Privacy Policy' },
+  { href: '/delete-account', label: 'Delete account' },
   { href: '/sitemap', label: 'Sitemap' },
 ];

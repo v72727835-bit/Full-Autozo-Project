@@ -111,7 +111,20 @@ export function ProfileScreen(_props: TabScreenProps) {
       icon: 'shield-checkmark-outline',
       title: 'Privacy and terms',
       subtitle: 'How your data is used',
-      onPress: () => toast.show('Opening this in the app is coming soon'),
+      onPress: () => void Linking.openURL('https://shop.autozo.org/privacy-policy'),
+    },
+    {
+      icon: 'document-text-outline',
+      title: 'Terms and conditions',
+      subtitle: 'The rules for using autozo',
+      onPress: () => void Linking.openURL('https://shop.autozo.org/p/terms'),
+    },
+    {
+      icon: 'trash-outline',
+      title: 'Delete account',
+      subtitle: 'Permanently remove your account and personal data',
+      onPress: () => navigation.navigate('DeleteAccount'),
+      danger: true,
     },
   ];
 
