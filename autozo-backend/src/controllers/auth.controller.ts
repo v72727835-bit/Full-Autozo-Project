@@ -2,6 +2,10 @@ import crypto from 'crypto';
 import { findReferrer } from '../services/referral.service';
 import { getIntegrations } from '../services/integrations.service';
 import { localPhone, requireOtp, verifyPhoneToken } from '../services/firebase.service';
+import { Cart } from '../models/Cart';
+import { DeviceToken } from '../models/DeviceToken';
+import { Order } from '../models/Order';
+import { ServiceBooking } from '../models/ServiceBooking';
 import { User, UserDoc } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -138,6 +142,51 @@ export const changePassword = asyncHandler(async (req, res) => {
   user.refreshTokens = []; // sign out all other devices
   await user.save();
   ok(res, { message: 'Password changed. Please log in again on your other devices.' });
+});
+
+/**
+ * Account deletion (Google Play policy): the signed-in customer, rider, seller or provider deletes their own
+ * account after confirming the password. Personal data is erased; orders and money records stay, tied to an
+ * anonymous placeholder, because they are needed for tax and accounting.
+ */
+export const deleteMyAccount = asyncHandler(async (req, res) => {
+  const { password } = req.body as { password: string };
+  const user = await User.findById(req.user!.id).select('+password');
+  if (!user || user.deletedAt) throw new ApiError(404, 'Account not found');
+  if (user.role === 'admin') throw new ApiError(403, 'Admin accounts cannot be deleted here');
+  if (!(await user.comparePassword(password))) throw new ApiError(400, 'Password is incorrect');
+
+  const id = user._id;
+  const openOrders = ['placed', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery'];
+  const openBookings = ['requested', 'accepted', 'on_the_way', 'in_progress'];
+  const [orders, bookings] = await Promise.all([
+    Order.exists({ status: { $in: openOrders }, $or: [{ user: id }, { rider: id }, { sellerIds: id }] }),
+    ServiceBooking.exists({ status: { $in: openBookings }, $or: [{ customer: id }, { provider: id }] }),
+  ]);
+  if (orders || bookings) {
+    throw new ApiError(409, 'You have an order or booking in progress. Finish or cancel it first, then delete your account.');
+  }
+
+  const tag = `deleted-${String(id)}`;
+  await User.updateOne(
+    { _id: id },
+    {
+      $set: {
+        name: 'Deleted user',
+        phone: tag,
+        isActive: false,
+        deletedAt: new Date(),
+        refreshTokens: [],
+        wishlist: [],
+        addresses: [],
+        lastSeenAt: null,
+        providerBusy: true,
+      },
+      $unset: { email: '', avatar: '', payout: '', sellerProfile: '', warehouseApplication: '', providerApplication: '', googleId: '', facebookId: '' },
+    },
+  );
+  await Promise.all([Cart.deleteMany({ user: id }), DeviceToken.deleteMany({ user: id })]);
+  ok(res, { message: 'Your account has been deleted.' });
 });
 
 /* ---------------- Continue with Google / Facebook ---------------- */

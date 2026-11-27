@@ -303,6 +303,7 @@ export function EarningsScreen() {
 }
 
 import { ShareCard } from '../components/ShareCard';
+import { LegalAndDelete } from '../components/LegalAndDelete';
 
 /* ---------------- Account ---------------- */
 export function AccountScreen() {
@@ -340,6 +341,7 @@ export function AccountScreen() {
           <Btn title={busy ? 'Please wait…' : 'Change password'} onPress={submit} disabled={busy} />
         </Card>
         <Btn tone="danger" title="Log out" onPress={() => Alert.alert('Log out?', undefined, [{ text: 'No' }, { text: 'Log out', style: 'destructive', onPress: signOut }])} />
+        <LegalAndDelete />
       </View>
     </ScrollView>
   );

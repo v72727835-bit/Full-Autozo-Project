@@ -61,6 +61,7 @@ router.post('/auth/refresh', authLimiter, validate({ body: v.refreshBody }), aut
 router.post('/auth/logout', protect, auth.logout);
 router.post('/devices', protect, validate({ body: v.deviceBody }), device.registerDevice);
 router.delete('/devices', protect, validate({ body: v.deviceDeleteBody }), device.removeDevice);
+router.post('/auth/delete-account', authLimiter, protect, validate({ body: v.deleteAccountBody }), auth.deleteMyAccount);
 router.post('/auth/change-password', ...customerOnly, validate({ body: v.changePasswordBody }), auth.changePassword);
 
 /* ============ Webhooks (no login; verified by re-fetching from the provider) ============ */

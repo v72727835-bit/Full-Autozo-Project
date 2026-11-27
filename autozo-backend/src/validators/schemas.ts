@@ -64,6 +64,8 @@ export const changePasswordBody = z.object({
   newPassword: password,
 });
 
+export const deleteAccountBody = z.object({ password: z.string().min(1) });
+
 /* ---------- profile / addresses ---------- */
 export const updateProfileBody = z
   .object({

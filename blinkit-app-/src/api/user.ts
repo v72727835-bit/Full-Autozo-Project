@@ -26,6 +26,10 @@ export async function changePassword(currentPassword: string, newPassword: strin
   await api.post('/auth/change-password', { currentPassword, newPassword });
 }
 
+export async function deleteAccount(password: string): Promise<void> {
+  await api.post('/auth/delete-account', { password });
+}
+
 /* ------------------------------------------------------------- addresses -- */
 
 export async function fetchAddresses(): Promise<Address[]> {

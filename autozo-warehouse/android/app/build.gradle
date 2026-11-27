@@ -78,6 +78,23 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+/**
+ * Release signing: env vars (CI) first, then Gradle properties (~/.gradle/gradle.properties).
+ * Nothing secret is stored in the repository. Without them a release build uses the debug key
+ * (fine for sideloaded test APKs, never for Google Play).
+ */
+def signingValue = { String name ->
+    def fromEnv = System.getenv(name)
+    if (fromEnv) return fromEnv
+    return project.hasProperty(name) ? project.property(name) : null
+}
+def releaseSigning = [
+    storeFile    : signingValue('AUTOZO_UPLOAD_STORE_FILE'),
+    storePassword: signingValue('AUTOZO_UPLOAD_STORE_PASSWORD'),
+    keyAlias     : signingValue('AUTOZO_UPLOAD_KEY_ALIAS'),
+    keyPassword  : signingValue('AUTOZO_UPLOAD_KEY_PASSWORD'),
+]
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -110,15 +127,26 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (releaseSigning.storeFile) {
+            release {
+                storeFile file(releaseSigning.storeFile)
+                storePassword releaseSigning.storePassword
+                keyAlias releaseSigning.keyAlias
+                keyPassword releaseSigning.keyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (releaseSigning.storeFile) {
+                signingConfig signingConfigs.release
+            } else {
+                logger.warn('AUTOZO_UPLOAD_STORE_FILE is not set: this release build is signed with the DEBUG key (not valid for Google Play).')
+                signingConfig signingConfigs.debug
+            }
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
