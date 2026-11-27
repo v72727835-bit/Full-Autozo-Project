@@ -65,7 +65,7 @@ function Shell() {
           <Text style={styles.appbarTitle} numberOfLines={1}>{sectionTitle}</Text>
           <Text style={styles.appbarSub} numberOfLines={1}>{firm}</Text>
         </View>
-        <View style={styles.brandMark} />
+        <View style={{ width: 40, height: 40 }} />
       </View>
 
       {locked && tab !== 'plan' ? (

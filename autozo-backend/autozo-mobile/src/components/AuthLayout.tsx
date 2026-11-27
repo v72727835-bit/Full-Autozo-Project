@@ -51,6 +51,7 @@ export function AuthLayout({ title, subtitle, children }: Props) {
 }
 
 export function ErrorBanner({ message }: { message: string }) {
+  if (!message) return null;
   return (
     <View style={styles.banner} accessibilityRole="alert">
       <Ionicons name="alert-circle" size={18} color={colors.danger} />
